@@ -1,0 +1,12 @@
+{
+    "cell_3_mito" : {
+        "file": "cell_3/cell_3.zarr",
+        "offset": [700, 2000, 6200],
+        "shape": [250, 250, 250],
+        "voxel_size": [5, 5, 5],
+        "raw": "volumes/raw_equalized_0.02",
+        "labels" : {
+            "volumes/labels/mito": 1
+        }
+    }
+}

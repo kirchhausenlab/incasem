@@ -1,0 +1,10 @@
+{
+    "Cell_6_example_roi_nickname" : {
+        "file": "cell_6/cell_6.zarr",
+        "offset": [400, 926, 2512],
+        "shape": [241, 476, 528],
+        "voxel_size": [5, 5, 5],
+        "raw": "volumes/raw_equalized_0.02"
+    }
+}
+

@@ -1,0 +1,132 @@
+{
+    "mito_113": {
+        "file": "janelia/jrc_hela-2/jrc_hela-2.zarr",
+        "labels": {
+            "volumes/labels/mito/113": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/mito/113"
+        ],
+        "offset": [
+            2975,
+            1075,
+            3125
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            250,
+            500,
+            500
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "mito_23": {
+        "file": "janelia/jrc_hela-2/jrc_hela-2.zarr",
+        "labels": {
+            "volumes/labels/mito/23": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/mito/23"
+        ],
+        "offset": [
+            2031,
+            1070,
+            2750
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            250,
+            250,
+            250
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "mito_3": {
+        "file": "janelia/jrc_hela-2/jrc_hela-2.zarr",
+        "labels": {
+            "volumes/labels/mito/3": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/mito/3"
+        ],
+        "offset": [
+            3999,
+            1000,
+            7800
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            250,
+            400,
+            400
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "mito_111": {
+        "file": "janelia/jrc_hela-3/jrc_hela-3.zarr",
+        "labels": {
+            "volumes/labels/mito/111": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/mito/111"
+        ],
+        "offset": [
+            6255,
+            432,
+            7184
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            500,
+            250,
+            500
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "mito_33": {
+        "file": "janelia/jrc_hela-3/jrc_hela-3.zarr",
+        "labels": {
+            "volumes/labels/mito/33": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/mito/33"
+        ],
+        "offset": [
+            5650,
+            570,
+            3450
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            200,
+            200,
+            200
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    }
+}

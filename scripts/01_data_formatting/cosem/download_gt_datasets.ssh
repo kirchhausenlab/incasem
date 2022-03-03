@@ -1,0 +1,13 @@
+dest_folder=/nfs/scratch2/fiborganelles/data/janelia
+for cell in "jrc_hela-2" "jrc_hela-3" "jrc_jurkat-1" "jrc_macrophage-2"
+do
+  set -- $cell
+  dest_arr="$dest_folder"/"$cell"/"$cell".n5/volumes/groundtruth
+  set -- $dest_arr
+ 
+  echo Downloading cell "$cell"
+  # aws s3 cp s3://janelia-cosem-publications/heinrich-2021a/"$cell"/"$cell".n5/volumes/groundtruth "$dest_arr" --recursive
+  
+  echo Rename folder "$dest_arr" to lowercase
+  python rename_gt_dataset.py -d "$dest_arr" 
+done

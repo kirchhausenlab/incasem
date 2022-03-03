@@ -1,0 +1,28 @@
+{
+    "cell_1_er_validation" : {
+        "file": "cell_1/cell_1.zarr",
+        "offset": [150, 120, 2645],
+        "shape": [600, 590, 250],
+        "voxel_size": [5, 5, 5],
+        "raw": "volumes/raw_equalized_0.02",
+        "metric_masks": [
+            "volumes/metric_masks/er"
+        ],
+        "labels" : {
+            "volumes/labels/er": 1
+        }
+    },
+    "cell_2_er_validation": {
+        "file": "cell_2/cell_2.zarr",
+        "offset": [300, 70, 700],
+        "shape": [300, 205, 600],
+        "voxel_size": [5, 5, 5],
+        "raw": "volumes/raw_equalized_0.02",
+        "metric_masks": [
+            "volumes/metric_masks/er"
+        ],
+        "labels": {
+            "volumes/labels/er": 1
+        }
+    }
+}

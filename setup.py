@@ -1,0 +1,22 @@
+from setuptools import setup
+
+setup(
+    name='incasem',
+    version='0.1',
+    description='',
+    url='https://github.com/kirchhausenlab/incasem',
+    author='Benjamin Gallusser, Giorgio Maltese',
+    author_email='gallusser@tklab.hms.harvard.edu, maltese@tklab.hms.harvard.edu',
+    license='MIT',
+    install_requires=[
+        'zarr',
+        'scikit-learn',
+        'pyyaml',
+        'quilt3',
+        'tensorboardX',
+        'tensorboard',
+        'sacred @ git+https://github.com/kirchhausenlab/sacred@master',
+        'funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch@master',
+        'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
+    ]
+)
