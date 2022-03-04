@@ -1,4 +1,4 @@
-# Intelligent Naive-Cell Automatic Segmentation for Electron Microscopy
+# <ins>I</ins>ntelligent <ins>N</ins>aive-<ins>C</ins>ell <ins>A</ins>utomatic <ins>S</ins>egmentation for <ins>E</ins>lectron <ins>M</ins>icroscopy (INCASEM)
 
 ## Table of Contents
 - [Installation](#Installation)
@@ -98,7 +98,7 @@ npm install -g omniboard
 ```
 
 ## Optional: Download our data
-The datasets in the publication are available in an [AWS bucket](https://open.quiltdata.com/b/fibsem/tree/dataset/) and can be downloaded with the [quilt3 API](https://docs.quiltdata.com/api-reference/api).
+The datasets in the publication are available in an [AWS bucket](https://open.quiltdata.com/b/incasem/tree/datasets/) and can be downloaded with the [quilt3 API](https://docs.quiltdata.com/api-reference/api).
 
 #### 1. Download an example dataset from the AWS bucket: cell 6
 Navigate to `~/incasem/data`:
@@ -108,7 +108,7 @@ cd ~/incasem/data
 Open a python shell and run
 ```python
 import quilt3
-b = quilt3.Bucket("s3://fibsem")
+b = quilt3.Bucket("s3://incasem")
 # download
 b.fetch("dataset/cell_6/", "~/incasem/data/cell_6/")
 ```
