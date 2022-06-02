@@ -8,6 +8,7 @@ setup(
     author='Benjamin Gallusser, Giorgio Maltese',
     author_email='gallusser@tklab.hms.harvard.edu, maltese@tklab.hms.harvard.edu',
     license='MIT',
+    py_modules=[],
     install_requires=[
         'zarr',
         'scikit-learn',
