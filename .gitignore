@@ -2,8 +2,8 @@
 ### PROJECT ###
 ###############
 
-models
-training_runs
+/models
+/training_runs
 
 ##############
 ### PYTHON ###
