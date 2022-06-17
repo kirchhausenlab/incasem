@@ -110,7 +110,7 @@ Open a python shell and run
 import quilt3
 b = quilt3.Bucket("s3://incasem")
 # download
-b.fetch("dataset/cell_6/", "~/incasem/data/cell_6/")
+b.fetch("datasets/cell_6/", "~/incasem/data/cell_6/")
 ```
 
 TODO add info about different formats: tiff, zarr, possibly n5.
