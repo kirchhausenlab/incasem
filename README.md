@@ -328,7 +328,7 @@ This is an example based on our datasets, which are publicly available in `.zarr
 We will fine-tune the mitochondria model ID `1847`, which was trained on data from cells 1 and 2, with a small amount of additional data from cell 3.
 
 #### 0. Download training data
-If you haven't done so before, download `cell_3` from our published datasets as outlined in the section [_Download our data_](#Download-our-data).
+If you haven't done so before, download `cell_3` from our published datasets as outlined in the section [_Download our data_](#Optional-Download-our-data).
 
 #### 1. Create a fine-tuning data configuration file
 For fine-tuning a model you need to create a configuration file in `JSON` format that specifies which data should be used.
@@ -399,7 +399,7 @@ Now you can use the fine-tuned model to generate predictions on the new target c
 This is an example based on our datasets, which are publicly available in `.zarr` format via Amazon Web Services.
 
 #### 0. Download training data
-Download `cell_1` and `cell_2` from our published datasets as outlined in the section [_Download our data_](#Download-our-data).
+Download `cell_1` and `cell_2` from our published datasets as outlined in the section [_Download our data_](#Optional-Download-our-data).
 
 #### 1. Prepare the data
 
