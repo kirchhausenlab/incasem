@@ -164,7 +164,7 @@ python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_data -f ~/incasem/
 #### 4. Equalize intensity histogram of the data
 Equalize the raw data with [CLAHE (Contrast limited adaptive histogram equalization)](https://en.wikipedia.org/wiki/Adaptive_histogram_equalization). The default clip limit is `0.02`.
 ```bash
-python 40_equalize_histogram.py -f ~/incasem/data/my_new_data.zarr -d volumes/raw -o volumes/raw_equalized
+python 40_equalize_histogram.py -f ~/incasem/data/my_new_data.zarr -d volumes/raw -o volumes/raw_equalized_0.02
 ```
 #### 5. Inspect the converted data with `neuroglancer`:
 ```bash
