@@ -62,7 +62,7 @@ pip install -e ./incasem
 
 #### 6. Install our neuroglancer scripts
 ```bash
-pip install -e git+git://github.com/kirchhausenlab/funlib.show.neuroglancer.git@more_scripts_v2#egg=funlib.show.neuroglancer
+pip install -e git+https://github.com/kirchhausenlab/funlib.show.neuroglancer.git@more_scripts_v2#egg=funlib.show.neuroglancer
 ```
 
 #### 7. Set up the experiment tracking databases for training and prediction
@@ -232,6 +232,11 @@ Note that we need to specify which model to use twice:
 - `--run_id 1841` to load the appropriate settings from the models database.
 - `'prediction.checkpoint=../../models/pretrained_checkpoints/model_checkpoint_1841_er_CF.pt'` to pass the path to the checkpoint file.
 
+You can check the status of the prediction in omniboard:
+```bash
+omniboard -m localhost:27017:incasem_predictions
+```
+
 #### 4. Visualize the prediction
 Every prediction is stored with a unique identifier (increasing number). If the example above was your first prediction run, you will see a folder `~/incasem/data/cell_6/cell_6.zarr/volumes/predictions/train_1841/predict_0001/segmentation`. To inspect these predictions, together with the corresponding EM data and ground truth, use the following command:
 ```bash
@@ -284,10 +289,11 @@ conda activate incasem
 
 #### 3. Conversion from `TIFF` to `zarr` format
 Convert the sequence of `.tif` annotations (3D stack) to [.`zarr` format](https://zarr.readthedocs.io/en/stable/).
-In this example, we assume
+In this example, we use
 ```bash
 python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_er_annotations -f ~/incasem/data/my_new_data.zarr -d volumes/labels/er --dtype uint32
 ```
+We assume the `.tif` annotations are in the format `name_number.tif`, as encapsulated by the regex `r'.*_(\d+).*\.tif$'`. If you want to change it, add `-r your_regex` to the line above.
 
 Inspect the converted data with `neuroglancer`:
 ```bash
