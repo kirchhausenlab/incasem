@@ -293,7 +293,7 @@ In this example, we use
 ```bash
 python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_er_annotations -f ~/incasem/data/my_new_data.zarr -d volumes/labels/er --dtype uint32
 ```
-We assume the `.tif` annotations are in the format `name_number.tif`, as encapsulated by the regex `r'.*_(\d+).*\.tif$'`. If you want to change it, add `-r your_regex` to the line above.
+We assume the `.tif` file names are in the format `name_number.tif`, as encapsulated by the default regular expression `.*_(\d+).*\.tif$`. If you want to change it, add `-r your_regular_expression` to the line above.
 
 Inspect the converted data with `neuroglancer`:
 ```bash
