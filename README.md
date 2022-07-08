@@ -1,4 +1,4 @@
-# <ins>I</ins>ntelligent <ins>N</ins>aive-<ins>C</ins>ell <ins>A</ins>utomatic <ins>S</ins>egmentation for <ins>E</ins>lectron <ins>M</ins>icroscopy (INCASEM)
+# <ins>A</ins>utomated <ins>S</ins>egmentation of cellular substructures in <ins>E</ins>lectron <ins>M</ins>icroscopy (ASEM)
 
 ## Table of Contents
 - [Installation](#Installation)
