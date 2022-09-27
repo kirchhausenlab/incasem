@@ -105,15 +105,16 @@ Navigate to `~/incasem/data`:
 ```bash
 cd ~/incasem/data
 ```
-Open a python shell and run
+Open a python session and run the following lines.
+> It may take a while until the download starts. Expected download spped is around 2MB/s.
 ```python
 import quilt3
 b = quilt3.Bucket("s3://incasem")
 # download
-b.fetch("datasets/cell_6/", "~/incasem/data/cell_6/")
+b.fetch("datasets/cell_6/cell_6.zarr/", "~/incasem/data/cell_6/cell_6.zarr/")
 ```
 
-TODO add info about different formats: tiff, zarr, possibly n5.
+We provide all datasets as 2d `.tiff` images as well as in [`.zarr` format](https://zarr.readthedocs.io/en/stable/), which is more suitable for deep learning on 3D images. Above we only downloaded the `.zarr` format.
 
 #### 2. Explore a dataset
 Example: Cell 6 raw electron microscopy data, Endoplasmic Reticulum prediction and corresponding Endoplasmic Reticulum ground-truth annotation.
