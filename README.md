@@ -473,7 +473,6 @@ Here is an example, also available at `~/incasem/scripts/02_train/data_configs/e
         "shape": [600, 590, 250],
         "voxel_size": [5, 5, 5],
         "raw": "volumes/raw_equalized_0.02",
-        "mask": "volumes/mask",
         "metric_masks": [
             "volumes/metric_masks/er"
         ],
@@ -487,7 +486,6 @@ Here is an example, also available at `~/incasem/scripts/02_train/data_configs/e
         "shape": [300, 205, 600],
         "voxel_size": [5, 5, 5],
         "raw": "volumes/raw_equalized_0.02",
-        "mask": "volumes/mask",
         "metric_masks": [
             "volumes/metric_masks/er"
         ],
