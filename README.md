@@ -98,7 +98,7 @@ npm install -g omniboard
 ```
 
 ## Optional: Download our data
-The datasets in the publication are available in an [AWS bucket](https://open.quiltdata.com/b/incasem/tree/datasets/) and can be downloaded with the [quilt3 API](https://docs.quiltdata.com/api-reference/api).
+The datasets in the publication are available in an [AWS bucket](https://open.quiltdata.com/b/asem-project/tree/datasets/) and can be downloaded with the [quilt3 API](https://docs.quiltdata.com/api-reference/api).
 
 #### 1. Download an example dataset from the AWS bucket: cell 6
 Navigate to `~/incasem/data`:
@@ -109,7 +109,7 @@ Open a python session and run the following lines.
 > It may take a while until the download starts. Expected download speed is >= 2MB/s.
 ```python
 import quilt3
-b = quilt3.Bucket("s3://asem")
+b = quilt3.Bucket("s3://asem-project")
 # download
 b.fetch("datasets/cell_6/cell_6_example.zarr/", "cell_6/cell_6.zarr/")
 ```
