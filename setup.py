@@ -18,6 +18,7 @@ setup(
         'tensorboard',
         'configargparse',
         'protobuf<=3.20',
+        'daisy',
         'sacred @ git+https://github.com/kirchhausenlab/sacred@master',
         'funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch@master',
         'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
