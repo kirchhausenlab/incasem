@@ -326,12 +326,14 @@ def predict(_config, _run, checkpoint=None, iteration=0, run_path=None):
     for idx_pipeline, prediction in enumerate(predictions):
         with gp.build(prediction.pipeline) as p:
             request = gp.BatchRequest()
-            provider_spec = p.spec
-            for key, spec in provider_spec.items():
-                if key in prediction.request:
-                    request_spec = spec.copy()
-                    request_spec.dtype = None
-                    request[key] = request_spec
+
+            if _config['prediction']['log_metrics']:
+                provider_spec = p.spec
+                for key, spec in provider_spec.items():
+                    if key in prediction.request:
+                        request_spec = spec.copy()
+                        request_spec.dtype = None
+                        request[key] = request_spec
 
             # labels_roi = request[gp.ArrayKey('LABELS')].roi
             # predictions_roi = request[gp.ArrayKey('PREDICTIONS')].roi
@@ -353,16 +355,17 @@ def predict(_config, _run, checkpoint=None, iteration=0, run_path=None):
             # )
 
             # TODO load files from disk as daisy datasets
-            log_metrics(
-                _run,
-                target=batch[gp.ArrayKey('LABELS')].data,
-                prediction_probas=batch[gp.ArrayKey('PREDICTIONS')].data,
-                mask=batch[gp.ArrayKey('MASK')].data,
-                metric_mask=batch[gp.ArrayKey('METRIC_MASK')].data,
-                run_path=run_path,
-                iteration=iteration,
-                mode=f'ds_{idx_pipeline}'
-            )
+            if _config['prediction']['log_metrics']:
+                log_metrics(
+                    _run,
+                    target=batch[gp.ArrayKey('LABELS')].data,
+                    prediction_probas=batch[gp.ArrayKey('PREDICTIONS')].data,
+                    mask=batch[gp.ArrayKey('MASK')].data,
+                    metric_mask=batch[gp.ArrayKey('METRIC_MASK')].data,
+                    run_path=run_path,
+                    iteration=iteration,
+                    mode=f'ds_{idx_pipeline}'
+                )
 
 
 def observer_setup():

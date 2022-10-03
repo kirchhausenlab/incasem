@@ -238,6 +238,34 @@ You can check the status of the prediction in omniboard:
 omniboard -m localhost:27017:incasem_predictions
 ```
 
+#### Optional:
+If you have corresponding ground truth annotations, create a metric exclusion zone as [described below](#Prepare-your-own-ground-truth-annotations-for-fine-tuning-or-training). For the example of predicting Endoplasmic Reticulum in cell 6 from above, put the metric exclusion zone in `cell_6/cell_6.zarr/volumes/metric_masks/er` and adapt `data_configs/example_cell6.json` to:
+```json
+{
+    "Cell_6_example_roi_nickname" : {
+        "file": "cell_6/cell_6.zarr",
+        "offset": [400, 926, 2512],
+        "shape": [241, 476, 528],
+        "voxel_size": [5, 5, 5],
+        "raw": "volumes/raw_equalized_0.02",
+        "metric_masks": [
+            "volumes/metric_masks/er"
+        ],
+        "labels": {
+            "volumes/labels/er": 1,
+        }
+    }
+}
+```
+
+Now run
+```bash
+python predict.py --run_id 1841 --name example_prediction_cell6_ER_with_GT with config_prediction.yaml 'prediction.log_metrics=True' 'prediction.data=data_configs/example_cell6.json' 'prediction.checkpoint=../../models/pretrained_checkpoints/model_checkpoint_1841_er_CF.pt'
+```
+, which will print an F1 score for the generated prediction given the ground truth annotations (`labels`).
+
+
+
 #### 4. Visualize the prediction
 Every prediction is stored with a unique identifier (increasing number). If the example above was your first prediction run, you will see a folder `~/incasem/data/cell_6/cell_6.zarr/volumes/predictions/train_1841/predict_0001/segmentation`. To inspect these predictions, together with the corresponding EM data and ground truth, use the following command:
 ```bash
