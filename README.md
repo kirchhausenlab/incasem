@@ -41,7 +41,7 @@ git clone https://github.com/kirchhausenlab/incasem.git ~/incasem
 
 #### 3. Create a new anaconda python environment.
 ```bash
-conda create -n incasem
+conda create -n incasem --no-default-packages python=3.8
 ```
 
 #### 4. Pip-install the incasem package contained in this repository into the environment.
@@ -50,10 +50,6 @@ Activate the new environment.
 conda activate incasem
 ```
 Install
-```bash
-conda install pip
-```
-and
 ```bash
 pip install -e ./incasem
 ```
@@ -160,6 +156,12 @@ python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_data -f ~/incasem/
 ```
 
 > To obtain documentation on how to use a script, run `python <script_name>.py -h`.
+
+If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](scripts/01_data_formatting/01_image_sequence_to_zarr_with_dask.py).
+
+```bash
+python 01_image_sequences_to_zarr_with_dask.py -i ~/incasem/data/my_new_data -f ~/incasem/data/my_new_data.zarr -d volumes/raw
+```
 
 
 #### 4. Equalize intensity histogram of the data

@@ -165,7 +165,7 @@ def write_to_zarr(
 
     if invert:
         assert np.max(stack) < 256
-        stack = 255-stack
+        stack = 255 - stack
 
     dataset[block.write_roi] = stack
 
@@ -281,6 +281,7 @@ def image_sequence_to_zarr(
             invert=invert
         ),
         fit='shrink',
+        read_write_conflict=False,
         num_workers=num_workers,
     )
 
