@@ -33,7 +33,12 @@ if __name__ == "__main__":
         type=int,
         default=None,
         help="The size of a chunk in voxels")
+    parser.add_argument(
+        "--num_workers",
+        type=int,
+        default=32,
+    )
 
     args = parser.parse_args()
 
-    scale_pyramid(args.file, args.ds, args.scales, args.chunk_shape)
+    scale_pyramid(args.file, args.ds, args.scales, args.chunk_shape, args.num_workers)

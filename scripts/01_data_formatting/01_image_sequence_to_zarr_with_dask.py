@@ -9,6 +9,7 @@ Please create a new environment and install the following dependencies:
 - zarr
 - configargparse
 - scikit-image
+- tqdm
 """
 
 import logging
@@ -16,6 +17,7 @@ import os
 import os.path as osp
 import re
 from pathlib import Path
+from glob import glob
 
 import numpy as np
 
@@ -26,6 +28,8 @@ from dask.array.image import imread as lazy_imread
 import zarr
 from numcodecs import Blosc
 import configargparse as argparse
+from PIL import Image
+from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -52,6 +56,15 @@ def check_image_paths(raw_dir, regex):
 
     image_paths = [osp.join(raw_dir, f) for f in image_paths]
     return image_paths
+
+
+def verify_images(globstring):
+    for p in tqdm(glob(globstring), desc="Verify images"):
+        try:
+            img = Image.open(str(p))
+            img.verify()
+        except BaseException:
+            raise RuntimeError(f"{p}")
 
 
 def image_sequence_to_zarr(
@@ -97,6 +110,7 @@ def image_sequence_to_zarr(
     _ = check_image_paths(raw_dir, image_regex)
 
     path = Path(raw_dir) / "*.tif"
+    verify_images(str(path))
     stack = lazy_imread(str(path))
 
     input_dt = stack.dtype
@@ -145,6 +159,7 @@ def parse_args():
         - zarr
         - configargparse
         - scikit-image
+        - tqdm
         """
     )
     p.add(

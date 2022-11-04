@@ -1,4 +1,3 @@
-import argparse
 import os
 import daisy
 import numpy as np
@@ -45,7 +44,7 @@ def downscale_block(in_array, out_array, factor, block):
     return 0
 
 
-def downscale(in_array, out_array, factor, write_size):
+def downscale(in_array, out_array, factor, write_size, num_workers):
 
     print("Downsampling by factor %s" % (factor,))
 
@@ -64,12 +63,12 @@ def downscale(in_array, out_array, factor, write_size):
             factor,
             b),
         read_write_conflict=False,
-        num_workers=32,
+        num_workers=num_workers,
         max_retries=0,
         fit='shrink')
 
 
-def scale_pyramid(in_file, in_ds_name, scales, chunk_shape):
+def scale_pyramid(in_file, in_ds_name, scales, chunk_shape, num_workers=32):
 
     ds = zarr.open(in_file)
 
@@ -139,6 +138,6 @@ def scale_pyramid(in_file, in_ds_name, scales, chunk_shape):
             dtype=prev_array.dtype,
             num_channels=num_channels)
 
-        downscale(prev_array, next_array, scale, next_write_size)
+        downscale(prev_array, next_array, scale, next_write_size, num_workers=num_workers)
 
         prev_array = next_array
