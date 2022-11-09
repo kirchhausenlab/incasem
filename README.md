@@ -1,5 +1,7 @@
 # <ins>A</ins>utomated <ins>S</ins>egmentation of cellular substructures in <ins>E</ins>lectron <ins>M</ins>icroscopy (ASEM)
 
+https://user-images.githubusercontent.com/8866751/200858874-af9220c9-60ac-4b3b-9b45-181d266f82b0.mp4
+
 ## Table of Contents
 - [Installation](#Installation)
 - [Optional: Download our data](#Optional-Download-our-data)
