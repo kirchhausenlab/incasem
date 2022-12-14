@@ -2,6 +2,12 @@
 
 https://user-images.githubusercontent.com/8866751/200858874-af9220c9-60ac-4b3b-9b45-181d266f82b0.mp4
 
+This repository contains the segmentation pipeline described in
+
+> Benjamin Gallusser, Giorgio Maltese, Giuseppe Di Caprio et al.<br>[*Deep neural network automated segmentation of cellular structures in volume electron microscopy*](https://rupress.org/jcb/article/222/2/e202208005/213736/Deep-neural-network-automated-segmentation-of),<br>Journal of Cell Biology, 2022.
+
+Please cite the publication if you are using this code in your research.
+
 ## Table of Contents
 - [Installation](#Installation)
 - [Optional: Download our data](#Optional-Download-our-data)
