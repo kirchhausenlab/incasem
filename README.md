@@ -8,6 +8,8 @@ This repository contains the segmentation pipeline described in
 
 Please cite the publication if you are using this code in your research.
 
+Our semi-automated annotation tool from the same publication is available at [https://github.com/kirchhausenlab/gc_segment](https://github.com/kirchhausenlab/gc_segment).
+
 ## Table of Contents
 - [Installation](#Installation)
 - [Optional: Download our data](#Optional-Download-our-data)
