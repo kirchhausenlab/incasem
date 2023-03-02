@@ -68,7 +68,7 @@ pip install -e ./incasem
 
 #### 6. Install our neuroglancer scripts
 ```bash
-pip install -e git+https://github.com/kirchhausenlab/funlib.show.neuroglancer.git@more_scripts_v2#egg=funlib.show.neuroglancer
+pip install git+https://github.com/kirchhausenlab/funlib.show.neuroglancer.git@more_scripts_v2#egg=funlib.show.neuroglancer
 ```
 
 #### 7. Set up the experiment tracking databases for training and prediction
