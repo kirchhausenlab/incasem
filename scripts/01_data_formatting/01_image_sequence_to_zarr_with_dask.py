@@ -120,7 +120,7 @@ def image_sequence_to_zarr(
             f'output dtype {output_dt} does not match input dtype {input_dt}')
 
     blocks = stack.rechunk((chunks[0],) + stack.shape[1:])
-    blocks = dask.delayed(blocks)
+
     z = zarr.open(
         store=output_file,
         path=output_dataset,
@@ -131,18 +131,12 @@ def image_sequence_to_zarr(
         compressor=Blosc(cname="zlib", clevel=3),
     )
     z.attrs.put({"offset": [0, 0, 0], "resolution": list(resolution)})
+    stored = dask.array.to_zarr(blocks, z, compute=False)
 
-    @delayed
-    def write_chunks(inp, out, selection):
-        out[selection] = inp[selection]
-
-    tasks = []
-    for i in range(0, stack.shape[0], chunks[0]):
-        task = write_chunks(blocks, z, slice(i, i + chunks[0]))
-        tasks.append(task)
+    # dask.visualize(stored, filename="dask_graph.png")
 
     with ProgressBar():
-        dask.compute(tasks)
+        dask.compute(stored)
 
 
 def parse_args():
