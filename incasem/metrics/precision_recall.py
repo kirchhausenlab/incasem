@@ -33,10 +33,10 @@ def precision_recall(target, prediction_probas, mask=None, threshold=None):
     assert prediction_probas.min() >= 0.0
 
     if mask is None:
-        mask = np.ones_like(target, dtype=np.bool)
+        mask = np.ones_like(target, dtype=bool)
         logger.debug("Mask not provided, using default array of ones.")
     else:
-        mask = mask.astype(np.bool)
+        mask = mask.astype(bool)
 
     assert target.shape == mask.shape
 

@@ -54,7 +54,7 @@ class MergeLocalShapeDescriptors(gp.BatchFilter):
         elif self.ambiguous == 'background':
             sum_of_binaries = np.sum(
                 np.array(
-                    [np.any(batch[array].data.astype(np.bool), axis=0)
+                    [np.any(batch[array].data.astype(bool), axis=0)
                      for array in self.arrays]
                 ),
                 axis=0
@@ -68,7 +68,7 @@ class MergeLocalShapeDescriptors(gp.BatchFilter):
                 axis=0
             )
 
-            mask = np.any(lsds.astype(np.bool), axis=0)
+            mask = np.any(lsds.astype(bool), axis=0)
 
             not_ambiguous = np.logical_and(
                 mask, np.logical_not(ambiguous))
