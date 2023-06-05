@@ -215,7 +215,6 @@ We provide the following pre-trained models:
 - For FIB-SEM data prepared by high-pressure freezing, `4x4x4` nm<sup>3</sup> resolution:
     - Mitochondria (model ID `1675`)
     - Endoplasmic Reticulum (model ID `1669`)
-- For FIB-SEM data prepared by high-pressure freezing, `5x5x5` nm<sup>3</sup> resolution:
     - Clathrin-Coated Pits (model ID `1986`) 
     - Nuclear Pores (model ID `2000`)
 
