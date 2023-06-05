@@ -77,7 +77,7 @@ class MaskedIntensityAugment(BatchFilter):
         scale = np.random.uniform(low=self.scale_min, high=self.scale_max)
         shift = np.random.uniform(low=self.shift_min, high=self.shift_max)
 
-        binary_mask = batch[self.mask].data.astype(np.bool)
+        binary_mask = batch[self.mask].data.astype(bool)
         scale = binary_mask * scale + \
             np.logical_not(binary_mask).astype(raw.data.dtype)
         shift = binary_mask * shift

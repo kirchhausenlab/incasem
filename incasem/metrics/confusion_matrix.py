@@ -23,10 +23,10 @@ def confusion_matrix(target, prediction_probas, mask=None):
     start = time.time()
 
     if mask is None:
-        mask = np.ones_like(target, dtype=np.bool)
+        mask = np.ones_like(target, dtype=bool)
         logger.debug("Mask not provided, using default array of ones.")
     else:
-        mask = mask.astype(np.bool)
+        mask = mask.astype(bool)
 
     assert target.shape == mask.shape
 
@@ -47,7 +47,7 @@ def confusion_matrix(target, prediction_probas, mask=None):
 
     if num_classes == 2:
         scores = np.bincount(
-            target.astype(np.bool) * 2 + prediction.astype(np.bool),
+            target.astype(bool) * 2 + prediction.astype(bool),
             minlength=4
         ).reshape(2, 2)
         scores = scores / scores.sum()

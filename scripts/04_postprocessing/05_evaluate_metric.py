@@ -120,8 +120,8 @@ def evaluate_metric(
         probas = probas * (mask != 0).astype(probas.dtype)
 
         metric_mask = np.logical_and(
-            mask.astype(np.bool),
-            metric_mask.astype(np.bool)
+            mask.astype(bool),
+            metric_mask.astype(bool)
         )
 
     # TODO parallelize, log results to DB
