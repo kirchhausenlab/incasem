@@ -73,10 +73,16 @@ pip install git+https://github.com/kirchhausenlab/funlib.show.neuroglancer.git@m
 
 #### 7. Set up the experiment tracking databases for training and prediction
 - If not already installed on your system (check by running `mongod`), install [MongoDB](https://docs.mongodb.com/manual/administration/install-community/).
-- Start up the MongoDB service. For example, if your machine is running Ubuntu (refer to [documentation](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/#run-mongodb-community-edition)), execute
-```bash
-sudo service mongod start
-```
+- Start up the MongoDB service (refer to [documentation](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/#run-mongodb-community-edition)):
+    - on Ubuntu:
+        ```
+        bash sudo service mongod start
+        ```
+    - on MacOS (assuming that you have installed mongodb via `homebrew`):
+        ```
+        brew services start mongodb-community
+        ```
+
 - Run
 ```bash
 cd ~/incasem; python download_models.py
