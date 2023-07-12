@@ -3,17 +3,12 @@ import os
 import sys
 import json
 
-from pymongo import MongoClient
 import configargparse as argparse
 import torch
 import numpy as np
 
-import sacred
-
 import gunpowder as gp
 import incasem as fos
-from incasem.tracking.sacred import ex
-
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -22,14 +17,12 @@ logger.setLevel(logging.INFO)
 logging.getLogger('gunpowder').setLevel(logging.INFO)
 
 
-@ex.capture
 def torch_setup(_config):
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
 
 
-@ex.capture
-def model_setup(_config, _run):
+def model_setup(_config):
     model_type = _config['model']['type']
     if model_type == 'OneConv3d':
         model = fos.torch.models.OneConv3d(
@@ -79,13 +72,11 @@ def model_setup(_config, _run):
     total_params = sum(p.numel()
                        for p in model.parameters())
     logger.info(f'{total_params=}')
-    _run.log_scalar('num_params', total_params, 0)
 
     return model
 
 
-@ex.capture
-def directory_structure_setup(_config, _run):
+def directory_structure_setup(_config):
 
     predictions_out_path = os.path.expanduser(
         _config['prediction']['directories']['prefix'])
@@ -95,8 +86,9 @@ def directory_structure_setup(_config, _run):
     # training run id, then prediction run id as subfolder
 
     run_path = os.path.join(
-        f"train_{int(_config['prediction']['run_id_training']):04d}",
-        f"predict_{_run._id:04d}"
+        f"{int(_config['prediction']['run_id_training']):04d}",
+        "notebook"
+        #f"predict_{_run._id:04d}"
     )
     return run_path
 
@@ -113,8 +105,7 @@ def get_checkpoint(checkpoint_file):
     return checkpoint_file
 
 
-@ex.capture
-def multiple_prediction_setup(_config, _run, run_path, model_, checkpoint):
+def multiple_prediction_setup(_config, run_path, model_, checkpoint):
     prediction_datasets = fos.utils.create_multiple_config(
         _config['prediction']['data'])
     pred_setups = []
@@ -122,7 +113,6 @@ def multiple_prediction_setup(_config, _run, run_path, model_, checkpoint):
         pred_setups.append(
             prediction_setup(
                 _config,
-                _run,
                 run_path,
                 model_,
                 checkpoint,
@@ -131,8 +121,7 @@ def multiple_prediction_setup(_config, _run, run_path, model_, checkpoint):
     return pred_setups
 
 
-@ex.capture
-def prediction_setup(_config, _run, run_path, model_,
+def prediction_setup(_config, run_path, model_,
                      checkpoint, pred_dataset):
     pipeline_type = {
         'baseline': fos.pipeline.PredictionBaseline,
@@ -174,9 +163,7 @@ def remove_context(batch, input_size_voxels, output_size_voxels):
     return batch
 
 
-@ex.capture
 def log_metrics(
-        _run,
         target,
         prediction_probas,
         mask,
@@ -304,30 +291,28 @@ def log_metrics(
     # shutil.rmtree(temp_path)
 
 
-@ex.main
-def predict(_config, _run, checkpoint=None, iteration=0, run_path=None):
+def predict(_config, checkpoint=None, iteration=0, run_path=None):
     """predict.
 
     """
 
     torch_setup(_config)
-    _run.add_artifact(_config['prediction']['data'])
 
     if run_path is None:
-        run_path = directory_structure_setup(_config, _run)
-    model = model_setup(_config, _run)
+        run_path = directory_structure_setup(_config)
+    model = model_setup(_config)
 
     if checkpoint is None:
         checkpoint = get_checkpoint(_config['prediction']['checkpoint'])
 
     predictions = multiple_prediction_setup(
-        _config, _run, run_path=run_path, model_=model, checkpoint=checkpoint)
+        _config, run_path=run_path, model_=model, checkpoint=checkpoint)
 
     for idx_pipeline, prediction in enumerate(predictions):
         with gp.build(prediction.pipeline) as p:
             request = gp.BatchRequest()
 
-            if _config['prediction']['log_metrics']:
+            if False:
                 provider_spec = p.spec
                 for key, spec in provider_spec.items():
                     if key in prediction.request:
@@ -355,9 +340,8 @@ def predict(_config, _run, checkpoint=None, iteration=0, run_path=None):
             # )
 
             # TODO load files from disk as daisy datasets
-            if _config['prediction']['log_metrics']:
+            if False:
                 log_metrics(
-                    _run,
                     target=batch[gp.ArrayKey('LABELS')].data,
                     prediction_probas=batch[gp.ArrayKey('PREDICTIONS')].data,
                     mask=batch[gp.ArrayKey('MASK')].data,
@@ -368,78 +352,13 @@ def predict(_config, _run, checkpoint=None, iteration=0, run_path=None):
                 )
 
 
-def observer_setup():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument(
-        '--run_id',
-        '-r',
-        type=int,
-        required=True,
-        help='Run ID of training that is used to make predictions'
-    )
-    parser.add_argument(
-        '--mongodb_training',
-        default='../02_train/trainings_db.json',
-        help='json file with credentials to mongodb with training experiments'
-    )
-    parser.add_argument(
-        '--mongodb_predictions',
-        default='predictions_db.json',
-        help=((
-            'json file with credentials'
-            'to mongodb with prediction experiments'
-        ))
-    )
-    args, remaining_argv = parser.parse_known_args()
-
-    # create experiment observer
-    if args.mongodb_predictions:
-        logger.info(f"Attach Mongo observer")
-        with open(args.mongodb_predictions) as f:
-            db_config = json.load(f)
-
-        ex.observers.append(
-            sacred.observers.MongoObserver.create(
-                url=db_config['url'],
-                db_name=db_config['db_name']
-            )
-        )
-
-    return args, remaining_argv
-
-
-def get_config_from_database(url, db_name, run_id):
-    client = MongoClient(
-        host=url,
-        port=27017
-    )
-    db = client[db_name]
-    run_document = db['runs'].find_one({'_id': run_id})
-    return run_document['config']
 
 
 if __name__ == '__main__':
-    ex.add_config('config_prediction.yaml')
 
-    args, remaining_argv = observer_setup()
+    json_file = sys.argv[1]
+    
+    with open(json_file) as f:
+        config = json.load(f)
 
-    with open(args.mongodb_training) as f:
-        db_config = json.load(f)
-    config = get_config_from_database(
-        db_config['url'],
-        db_config['db_name'],
-        args.run_id)
-    ex.add_config(config)
-
-    sacred_default_flags = ['-C', 'no']
-    argv = [
-        sys.argv[0],
-        *sacred_default_flags,
-        *remaining_argv,
-        f'prediction.run_id_training={args.run_id}'
-    ]
-    logger.info(argv)
-
-    ex.run_commandline(argv)
+    predict(config)

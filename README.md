@@ -173,7 +173,7 @@ python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_data -f ~/incasem/
 
 > To obtain documentation on how to use a script, run `python <script_name>.py -h`.
 
-If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](scripts/01_data_formatting/01_image_sequence_to_zarr_with_dask.py).
+If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](../../Downloads/incasem-notebook/incasem-notebook/scripts/01_data_formatting/01_image_sequence_to_zarr_with_dask.py).
 
 ```bash
 python 01_image_sequences_to_zarr_with_dask.py -i ~/incasem/data/my_new_data -f ~/incasem/data/my_new_data.zarr -d volumes/raw --resolution 5 5 5
@@ -210,7 +210,7 @@ Here is an example, also available at `~/incasem/scripts/03_predict/data_configs
 `offset` and `shape` are specified in voxels and in **z, y, x** format. They have to outline a _region of interest_ (ROI) that lies within the total available ROI of the dataset (as defined in `.zarray` and `.zattrs` files of each zarr volume).
 > Note that the offset in each `.zattr` file is defined in nanometers, while the shape in `.zarray` is defined in voxels.
 
-We assume the data to be in `~/incasem/data`, as defined [here](scripts/03_predict/config_prediction.yaml).
+We assume the data to be in `~/incasem/data`, as defined [here](../../Downloads/incasem-notebook/incasem-notebook/scripts/03_predict/config_prediction.yaml).
 
 #### 2. Choose a model
 We provide the following pre-trained models:
@@ -342,7 +342,7 @@ python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_er_annotations -f 
 ```
 We assume the `.tif` file names are in the format `name_number.tif`, as encapsulated by the default regular expression `.*_(\d+).*\.tif$`. If you want to change it, add `-r your_regular_expression` to the line above.
 
-If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](scripts/01_data_formatting/01_image_sequence_to_zarr_with_dask.py).
+If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](../../Downloads/incasem-notebook/incasem-notebook/scripts/01_data_formatting/01_image_sequence_to_zarr_with_dask.py).
 
 ```bash
 python 01_image_sequences_to_zarr_with_dask.py -i ~/incasem/data/my_new_er_annotations -f ~/incasem/data/my_new_data.zarr -d volumes/labels_er --resolution 5 5 5 --dtype uint32
