@@ -24,6 +24,11 @@ class AddMask(gp.BatchFilter):
         spec.dtype = np.dtype(self.dtype)
         spec.interpolatable = False
         self.provides(self.output_array, spec)
+    
+    def prepare(self, request):
+        deps = gp.BatchRequest()
+        deps[self.reference_array] = request[self.output_array]
+        return deps
 
     def process(self, batch, request):
 

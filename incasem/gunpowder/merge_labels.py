@@ -28,7 +28,8 @@ class MergeLabels(gp.BatchFilter):
             self,
             classes: Dict[gp.ArrayKey, int],
             output_array: gp.ArrayKey,
-            dtype: Optional[str] = 'uint32',
+            # dtype: Optional[str] = 'uint32',
+            dtype: Optional[str] = 'uint8',
             ambiguous_labels: Optional[str] = 'background'):
 
         self.classes = classes
