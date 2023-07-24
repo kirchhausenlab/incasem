@@ -198,7 +198,6 @@ class RandomLocationBounded(BatchFilter):
         else:
             return True
 
-        # return True
 
     def __get_possible_shifts(self, request):
 
@@ -289,8 +288,6 @@ class RandomLocationBounded(BatchFilter):
             if not self.__is_min_masked(random_shift, request):
                 logger.debug(
                     "random location does not meet 'min_masked' criterium")
-                # if random() <= self.reject_probability:
-                #     continue
                 continue
 
             if not self.__accepts(random_shift, request):
