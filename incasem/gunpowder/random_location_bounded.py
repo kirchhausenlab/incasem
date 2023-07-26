@@ -193,10 +193,6 @@ class RandomLocationBounded(BatchFilter):
         ``ensure_nonempty``). Subclasses can overwrite this method to implement
         additional tests for acceptable locations.'''
         
-        # if self.reject_probability < 1.0:
-        #     return random() > self.reject_probability
-        # else:
-        #     return True
         return True
 
     def __get_possible_shifts(self, request):
@@ -288,7 +284,6 @@ class RandomLocationBounded(BatchFilter):
             if not self.__is_min_masked(random_shift, request):
                 logger.debug(
                     "random location does not meet 'min_masked' criterium")
-                # continue
                 if random() <= self.reject_probability:
                     continue
 
