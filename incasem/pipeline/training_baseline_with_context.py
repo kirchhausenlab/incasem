@@ -59,7 +59,7 @@ class TrainingBaselineWithContext:
             'RAW_OUTPUT_SIZE': gp.ArrayKey('RAW_OUTPUT_SIZE'),
             'LABELS': gp.ArrayKey('LABELS'),
             'MASK': gp.ArrayKey('MASK'),
-            # 'BACKGROUND_MASK': gp.ArrayKey('BACKGROUND_MASK'),
+            'BACKGROUND_MASK': gp.ArrayKey('BACKGROUND_MASK'),
             'METRIC_MASK': gp.ArrayKey('METRIC_MASK'),
             'LOSS_SCALINGS': gp.ArrayKey('LOSS_SCALINGS'),
             'PREDICTIONS': gp.ArrayKey('PREDICTIONS'),
@@ -72,7 +72,7 @@ class TrainingBaselineWithContext:
         self.request.add(keys['RAW_OUTPUT_SIZE'], self._output_size)
         self.request.add(keys['LABELS'], self._output_size)
         self.request.add(keys['MASK'], self._output_size)
-        # self.request.add(keys['BACKGROUND_MASK'], self._output_size)
+        self.request.add(keys['BACKGROUND_MASK'], self._output_size)
         self.request.add(keys['METRIC_MASK'], self._output_size)
         self.request.add(keys['LOSS_SCALINGS'], self._output_size)
         self.request.add(keys['PREDICTIONS'], self._output_size)
@@ -98,19 +98,18 @@ class TrainingBaselineWithContext:
         for sources_p in sources.pipelines:
             p = (
                 sources_p
-                # + fos.gunpowder.DeepCopyArrays(
-                #     arrays=[keys['LABELS']],
-                #     output_arrays=[keys['BACKGROUND_MASK']]
-                # )
-                # + fos.gunpowder.BinarizeLabels([keys['BACKGROUND_MASK']])
+                + fos.gunpowder.DeepCopyArrays(
+                    arrays=[keys['LABELS']],
+                    output_arrays=[keys['BACKGROUND_MASK']]
+                )
+                + fos.gunpowder.BinarizeLabels([keys['BACKGROUND_MASK']])
 
                 + fos.gunpowder.SaveBlockPosition(
                     keys['RAW'],
                     raw_pos
                 )
                 + fos.gunpowder.RandomLocationBounded(
-                    # mask=keys['BACKGROUND_MASK'],
-                    mask=keys['MASK'],
+                    mask=keys['BACKGROUND_MASK'],
                     min_masked=self._reject_min_masked,
                     reject_probability=self._reject_probability,
                 )
@@ -174,14 +173,14 @@ class TrainingBaselineWithContext:
                 keys['RAW'],
                 keys['LABELS'],
                 keys['MASK'],
-                # keys['BACKGROUND_MASK'],
+                keys['BACKGROUND_MASK'],
                 keys['METRIC_MASK'],
             ],
             target=[
                 keys['RAW'],
                 keys['LABELS'],
                 keys['MASK'],
-                # keys['BACKGROUND_MASK'],
+                keys['BACKGROUND_MASK'],
                 keys['METRIC_MASK'],
             ],
             factor=1,
