@@ -132,6 +132,11 @@ class TrainingBaselineWithContext:
                     value=1
                 )
                 + fos.gunpowder.PadDownstreamOfRandomLocation(
+                    keys['BACKGROUND_MASK'],
+                    size=None,
+                    value=1
+                )
+                + fos.gunpowder.PadDownstreamOfRandomLocation(
                     keys['METRIC_MASK'],
                     size=None,
                     value=1

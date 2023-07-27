@@ -192,7 +192,7 @@ class RandomLocationBounded(BatchFilter):
         (besided meeting other criteria like ``min_masked`` and/or
         ``ensure_nonempty``). Subclasses can overwrite this method to implement
         additional tests for acceptable locations.'''
-        
+
         return True
 
     def __get_possible_shifts(self, request):
