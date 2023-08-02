@@ -28,8 +28,8 @@ class TrainingBaselineWithContext:
             voxel_size,
             input_size_voxels,
             output_size_voxels,
-            reject_min_masked=0.0,
-            reject_probability=1.0,
+            reject_min_masked=0.05,
+            reject_probability=0.9,
             random_seed=None,
     ):
         self._data_config = data_config
@@ -130,6 +130,11 @@ class TrainingBaselineWithContext:
                     keys['MASK'],
                     size=None,
                     value=1
+                )
+                + fos.gunpowder.PadDownstreamOfRandomLocation(
+                    keys['BACKGROUND_MASK'],
+                    size=None,
+                    value=0
                 )
                 + fos.gunpowder.PadDownstreamOfRandomLocation(
                     keys['METRIC_MASK'],
