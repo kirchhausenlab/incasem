@@ -11,5 +11,3 @@ from .create_multiple_config import create_multiple_config
 from .monitor_runtime import monitor_runtime
 from .scale_pyramid import scale_pyramid
 from .neuroglancer_utils import add_data_to_viewer
-
-__all__ = ['add_data_to_viewer']
