@@ -169,7 +169,7 @@ def add_layer(
         channel_dim_names = ["b^", "c^"]
 
         dims = len(a.data.shape)
-        spatial_dims = a.roi.dims()
+        spatial_dims = a.roi.dims
         channel_dims = dims - spatial_dims
 
         attrs = {
@@ -194,7 +194,7 @@ def add_layer(
             channel_dim_names = ["b^", "c^"]
 
             dims = len(a.data.shape)
-            spatial_dims = a.roi.dims()
+            spatial_dims = a.roi.dims
             channel_dims = dims - spatial_dims
 
             attrs = {
@@ -219,7 +219,7 @@ def add_layer(
 
     if shader is None:
         a = array if not is_multiscale else array[0]
-        dims = a.roi.dims()
+        dims = a.roi.dims
         if dims < len(a.data.shape):
             channels = a.data.shape[0]
             if channels > 1:
@@ -384,7 +384,7 @@ class Project:
 
 def slice_dataset(a, slices):
 
-    dims = a.roi.dims()
+    dims = a.roi.dims
 
     for d, s in list(enumerate(slices))[::-1]:
 
@@ -430,13 +430,13 @@ def open_dataset(f, ds):
         if slices is not None:
             a = slice_dataset(a, slices)
 
-        if a.roi.dims() == 2:
+        if a.roi.dims == 2:
             print("ROI is 2D, recruiting next channel to z dimension")
             a.roi = Roi((0,) + a.roi.get_begin(),
                               (a.shape[-3],) + a.roi.get_shape())
             a.voxel_size = Coordinate((1,) + a.voxel_size)
 
-        if a.roi.dims() == 4:
+        if a.roi.dims == 4:
             print("ROI is 4D, stripping first dimension and treat as channels")
             a.roi = Roi(a.roi.get_begin()[1:], a.roi.get_shape()[1:])
             a.voxel_size = Coordinate(a.voxel_size[1:])
