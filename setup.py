@@ -19,6 +19,7 @@ setup(
         'configargparse',
         'protobuf<=3.20',
         'daisy',
+        'neuroglancer',
         'funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch@master',
         'funlib.persistence @ git+https://github.com/funkelab/funlib.persistence',
         'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
