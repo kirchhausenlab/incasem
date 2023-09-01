@@ -1,4 +1,6 @@
 import os
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 import numpy as np
 import skimage.measure
@@ -21,7 +23,7 @@ def downscale_block(in_array, out_array, factor, block):
     dims = len(factor)
     in_data = in_array.to_ndarray(block.read_roi, fill_value=0)
 
-    in_shape = daisy.Coordinate(in_data.shape[-dims:])
+    in_shape = Coordinate(in_data.shape[-dims:])
     assert in_shape.is_multiple_of(factor)
 
     n_channels = len(in_data.shape) - dims
@@ -49,7 +51,7 @@ def downscale(in_array, out_array, factor, write_size, num_workers):
     print("Downsampling by factor %s" % (factor,))
 
     dims = in_array.roi.dims()
-    block_roi = daisy.Roi((0,) * dims, write_size)
+    block_roi = Roi((0,) * dims, write_size)
 
     print("Processing ROI %s with blocks %s" % (out_array.roi, block_roi))
 
@@ -74,7 +76,7 @@ def scale_pyramid(in_file, in_ds_name, scales, chunk_shape, num_workers=32):
 
     # make sure in_ds_name points to a dataset
     try:
-        daisy.open_ds(in_file, in_ds_name)
+        open_ds(in_file, in_ds_name)
     except Exception:
         raise RuntimeError("%s does not seem to be a dataset" % in_ds_name)
 
@@ -93,12 +95,12 @@ def scale_pyramid(in_file, in_ds_name, scales, chunk_shape, num_workers=32):
 
     print("Scaling %s by a factor of %s" % (in_file, scales))
 
-    prev_array = daisy.open_ds(in_file, ds_name)
+    prev_array = open_ds(in_file, ds_name)
 
     if chunk_shape is not None:
-        chunk_shape = daisy.Coordinate(chunk_shape)
+        chunk_shape = Coordinate(chunk_shape)
     else:
-        chunk_shape = daisy.Coordinate(prev_array.data.chunks)
+        chunk_shape = Coordinate(prev_array.data.chunks)
         print("Reusing chunk shape of %s for new datasets" % (chunk_shape,))
 
     if prev_array.n_channel_dims == 0:
@@ -112,9 +114,9 @@ def scale_pyramid(in_file, in_ds_name, scales, chunk_shape, num_workers=32):
     for scale_num, scale in enumerate(scales):
 
         try:
-            scale = daisy.Coordinate(scale)
+            scale = Coordinate(scale)
         except Exception:
-            scale = daisy.Coordinate((scale,) * chunk_shape.dims())
+            scale = Coordinate((scale,) * chunk_shape.dims())
 
         next_voxel_size = prev_array.voxel_size * scale
         next_total_roi = prev_array.roi.snap_to_grid(
@@ -129,7 +131,7 @@ def scale_pyramid(in_file, in_ds_name, scales, chunk_shape, num_workers=32):
         next_ds_name = in_ds_name + '/s' + str(scale_num + 1)
         print("Preparing %s" % (next_ds_name,))
 
-        next_array = daisy.prepare_ds(
+        next_array = prepare_ds(
             in_file,
             next_ds_name,
             total_roi=next_total_roi,

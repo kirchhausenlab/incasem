@@ -1,5 +1,7 @@
 import logging
 from time import time as now
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 
 logger = logging.getLogger(__name__)
@@ -13,7 +15,7 @@ def crop_dataset_worker(
 
 ):
     data = in_ds.to_ndarray(roi=block.read_roi + read_shift, fill_value=0)
-    array = daisy.Array(data, roi=block.read_roi, voxel_size=in_ds.voxel_size)
+    array = Array(data, roi=block.read_roi, voxel_size=in_ds.voxel_size)
     out_ds[block.write_roi] = array[block.write_roi]
 
 
@@ -32,7 +34,7 @@ def crop_daisy_dataset(
     Refer to documentation for `crop_datasets`.
     """
 
-    full_ds = daisy.open_ds(
+    full_ds = open_ds(
         filename,
         ds_name,
         mode='r'
@@ -44,21 +46,21 @@ def crop_daisy_dataset(
     if crop_offset_voxels is None:
         crop_offset = full_ds.roi.get_offset()
     else:
-        crop_offset = daisy.Coordinate(crop_offset_voxels) * voxel_size
+        crop_offset = Coordinate(crop_offset_voxels) * voxel_size
 
     if crop_shape_voxels is None:
         crop_shape = full_ds.roi.get_shape()
     else:
-        crop_shape = daisy.Coordinate(crop_shape_voxels) * voxel_size
+        crop_shape = Coordinate(crop_shape_voxels) * voxel_size
 
-    roi_to_copy = daisy.Roi(
+    roi_to_copy = Roi(
         offset=crop_offset,
         shape=crop_shape,
     )
     logger.debug(f"{roi_to_copy=}")
 
     # Shift both Rois to zero origin to avoid copying artifacts.
-    shift_to_origin = daisy.Coordinate(
+    shift_to_origin = Coordinate(
         [min(x, 0) for x in crop_offset]
     )
 
@@ -70,19 +72,19 @@ def crop_daisy_dataset(
     logger.debug(f"{roi_to_copy=}")
     logger.debug(f"{full_ds.roi=}")
 
-    out_ds = daisy.prepare_ds(
+    out_ds = prepare_ds(
         filename=out_filename,
         ds_name=out_ds_name,
         total_roi=roi_to_copy,
         voxel_size=voxel_size,
         dtype=dtype if dtype else full_ds.dtype,
-        write_size=voxel_size * daisy.Coordinate(chunk_shape),
+        write_size=voxel_size * Coordinate(chunk_shape),
         compressor={'id': 'zlib', 'level': 3}
     )
 
-    block_roi = daisy.Roi(
+    block_roi = Roi(
         (0,) * voxel_size.dims(),
-        daisy.Coordinate(chunk_shape) * voxel_size
+        Coordinate(chunk_shape) * voxel_size
     )
     start = now()
     daisy.run_blockwise(
