@@ -6,6 +6,9 @@ import zarr
 import sys
 import glob
 import os
+
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 
 logger = logging.getLogger(__name__)
@@ -390,7 +393,7 @@ def slice_dataset(a, slices):
         else:
             index = (s - a.roi.get_begin()[d]) // a.voxel_size[d]
             a.data = Project(a.data, d, index)
-            a.roi = daisy.Roi(
+            a.roi = Roi(
                 a.roi.get_begin()[:d] + a.roi.get_begin()[d + 1:],
                 a.roi.get_shape()[:d] + a.roi.get_shape()[d + 1:])
             a.voxel_size = a.voxel_size[:d] + a.voxel_size[d + 1:]
@@ -422,21 +425,21 @@ def open_dataset(f, ds):
         is_multiscale = False
 
     if not is_multiscale:
-        a = daisy.open_ds(f, ds)
+        a = open_ds(f, ds)
 
         if slices is not None:
             a = slice_dataset(a, slices)
 
         if a.roi.dims() == 2:
             print("ROI is 2D, recruiting next channel to z dimension")
-            a.roi = daisy.Roi((0,) + a.roi.get_begin(),
+            a.roi = Roi((0,) + a.roi.get_begin(),
                               (a.shape[-3],) + a.roi.get_shape())
-            a.voxel_size = daisy.Coordinate((1,) + a.voxel_size)
+            a.voxel_size = Coordinate((1,) + a.voxel_size)
 
         if a.roi.dims() == 4:
             print("ROI is 4D, stripping first dimension and treat as channels")
-            a.roi = daisy.Roi(a.roi.get_begin()[1:], a.roi.get_shape()[1:])
-            a.voxel_size = daisy.Coordinate(a.voxel_size[1:])
+            a.roi = Roi(a.roi.get_begin()[1:], a.roi.get_shape()[1:])
+            a.voxel_size = Coordinate(a.voxel_size[1:])
 
         if a.data.dtype == np.int64 or a.data.dtype == np.int16:
             print("Converting dtype in memory...")
@@ -444,7 +447,7 @@ def open_dataset(f, ds):
 
         return [(a, ds)]
     else:
-        return [([daisy.open_ds(f, f"{ds}/{key}")
+        return [([open_ds(f, f"{ds}/{key}")
                   for key in zarr.open(f)[ds].keys()], ds)]
 
 
