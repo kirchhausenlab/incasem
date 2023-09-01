@@ -8,6 +8,8 @@ import configargparse as argparse
 import skimage
 from skimage.morphology import ball
 
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 
 
@@ -62,26 +64,26 @@ def create_mask(
         max_gray_value,
         num_workers):
 
-    raw = daisy.open_ds(
+    raw = open_ds(
         filename,
         ds_name,
         mode='r'
     )
 
-    out = daisy.prepare_ds(
+    out = prepare_ds(
         filename=filename,
         ds_name=out_ds_name,
         total_roi=raw.roi,
         voxel_size=raw.voxel_size,
         dtype=raw.dtype,
-        write_size=raw.voxel_size * daisy.Coordinate(chunk_shape),
+        write_size=raw.voxel_size * Coordinate(chunk_shape),
         compressor={'id': 'zlib', 'level': 3}
     )
 
     # Spawn a worker per chunk
-    block_roi = daisy.Roi(
+    block_roi = Roi(
         (0, 0, 0),
-        raw.voxel_size * daisy.Coordinate(chunk_shape)
+        raw.voxel_size * Coordinate(chunk_shape)
     )
 
     start = now()

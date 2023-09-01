@@ -7,6 +7,8 @@ import numpy as np
 import configargparse as argparse
 from scipy import ndimage
 
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 
 
@@ -49,7 +51,7 @@ def create_metric_mask_worker(
     mask *= 255
 
     # save to output dataset
-    mask = daisy.Array(mask, roi=block.read_roi, voxel_size=labels.voxel_size)
+    mask = Array(mask, roi=block.read_roi, voxel_size=labels.voxel_size)
     out[block.write_roi] = mask[block.write_roi]
 
 
@@ -62,25 +64,25 @@ def create_metric_mask(
         exclude_voxels_inwards,
         num_workers):
 
-    labels = daisy.open_ds(
+    labels = open_ds(
         filename,
         ds_name,
         mode='r'
     )
 
-    out = daisy.prepare_ds(
+    out = prepare_ds(
         filename=filename,
         ds_name=out_ds_name,
         total_roi=labels.roi,
         voxel_size=labels.voxel_size,
         dtype=np.uint8,
-        write_size=labels.voxel_size * daisy.Coordinate(chunk_shape),
+        write_size=labels.voxel_size * Coordinate(chunk_shape),
         compressor={'id': 'zlib', 'level': 3}
     )
 
-    write_roi = daisy.Roi(
+    write_roi = Roi(
         (0, 0, 0),
-        labels.voxel_size * daisy.Coordinate(chunk_shape)
+        labels.voxel_size * Coordinate(chunk_shape)
     )
 
     context = labels.voxel_size * \

@@ -5,6 +5,8 @@ from time import time as now
 
 import numpy as np
 import configargparse as argparse
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 
 from incasem.utils import equalize_adapthist
@@ -41,7 +43,7 @@ def clahe_worker(
     assert equalized.dtype == np.uint8
 
     # save to output dataset
-    equalized = daisy.Array(
+    equalized = Array(
         equalized,
         roi=block.read_roi,
         voxel_size=raw.voxel_size
@@ -58,26 +60,26 @@ def equalize_histogram(
         clip_limit,
         num_workers):
 
-    raw = daisy.open_ds(
+    raw = open_ds(
         filename,
         ds_name,
         mode='r'
     )
 
-    out = daisy.prepare_ds(
+    out = prepare_ds(
         filename=filename,
         ds_name=out_ds_name,
         total_roi=raw.roi,
         voxel_size=raw.voxel_size,
         dtype=raw.dtype,
-        write_size=raw.voxel_size * daisy.Coordinate(chunk_shape),
+        write_size=raw.voxel_size * Coordinate(chunk_shape),
         compressor={'id': 'zlib', 'level': 3}
     )
 
     # Spawn a worker per chunk
-    write_roi = daisy.Roi(
+    write_roi = Roi(
         (0, 0, 0),
-        raw.voxel_size * daisy.Coordinate(chunk_shape)
+        raw.voxel_size * Coordinate(chunk_shape)
     )
     # Add (1,1,1) to avoid division of odd number
     context = ((raw.voxel_size * kernel_size) +
