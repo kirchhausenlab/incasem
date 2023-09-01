@@ -9,6 +9,8 @@ from time import time as now
 import numpy as np
 import configargparse as argparse
 
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 import incasem as fos
 
@@ -41,12 +43,12 @@ def evaluate_metric(
         thresholds,
         # num_workers
 ):
-    labels = daisy.open_ds(
+    labels = open_ds(
         *split_zarr_path(labels_path),
         mode='r'
     )
 
-    probas = daisy.open_ds(
+    probas = open_ds(
         *split_zarr_path(prediction_probas_path),
         mode='r'
     )
@@ -58,7 +60,7 @@ def evaluate_metric(
         ))
 
     try:
-        mask = daisy.open_ds(
+        mask = open_ds(
             *split_zarr_path(mask_path),
             mode='r'
         )
@@ -75,7 +77,7 @@ def evaluate_metric(
         mask = None
 
     try:
-        metric_mask = daisy.open_ds(
+        metric_mask = open_ds(
             *split_zarr_path(metric_mask_path),
             mode='r'
         )
@@ -95,7 +97,7 @@ def evaluate_metric(
     logger.debug(f"Full Roi: {probas.roi}")
     if len(roi_padding) == 1:
         roi_padding = roi_padding * probas.roi.dims()
-    roi_padding = daisy.Coordinate(roi_padding) * probas.voxel_size
+    roi_padding = Coordinate(roi_padding) * probas.voxel_size
     roi = probas.roi.grow(-roi_padding, -roi_padding)
     logger.debug(f"Roi without padding: {roi}\n")
 

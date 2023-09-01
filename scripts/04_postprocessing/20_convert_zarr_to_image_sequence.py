@@ -13,6 +13,8 @@ import zarr
 import skimage
 from skimage import io
 
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 
 logging.basicConfig(level=logging.INFO)
@@ -98,7 +100,7 @@ def convert(filename, ds_name, out_path, num_workers):
         raise NotImplementedError(
             "Conversion only implemented for 3D zarr arrays")
 
-    ds = daisy.open_ds(
+    ds = open_ds(
         filename,
         ds_name,
         mode='r'
@@ -111,7 +113,7 @@ def convert(filename, ds_name, out_path, num_workers):
     chunk_shape = zarr.open(os.path.join(filename, ds_name), 'r').chunks
 
     # zyx format
-    block_roi = daisy.Roi(
+    block_roi = Roi(
         (0, 0, 0),
         (ds.voxel_size[0] * chunk_shape[0],) + tuple(ds.roi.get_shape()[1:])
 
