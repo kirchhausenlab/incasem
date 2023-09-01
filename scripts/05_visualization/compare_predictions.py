@@ -5,6 +5,8 @@ import webbrowser
 import logging
 
 import neuroglancer
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 
 from funlib.show.neuroglancer import add_layer
@@ -61,7 +63,7 @@ def compare_predictions(
             datasets_series.append(ds)
 
             logger.debug(f"Adding {predictions_file}, {ds}")
-            a = daisy.open_ds(predictions_file, ds)
+            a = open_ds(predictions_file, ds)
 
             arrays_series.append(a)
 
@@ -78,12 +80,12 @@ def compare_predictions(
                 )
 
     input_datasets = [raw_dataset]
-    input_arrays = [daisy.open_ds(input_file, raw_dataset)]
+    input_arrays = [open_ds(input_file, raw_dataset)]
 
     if labels_datasets is not None:
         input_datasets.extend(labels_datasets)
         for ds in labels_datasets:
-            a = daisy.open_ds(input_file, ds)
+            a = open_ds(input_file, ds)
             input_arrays.append(a)
 
     with viewer.txn() as s:
