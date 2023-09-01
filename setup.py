@@ -17,7 +17,7 @@ setup(
         'tensorboardX',
         'tensorboard',
         'configargparse',
-        'protobuf<=3.20',
+        'protobuf',
         'daisy',
         'neuroglancer',
         'funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch@master',
