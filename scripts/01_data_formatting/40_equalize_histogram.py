@@ -83,6 +83,9 @@ def equalize_histogram(
     )
     # Add (1,1,1) to avoid division of odd number
     print(">>>", raw.voxel_size)
+    print(raw.voxel_size[0])
+    print(type(raw.voxel_size))
+    rint(type(raw.voxel_size[0]))
                 
     context = ((raw.voxel_size * kernel_size) + (1,) * raw.voxel_size.dims) / 2
     read_roi = write_roi.grow(context, context)
