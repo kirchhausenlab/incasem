@@ -91,7 +91,7 @@ def create_metric_mask(
 
     start = now()
 
-    daisy.run_blockwise(
+    daisy.Task(
         total_roi=labels.roi.grow(context, context),
         read_roi=read_roi,
         write_roi=write_roi,
@@ -105,7 +105,10 @@ def create_metric_mask(
         read_write_conflict=False,
         fit='shrink',
         num_workers=num_workers,
+        task_id='create_metric_mask'
     )
+
+    daisy.run_blockwise([task])
 
     logger.info(f"Done in {now() - start} s")
 
