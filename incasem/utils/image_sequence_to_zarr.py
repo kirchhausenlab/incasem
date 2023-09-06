@@ -269,7 +269,7 @@ def image_sequence_to_zarr(
         voxel_size * Coordinate(chunks)
     )
 
-    daisy.run_blockwise(
+    task = daisy.Task(
         total_roi=metric_roi,
         read_roi=block_roi,
         write_roi=block_roi,
@@ -285,6 +285,9 @@ def image_sequence_to_zarr(
         fit='shrink',
         read_write_conflict=False,
         num_workers=num_workers,
+        task_id="image_sequence_to_zarr"
     )
+
+    daisy.run_blockwise([task])
 
     logger.info(f'Saved to persistent zarr array in {now() - start} s')
