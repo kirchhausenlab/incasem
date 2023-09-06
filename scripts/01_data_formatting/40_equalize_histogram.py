@@ -82,14 +82,9 @@ def equalize_histogram(
         raw.voxel_size * Coordinate(chunk_shape)
     )
     # Add (1,1,1) to avoid division of odd number
-    print(">>>", raw.voxel_size)
-    print(raw.voxel_size[0])
-    print(type(raw.voxel_size))
-    print(type(raw.voxel_size[0]))
-
-    print((1,) * raw.voxel_size.dims)
-                
-    context = ((raw.voxel_size * kernel_size) + (1,) * raw.voxel_size.dims) / 2
+    # Force into tuple to avoid TypeError addition
+    #context = ((raw.voxel_size * kernel_size) + (1,) * raw.voxel_size.dims) / 2
+    context = ((raw.voxel_size[0], raw.voxel_size[1], raw.voxel_size[2]) * kernel_size + (1,) * raw.voxel_size.dims) / 2
     read_roi = write_roi.grow(context, context)
 
     total_roi = raw.roi.grow(context, context)
