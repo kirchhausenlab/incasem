@@ -2,13 +2,15 @@ import logging
 import os
 import sys
 import json
-
+import yaml
+#
 import configargparse as argparse
-import torch
-import numpy as np
+# import torch
+# import numpy as np
+import re
 
-import gunpowder as gp
-import incasem as fos
+# import gunpowder as gp
+# import incasem as fos
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,13 +18,26 @@ logger.setLevel(logging.INFO)
 
 logging.getLogger('gunpowder').setLevel(logging.INFO)
 
+class RunDummy():
+    def __init__(self):
+        # Get the highest ID and add 1
+        pred_jsons = [int(e.split(".json")[0]) for e in os.listdir("json_configs")]
+        train_jsons = [int(e.split(".json")[0]) for e in os.listdir("../02_train/json_configs")]
+
+        ids = pred_jsons + train_jsons
+        self._id = max(-1, max(ids))+1
+
+        self.log = []
+
+    def log_scalar(self, name, value, step):
+        self.log.append({"name": name, "value": value, "step": step})
 
 def torch_setup(_config):
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
 
 
-def model_setup(_config):
+def model_setup(_run_dummy, _config):
     model_type = _config['model']['type']
     if model_type == 'OneConv3d':
         model = fos.torch.models.OneConv3d(
@@ -72,11 +87,12 @@ def model_setup(_config):
     total_params = sum(p.numel()
                        for p in model.parameters())
     logger.info(f'{total_params=}')
+    _run_dummy.log_scalar('num_params', total_params, 0)
 
     return model
 
 
-def directory_structure_setup(_config):
+def directory_structure_setup(_run_dummy, _config):
 
     predictions_out_path = os.path.expanduser(
         _config['prediction']['directories']['prefix'])
@@ -87,8 +103,7 @@ def directory_structure_setup(_config):
 
     run_path = os.path.join(
         f"{int(_config['prediction']['run_id_training']):04d}",
-        "notebook"
-        #f"predict_{_run._id:04d}"
+        f"predict_{_run_dummy._id:04d}"
     )
     return run_path
 
@@ -163,7 +178,8 @@ def remove_context(batch, input_size_voxels, output_size_voxels):
     return batch
 
 
-def log_metrics(
+def log_metrics
+        _run_dummy,
         target,
         prediction_probas,
         mask,
@@ -171,7 +187,6 @@ def log_metrics(
         run_path,
         iteration,
         mode):
-
     mask = np.logical_and(mask.astype(bool), metric_mask.astype(bool))
 
     jaccard_scores = []
@@ -186,7 +201,7 @@ def log_metrics(
         )
         jaccard_scores.append(jac_score)
     for label, score in enumerate(jaccard_scores):
-        _run.log_scalar(f"jaccard_class_{label}_{mode}", score, iteration)
+        _run_dummy.log_scalar(f"jaccard_class_{label}_{mode}", score, iteration)
         logger.info(f"{mode} | Jaccard score class {label}: {score}")
 
     dice_scores = []
@@ -201,21 +216,9 @@ def log_metrics(
         )
         dice_scores.append(dic_score)
     for label, score in enumerate(dice_scores):
-        _run.log_scalar(f"dice_class_{label}_{mode}", score, iteration)
+        _run_dummy.log_scalar(f"dice_class_{label}_{mode}", score, iteration)
         logger.info(f"{mode} | Dice score class {label}: {score}")
 
-    # conf_mat = fos.metrics.confusion_matrix(
-        # target,
-        # prediction_probas,
-        # mask
-    # )
-    # for i in range(conf_mat.shape[0]):
-        # for j in range(conf_mat.shape[1]):
-            # _run.log_scalar(f"confusm_t{i}_p{j}_{mode}",
-                            # conf_mat[i, j], iteration)
-            # logger.info(
-                # f"{mode} | Confusion matrix true {i} pred {j}: {conf_mat[i,
-                # j]}")
 
     precision_recall = fos.metrics.precision_recall(
         target,
@@ -223,75 +226,15 @@ def log_metrics(
         mask
     )
     for i, (p, r) in enumerate(precision_recall):
-        _run.log_scalar(f"precision_{i}_{mode}", p, iteration)
+        _run_dummy.log_scalar(f"precision_{i}_{mode}", p, iteration)
         logger.info(
             f"{mode} | Precision class {i}: {p}")
-        _run.log_scalar(f"recall_{i}_{mode}", r, iteration)
+        _run_dummy.log_scalar(f"recall_{i}_{mode}", r, iteration)
         logger.info(
             f"{mode} | Recall class {i}: {r}")
 
-    # average_precision_scores = fos.metrics.average_precision(
-    # target,
-    # prediction_probas
-    # )
-    # for label, score in enumerate(average_precision_scores):
-    # _run.log_scalar(f"AP_class_{label}", score, 0)
-    # logger.info(f"Average precision class {label}: {score}")
 
-    # # Precision Recall
-
-    # pr_curves = fos.metrics.precision_recall(
-    # target,
-    # prediction_probas
-    # )
-
-    # temp_path = os.path.join('temp', run_path)
-    # os.makedirs(temp_path)
-    # for label, curve in pr_curves.items():
-    # plt.figure(label)
-    # plt.plot(curve['recall'], curve['precision'], label='PR curve')
-    # plt.plot(curve['recall'], curve['thresholds'], label='thresholds')
-    # plt.legend(loc='center')
-    # plt.grid()
-    # plt.xlabel('Recall')
-    # plt.ylabel('Precision / Threshold')
-    # plt.axis('square')
-
-    # plot_path = os.path.join(temp_path, f"pr_class_{label}.png")
-    # plt.savefig(plot_path)
-    # _run.add_artifact(plot_path)
-
-    # # Thresholded jaccard based on pr curve
-    # idx = np.argwhere(
-    # np.diff(
-    # np.sign(
-    # curve['recall'] -
-    # curve['precision']))).flatten()[0]
-
-    # threshold = curve['thresholds'][idx]
-    # _run.log_scalar(f"pr_based_threshold_class_{label}", threshold, 0)
-    # logger.info(f"PR-based threshold class {label}: {threshold}")
-
-    # # Jaccard score
-
-    # jaccard_thresholded = fos.metrics.jaccard_thresholded(
-    # target,
-    # prediction_probas,
-    # threshold,
-    # pos_label=label
-    # )
-    # _run.log_scalar(
-    # f"thresholded_jaccard_class_{label}",
-    # jaccard_thresholded,
-    # 0)
-    # logger.info(
-    # f"Thresholded Jaccard score class {label}: {jaccard_thresholded}")
-
-    # # remove the plot objects
-    # shutil.rmtree(temp_path)
-
-
-def predict(_config, checkpoint=None, iteration=0, run_path=None):
+def predict(_run_dummy, _config, checkpoint=None, iteration=0, run_path=None):
     """predict.
 
     """
@@ -299,8 +242,8 @@ def predict(_config, checkpoint=None, iteration=0, run_path=None):
     torch_setup(_config)
 
     if run_path is None:
-        run_path = directory_structure_setup(_config)
-    model = model_setup(_config)
+        run_path = directory_structure_setup(_run_dummy,_config)
+    model = model_setup(_run_dummy,_config)
 
     if checkpoint is None:
         checkpoint = get_checkpoint(_config['prediction']['checkpoint'])
@@ -312,7 +255,7 @@ def predict(_config, checkpoint=None, iteration=0, run_path=None):
         with gp.build(prediction.pipeline) as p:
             request = gp.BatchRequest()
 
-            if False:
+            if _config['prediction']['log_metrics']:
                 provider_spec = p.spec
                 for key, spec in provider_spec.items():
                     if key in prediction.request:
@@ -340,8 +283,9 @@ def predict(_config, checkpoint=None, iteration=0, run_path=None):
             # )
 
             # TODO load files from disk as daisy datasets
-            if False:
+            if _config['prediction']['log_metrics']:
                 log_metrics(
+                    _run_dummy
                     target=batch[gp.ArrayKey('LABELS')].data,
                     prediction_probas=batch[gp.ArrayKey('PREDICTIONS')].data,
                     mask=batch[gp.ArrayKey('MASK')].data,
@@ -352,13 +296,67 @@ def predict(_config, checkpoint=None, iteration=0, run_path=None):
                 )
 
 
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument(
+        '--run_id',
+        '-r',
+        type=int,
+        required=True,
+        help='Run ID of training that is used to make predictions'
+    )
+
+    args, remaining_argv = parser.parse_known_args()
+
+    remaining_argv_dict = {}
+
+    # Extra parsing
+    if "--name"in remaining_argv:
+        name_idx = remaining_argv.index("--name") + 1
+        name = remaining_argv[name_idx]
+        remaining_argv_dict['name'] = name
+
+    if "with" in remaining_argv:
+        with_idx = remaining_argv.index("with")
+        cfg_yaml_path = remaining_argv[with_idx+1]
+        remaining_argv_dict["cfg_yaml"] = cfg_yaml_path
+
+    for item in remaining_argv:
+        if "prediction." in item and "=" in item:
+            pattern = r'\bprediction\.(\S+)\s*=\s*(\S+)\b'
+            # Find all matches in the text
+            matches = re.findall(pattern, item)
+            if len(matches)>0:
+                k, v = item.split("prediction.")[-1].split("=")
+                remaining_argv_dict[k] = v
+
+    return args, remaining_argv_dict
 
 
 if __name__ == '__main__':
 
-    json_file = sys.argv[1]
-    
+    args, remaining_argv = parse_arguments()
+
+    available_models = [int(e.split(".json")[0]) for e in os.listdir("json_configs")]
+
+    assert args.run_id in available_models, "Desired run_id not found in json_configs, make sure it exists"
+
+    json_file = f"json_configs/{args.run_id}.json"
+
     with open(json_file) as f:
         config = json.load(f)
 
-    predict(config)
+    # Read the YAML file into a dictionary
+    yaml_data = {}
+    if "cfg_yaml" in remaining_argv:
+        with open(remaining_argv['cfg_yaml'], 'r') as file:
+            yaml_data = yaml.safe_load(file)
+
+    # Add remaining_argv and config yaml to config
+    config = {**config, **remaining_argv, **yaml_data}
+
+    _run_dummy = RunDummy()
+
+    predict(_run_dummy, config)
