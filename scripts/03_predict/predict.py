@@ -5,12 +5,12 @@ import json
 import yaml
 #
 import configargparse as argparse
-# import torch
-# import numpy as np
+import torch
+import numpy as np
 import re
 
-# import gunpowder as gp
-# import incasem as fos
+import gunpowder as gp
+import incasem as fos
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -285,7 +285,7 @@ def predict(_run_dummy, _config, checkpoint=None, iteration=0, run_path=None):
             # TODO load files from disk as daisy datasets
             if _config['prediction']['log_metrics']:
                 log_metrics(
-                    _run_dummy
+                    _run_dummy,
                     target=batch[gp.ArrayKey('LABELS')].data,
                     prediction_probas=batch[gp.ArrayKey('PREDICTIONS')].data,
                     mask=batch[gp.ArrayKey('MASK')].data,
@@ -355,7 +355,11 @@ if __name__ == '__main__':
             yaml_data = yaml.safe_load(file)
 
     # Add remaining_argv and config yaml to config
-    config = {**config, **remaining_argv, **yaml_data}
+    config = {**config, **yaml_data}
+    config["prediction"] = {**config["prediction"], **remaining_argv}
+    config["prediction"]["run_id_training"] = args.run_id
+
+    print(config)
 
     _run_dummy = RunDummy()
 
