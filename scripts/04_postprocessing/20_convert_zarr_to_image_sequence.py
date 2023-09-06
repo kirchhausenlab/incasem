@@ -122,7 +122,7 @@ def convert(filename, ds_name, out_path, num_workers):
     if not os.path.isdir(out_path):
         os.makedirs(out_path)
 
-    daisy.run_blockwise(
+    task = daisy.Task(
         total_roi=ds.roi,
         read_roi=block_roi,
         write_roi=block_roi,
@@ -134,8 +134,11 @@ def convert(filename, ds_name, out_path, num_workers):
         fit='shrink',
         read_write_conflict=False,
         num_workers=num_workers,
+        task_id="convert_zarr_to_images"
     )
 
+    daisy.run_blockwise([task])
+    
     logger.info(
         f"Done in {now() - start} s")
 
