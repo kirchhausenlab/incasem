@@ -1,0 +1,211 @@
+{
+   "er_113": {
+        "file": "janelia/jrc_hela-2/jrc_hela-2.zarr",
+        "labels": {
+            "volumes/labels/er/113": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/er/113"
+        ],
+        "offset": [
+            2975,
+            1075,
+            3125
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            250,
+            500,
+            500
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+   "er_16": {
+        "file": "janelia/jrc_hela-2/jrc_hela-2.zarr",
+        "labels": {
+            "volumes/labels/er/16": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/er/16"
+        ],
+        "offset": [
+            1900,
+            290,
+            5210
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            200,
+            200,
+            200
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "er_23": {
+        "file": "janelia/jrc_hela-2/jrc_hela-2.zarr",
+        "labels": {
+            "volumes/labels/er/23": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/er/23"
+        ],
+        "offset": [
+            2031,
+            1070,
+            2750
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            250,
+            250,
+            250
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "er_28": {
+        "file": "janelia/jrc_hela-2/jrc_hela-2.zarr",
+        "labels": {
+            "volumes/labels/er/28": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/er/28"
+        ],
+        "offset": [
+            510,
+            1015,
+            7756
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            200,
+            200,
+            200
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "er_3": {
+        "file": "janelia/jrc_hela-2/jrc_hela-2.zarr",
+        "labels": {
+            "volumes/labels/er/3": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/er/3"
+        ],
+        "offset": [
+            3999,
+            1000,
+            7800
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            250,
+            400,
+            400
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "er_4": {
+        "file": "janelia/jrc_hela-2/jrc_hela-2.zarr",
+        "labels": {
+            "volumes/labels/er/4": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/er/4"
+        ],
+        "offset": [
+            2737,
+            1100,
+            6100
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            238,
+            300,
+            300
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "er_111": {
+        "file": "janelia/jrc_hela-3/jrc_hela-3.zarr",
+        "labels": {
+            "volumes/labels/er/111": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/er/111"
+        ],
+        "offset": [
+            6255,
+            432,
+            7184
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            500,
+            250,
+            500
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    },
+    "er_33": {
+        "file": "janelia/jrc_hela-3/jrc_hela-3.zarr",
+        "labels": {
+            "volumes/labels/er/33": 1
+        },
+        "mask": "volumes/mask",
+        "metric_masks": [
+            "volumes/metric_masks/er/33"
+        ],
+        "offset": [
+            5650,
+            570,
+            3450
+        ],
+        "raw": "volumes/raw_equalized_0.02",
+        "shape": [
+            200,
+            200,
+            200
+        ],
+        "voxel_size": [
+            4,
+            4,
+            4
+        ]
+    }
+}
+

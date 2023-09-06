@@ -1,0 +1,73 @@
+directories:
+    runs: ~/incasem/training_runs
+    data: ~/incasem/data
+
+training:
+    pipeline: baseline_with_context
+    data: 
+    iterations: 200000
+    input_size_voxels: [204, 204, 204]
+    output_size_voxels: [110, 110, 110]
+    save_every: 1000
+    log_every: 1
+    optimizer:
+        lr: 0.00003
+        weight_decay: 0.00003
+    reject:
+        min_masked: 0.05
+        reject_probability: 0.9
+    augmentation:
+        elastic:
+            control_point_spacing: [32, 32, 32]
+            jitter_sigma: [2, 2, 2]
+            subsample: 4
+        intensity:
+            scale: 0.15
+            shift: 0.15
+        simple:
+            transpose_only: [0, 1, 2]
+    snapshot:
+        every: 1000
+    profiling_stats:
+        every: 1000
+    precache:
+        cache_size: 20
+        num_workers: 8
+
+validation:
+    pipeline: baseline_with_context
+    data:
+    validate_every: 1000
+    input_size_voxels: [204, 204, 204]
+    output_size_voxels: [110, 110, 110]
+    snapshot:
+        every: 10
+
+sources:
+    class: DataSourcesSemantic
+
+data:
+    voxel_size: [5, 5, 5]
+    downsample_factor: 1
+    num_classes: 2
+
+model:
+    type: Unet
+    num_fmaps: 32
+    num_fmaps_out: 2
+    fmap_inc_factor: 2
+    downsample_factors: [[2,2,2], [2,2,2], [2,2,2]]
+    constant_upsample: True
+
+loss:
+    type: cross_entropy_scaling
+    weight: [1.0, 1.0]
+    balance_labels:
+        clipmin: 0.01
+        clipmax: 0.99
+
+torch:
+    device: 0
+
+sacred:
+    log_every: 1000
