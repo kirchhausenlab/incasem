@@ -87,7 +87,7 @@ def crop_daisy_dataset(
         Coordinate(chunk_shape) * voxel_size
     )
     start = now()
-    daisy.run_blockwise(
+    task = daisy.Task(
         total_roi=out_ds.roi,
         read_roi=block_roi,
         write_roi=block_roi,
@@ -99,8 +99,10 @@ def crop_daisy_dataset(
         ),
         read_write_conflict=False,
         fit='shrink',
-        num_workers=num_workers
+        num_workers=num_workers,
+        task_id = 'crop_datasets'
     )
+    daisy.run_blockwise([task])
 
     logger.info(f"Done with {out_ds_name} in {now() - start} s")
 
