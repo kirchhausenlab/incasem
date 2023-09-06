@@ -81,6 +81,10 @@ def equalize_histogram(
         (0, 0, 0),
         raw.voxel_size * Coordinate(chunk_shape)
     )
+
+    print(">>",raw.voxel_size.dims)
+    print((1,) * raw.voxel_size.dims)
+                
     # Add (1,1,1) to avoid division of odd number
     # Force into tuple to avoid TypeError addition
     #context = ((raw.voxel_size * kernel_size) + (1,) * raw.voxel_size.dims) / 2
