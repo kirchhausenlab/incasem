@@ -85,7 +85,7 @@ def equalize_histogram(
     # Add (1,1,1) to avoid division of odd number
     # Force into tuple to avoid TypeError addition
     #context = ((raw.voxel_size * kernel_size) + (1,) * raw.voxel_size.dims) / 2
-    context = ((dim * kernel_size for dim in raw.voxel_size) + (1,) * raw.voxel_size.dims) / 2
+    context = (tuple([dim * kernel_size for dim in raw.voxel_size]) + (1,) * raw.voxel_size.dims) / 2
     read_roi = write_roi.grow(context, context)
 
     total_roi = raw.roi.grow(context, context)
