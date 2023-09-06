@@ -91,7 +91,7 @@ def create_metric_mask(
 
     start = now()
 
-    daisy.Task(
+    task = daisy.Task(
         total_roi=labels.roi.grow(context, context),
         read_roi=read_roi,
         write_roi=write_roi,
