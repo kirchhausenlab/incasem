@@ -88,7 +88,7 @@ def create_mask(
 
     start = now()
 
-    daisy.run_blockwise(
+    task = daisy.Task(
         total_roi=raw.roi,
         read_roi=block_roi,
         write_roi=block_roi,
@@ -102,7 +102,10 @@ def create_mask(
         read_write_conflict=False,
         fit='shrink',
         num_workers=num_workers,
+        task_id="create_mask
     )
+        
+    daisy.run_blockwise([task])
 
     logger.info(f"Done in {now() - start} s")
 
