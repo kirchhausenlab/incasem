@@ -83,15 +83,14 @@ def equalize_histogram(
     )
                 
     # Add (1,1,1) to avoid division of odd number
-    # Force into tuple to avoid TypeError addition
     #context = ((raw.voxel_size * kernel_size) + (1,) * raw.voxel_size.dims) / 2
-    context = (tuple([dim * kernel_size for dim in raw.voxel_size]) + (1,) * raw.voxel_size.dims) / 2
+    context = (raw.voxel_size * kernel_size + Coordinate((1,) * raw.voxel_size.dims)) / 2
     read_roi = write_roi.grow(context, context)
 
     total_roi = raw.roi.grow(context, context)
     start = now()
 
-    daisy.run_blockwise(
+    task = daisy.Task(
         total_roi=total_roi,
         read_roi=read_roi,
         write_roi=write_roi,
@@ -105,7 +104,10 @@ def equalize_histogram(
         read_write_conflict=False,
         fit='shrink',
         num_workers=num_workers,
+        task_id='histogram_equalization'
     )
+
+    daisy.run_blockwise([task])
 
     logger.info(f'Done in {now() - start} s')
 
