@@ -178,7 +178,7 @@ def remove_context(batch, input_size_voxels, output_size_voxels):
     return batch
 
 
-def log_metrics
+def log_metrics(
         _run_dummy,
         target,
         prediction_probas,
