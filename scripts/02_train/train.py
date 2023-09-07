@@ -712,4 +712,4 @@ if __name__ == '__main__':
 
     seed_dummy = 42
 
-    train(config, run_dummy, seed_dummy)
+    train(config, _run_dummy, seed_dummy)
