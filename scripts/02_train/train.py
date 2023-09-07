@@ -306,9 +306,7 @@ def log_result(
 
     # TODO This should be some metric, not the loss function
     experiment_name = (
-        f"Run {_run_dummy._id}: "
-        # f"{_run_dummy.experiment_info['name']}. "
-        f"{_config["name"]}"
+        f"Run {_run_dummy._id}: {_config["name"]}"
     )
 
     return (f"\n{experiment_name}"
@@ -711,5 +709,7 @@ if __name__ == '__main__':
         os.mkdir(config['directories']['runs'])
 
     seed_dummy = 42
+
+    print(">>>", config["name"])
 
     train(config, _run_dummy, seed_dummy)
