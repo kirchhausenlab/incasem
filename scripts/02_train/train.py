@@ -308,19 +308,19 @@ def log_result(
     experiment_name = (
         f"Run {_run_dummy._id}: "
         # f"{_run_dummy.experiment_info['name']}. "
-        f"{_run_dummy.meta_info['options'].get('--name','')}"
+        f"{_config["name"]}"
     )
 
     return (f"\n{experiment_name}"
             f"\nval {metric_name}: {metric_val:.6f}")
 
 
-def log_data_config(_config, _run_dummy):
-    _run_dummy.add_artifact(_config['training']['data'])
+# def log_data_config(_config, _run_dummy):
+#     _run_dummy.add_artifact(_config['training']['data'])
 
-    val_config_files = _config['validation']['data'].split(',')
-    for f in val_config_files:
-        _run_dummy.add_artifact(f)
+#     val_config_files = _config['validation']['data'].split(',')
+#     for f in val_config_files:
+#         _run_dummy.add_artifact(f)
 
 
 def directory_structure_setup(_config, _run_dummy):
@@ -436,7 +436,7 @@ def train(_config, _run, _seed):
     """
 
     torch_setup(_config)
-    log_data_config(_config, _run)
+    #log_data_config(_config, _run)
 
     run_dir = directory_structure_setup(_config, _run)
 
