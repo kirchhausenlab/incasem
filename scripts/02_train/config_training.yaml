@@ -1,6 +1,7 @@
 directories:
     runs: ~/incasem/training_runs
     data: ~/incasem/data
+    db: ~/incasem/mock_db
 
 training:
     pipeline: baseline_with_context

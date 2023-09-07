@@ -18,15 +18,16 @@ logger.setLevel(logging.INFO)
 
 logging.getLogger('gunpowder').setLevel(logging.INFO)
 
-class RunDummy():
+class PredictionRunDummy():
     def __init__(self):
-        # # Get the highest ID and add 1
-        # pred_jsons = [int(e.split(".json")[0]) for e in os.listdir("json_configs")]
-        # train_jsons = [int(e.split(".json")[0]) for e in os.listdir("../02_train/json_configs")]
-        # 
-        # ids = pred_jsons + train_jsons
-        # self._id = max(-1, max(ids))+1
-        self._id=0
+
+        # Get the highest ID and add 1
+        with open('../../mock_db/ledger.json') as f:
+            ledger = json.load(f)
+
+        ids = [int(e) for e in ledger.keys()]
+
+        self._id = max(-1, max(ids))+1
 
         self.log = []
 
@@ -339,12 +340,14 @@ def parse_arguments():
 if __name__ == '__main__':
 
     args, remaining_argv = parse_arguments()
+    with open('../../mock_db/ledger.json') as fp:
+        ledger = json.load(fp)
+    available_models = [int(e) for e in ledger.keys()]
 
-    available_models = [int(e.split(".json")[0]) for e in os.listdir("json_configs")]
 
-    assert args.run_id in available_models, "Desired run_id not found in json_configs, make sure it exists"
+    assert args.run_id in available_models, "Desired run_id not found in mock_db, make sure it exists"
 
-    json_file = f"json_configs/{args.run_id}.json"
+    json_file = f"../../mock_db/{ledger[str(args.run_id)]}"
 
     with open(json_file) as f:
         config = json.load(f)
@@ -360,6 +363,19 @@ if __name__ == '__main__':
     config["prediction"] = {**config["prediction"], **remaining_argv}
     config["prediction"]["run_id_training"] = args.run_id
 
-    _run_dummy = RunDummy()
+    _run_dummy = PredictionRunDummy()
+
+    try:
+        name = config["prediction"]["name"]
+    except KeyError:
+        name = "prediction"
+
+    name = name + f"_{_run_dummy._id}"
+
+    # Update ledger
+    ledger[str(_run_dummy._id)] = name
+
+    with open("../../mock_db/ledger.json", mode="w") as f:
+        json.dump(ledger, f)
 
     predict(_run_dummy, config)

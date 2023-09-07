@@ -4,17 +4,29 @@ import sys
 import logging
 import argparse
 import json
+import re
 
 import numpy as np
-from pymongo import MongoClient
 import torch
-import sacred
-import tensorboardX
 
 import gunpowder as gp
 
 import incasem as fos
-from incasem.tracking.sacred import ex
+
+class TrainingRunDummy():
+    def __init__(self):
+        # Get the highest ID and add 1
+        with open('../../mock_db/ledger.json') as f:
+            ledger = json.load(f)
+
+        ids = [int(e) for e in ledger.keys()]
+
+        self._id = max(-1, max(ids)) + 1
+
+        self.log = []
+
+    def log_scalar(self, name, value, step):
+        self.log.append({"name": name, "value": value, "step": step})
 
 
 logging.basicConfig(level=logging.INFO)
@@ -22,11 +34,6 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger('gunpowder').setLevel(logging.INFO)
 
-
-# TODO Port some setup functions into the package
-
-
-@ex.capture
 def torch_setup(_config):
     torch.backends.cudnn.enabled = True
     torch.backends.cudnn.benchmark = True
@@ -34,8 +41,7 @@ def torch_setup(_config):
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
-@ex.capture
-def model_setup(_config, _run):
+def model_setup(_config, _run_dummy):
     model_type = _config['model']['type']
     if model_type == 'OneConv3d':
         model = fos.torch.models.OneConv3d(
@@ -79,7 +85,7 @@ def model_setup(_config, _run):
                        for p in model.parameters())
     logger.info(f'{total_params=}')
 
-    _run.log_scalar('num_params', total_params, 0)
+    _run_dummy.log_scalar('num_params', total_params, 0)
 
     trainable_params = sum(p.numel()
                            for p in model.parameters() if p.requires_grad)
@@ -87,7 +93,6 @@ def model_setup(_config, _run):
     return model
 
 
-@ex.capture
 def loss_setup(_config, device='cuda'):
     weight = torch.tensor(
         list(_config['loss']['weight']),
@@ -108,8 +113,7 @@ def loss_setup(_config, device='cuda'):
     return loss
 
 
-@ex.capture
-def training_setup(_config, _run, _seed, run_dir, model):
+def training_setup(_config, _run_dummy, _seed, run_dir, model):
     loss = loss_setup(_config)
 
     # TODO parametrize type of optimizer, move to separate function
@@ -230,8 +234,7 @@ def training_setup(_config, _run, _seed, run_dir, model):
     return training
 
 
-@ex.capture
-def multiple_validation_setup(_config, _run, _seed, run_dir, model):
+def multiple_validation_setup(_config, _run_dummy, _seed, run_dir, model):
     val_datasets = fos.utils.create_multiple_config(
         _config['validation']['data'])
     validations = []
@@ -239,7 +242,7 @@ def multiple_validation_setup(_config, _run, _seed, run_dir, model):
         validations.append(
             validation_setup(
                 _config,
-                _run,
+                _run_dummy,
                 _seed,
                 run_dir,
                 model,
@@ -249,8 +252,7 @@ def multiple_validation_setup(_config, _run, _seed, run_dir, model):
     return validations
 
 
-@ex.capture
-def validation_setup(_config, _run, _seed, run_dir, model, val_dataset):
+def validation_setup(_config, _run_dummy, _seed, run_dir, model, val_dataset):
     # Validation loss is assumed to be the same as the training loss
     loss = loss_setup(_config)
 
@@ -297,34 +299,31 @@ def validation_setup(_config, _run, _seed, run_dir, model, val_dataset):
     return validation
 
 
-@ ex.capture
 def log_result(
-        _run,
+        _run_dummy,
         metric_name='loss',
         metric_val=float('inf')):
 
     # TODO This should be some metric, not the loss function
     experiment_name = (
-        f"Run {_run._id}: "
-        # f"{_run.experiment_info['name']}. "
-        f"{_run.meta_info['options'].get('--name','')}"
+        f"Run {_run_dummy._id}: "
+        # f"{_run_dummy.experiment_info['name']}. "
+        f"{_run_dummy.meta_info['options'].get('--name','')}"
     )
 
     return (f"\n{experiment_name}"
             f"\nval {metric_name}: {metric_val:.6f}")
 
 
-@ ex.capture
-def log_data_config(_config, _run):
-    _run.add_artifact(_config['training']['data'])
+def log_data_config(_config, _run_dummy):
+    _run_dummy.add_artifact(_config['training']['data'])
 
     val_config_files = _config['validation']['data'].split(',')
     for f in val_config_files:
-        _run.add_artifact(f)
+        _run_dummy.add_artifact(f)
 
 
-@ ex.capture
-def directory_structure_setup(_config, _run):
+def directory_structure_setup(_config, _run_dummy):
     try:
         dir_run_id = _config['training']['continue_id']
         logger.info(
@@ -342,26 +341,25 @@ def directory_structure_setup(_config, _run):
             new_model = os.path.join(
                 os.path.expanduser(_config['directories']['runs']),
                 "models",
-                str(_run._id),
+                str(_run_dummy._id),
                 "model_checkpoint_0")
 
             os.makedirs(os.path.dirname(new_model), exist_ok=True)
             copyfile(model_to_load, new_model)
-            dir_run_id = _run._id
+            dir_run_id = _run_dummy._id
 
             logger.info(
                 f"Starting new training run {dir_run_id}, \
                 from previous run {load_run_id}, \
                 checkpoint {load_run_checkpoint}")
         except KeyError:
-            dir_run_id = _run._id
+            dir_run_id = _run_dummy._id
             logger.info(f"Starting new training run {dir_run_id}")
 
     dir_run_id = f"{dir_run_id:04d}"
     return dir_run_id
 
 
-@ ex.capture
 def log_metrics(
         _run,
         target,
@@ -385,7 +383,7 @@ def log_metrics(
         )
         dice_scores.append(dic_score)
     for label, score in enumerate(dice_scores):
-        _run.log_scalar(f"dice_class_{label}_{mode}", score, iteration)
+        _run_dummy.log_scalar(f"dice_class_{label}_{mode}", score, iteration)
         logger.info(f"{mode} | Dice score class {label}: {score}")
 
     # jaccard_scores = fos.metrics.jaccard(
@@ -394,22 +392,21 @@ def log_metrics(
         # mask
     # )
     # for label, score in enumerate(jaccard_scores):
-        # _run.log_scalar(f"jaccard_class_{label}_{mode}", score, iteration)
+        # _run_dummy.log_scalar(f"jaccard_class_{label}_{mode}", score, iteration)
 
     # average_precision_scores = fos.metrics.average_precision(
         # target,
         # prediction_probas
     # )
     # for label, score in enumerate(average_precision_scores):
-        # _run.log_scalar(f"AP_class_{label}_{mode}", score, iteration)
+        # _run_dummy.log_scalar(f"AP_class_{label}_{mode}", score, iteration)
 
 
-@ ex.capture
 def log_labels_balance(_run, labels, num_classes, iteration):
     try:
         for c in range(num_classes):
             pct = np.sum(labels == c) / np.prod(labels.shape)
-            _run.log_scalar(f"pct_class_{c}", pct, iteration)
+            _run_dummy.log_scalar(f"pct_class_{c}", pct, iteration)
     except KeyError as e:
         logger.error(e)
 
@@ -430,7 +427,6 @@ def log_tb_batch_labels_balance(summary_writer, i, labels, num_classes):
         summary_writer.add_scalar(f'pct_class_{c}', pct, i)
 
 
-@ ex.main
 def train(_config, _run, _seed):
     """train.
 
@@ -502,7 +498,7 @@ def train(_config, _run, _seed):
                 # Convention for loss: pos 0 is the final loss used for
                 # backprop, other positions are intermediate/partial losses
                 for l_i, l in enumerate(np.atleast_1d(batch.loss)):
-                    _run.log_scalar(f"loss_train_{l_i}", l, i)
+                    _run_dummy.log_scalar(f"loss_train_{l_i}", l, i)
 
                 log_labels_balance(
                     _run,
@@ -542,7 +538,7 @@ def train(_config, _run, _seed):
 
                     val_losses = np.atleast_1d(val_batch.loss)
                     for l_i, l in enumerate(val_losses):
-                        _run.log_scalar(
+                        _run_dummy.log_scalar(
                             f"loss_val_ds_{val_idx}_type_{l_i}", l, i)
 
                     # TODO there is no single validation loss to save any more.
@@ -572,99 +568,28 @@ def train(_config, _run, _seed):
     return log_result(_run, metric_val=validation_loss)
 
 
-def observer_setup():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument(
-        '--mongodb',
-        default='trainings_db.json',
-        help=('Json file with credentials to mongodb '
-              'for sacred experiment tracking.')
-    )
-    parser.add_argument(
-        '--slack',
-        action='store_true',
-        help='Slack messages about failure/interruption.'
-    )
-
-    args, remaining_argv = parser.parse_known_args()
-    sys.argv = [sys.argv[0], *remaining_argv]
-
-    # create experiment observers
-    if args.mongodb:
-        logger.info(f"Attach Mongo observer")
-        with open(args.mongodb) as f:
-            db_config = json.load(f)
-
-        ex.observers.append(
-            sacred.observers.MongoObserver.create(
-                url=db_config['url'],
-                db_name=db_config['db_name']
-            )
-        )
-
-    if args.slack:
-        logger.info(f"Attach Slack observer")
-        ex.observers.append(
-            sacred.observers.SlackObserver.from_config('slack.json')
-        )
-
-    return args.mongodb
+# def get_config_from_db(url, db_name, run_id):
+#     with MongoClient(host=url, port=27017) as client:
+#         db = client[db_name]
+#         run_document = db['runs'].find_one({'_id': run_id})
+#
+#     return run_document['config']
 
 
-def get_config_from_db(url, db_name, run_id):
-    with MongoClient(host=url, port=27017) as client:
-        db = client[db_name]
-        run_document = db['runs'].find_one({'_id': run_id})
+def load_run(run_id):
 
-    return run_document['config']
+    # Check if the previous run ID is in training_runs or mock_db
+    with open("../../mock_db/ledger.json") as f:
+        ledger = json.load(f)
+    assert str(run_id) in ledger.keys(), "Run ID not found in ~/incasem/mock_db"
 
+    with open(f"../../mock_db/{ledger[str(run_id)]}") as f:
+        config = json.load(f)
 
-def get_git_commit_from_db(url, db_name, run_id):
-    with MongoClient(host=url, port=27017) as client:
-        db = client[db_name]
-        run_document = db['runs'].find_one({'_id': run_id})
-
-    repo_count = len(run_document['experiment']['repositories'])
-    assert repo_count == 1, \
-        (f"{repo_count} repositories linked with run {run_id}, "
-         "not sure which one to check against")
-
-    return run_document['experiment']['repositories'][0]['commit']
-
-
-def load_run(mongodb_cfg_file, run_id, check_commit):
-    with open(mongodb_cfg_file) as f:
-        db_config = json.load(f)
-
-    if check_commit:
-        commit = get_git_commit_from_db(
-            db_config['url'],
-            db_config['db_name'],
-            run_id
-        )
-
-        _, current_commit, _ = sacred.dependencies.get_commit_if_possible(
-            '.', True)
-
-        if current_commit != commit:
-            msg = (
-                f"Currently checked out git commit {current_commit} "
-                f"does not match the required commit {commit} "
-                f"for rerunning experiment {run_id}"
-            )
-            raise RuntimeError(msg)
-
-    config = get_config_from_db(
-        db_config['url'],
-        db_config['db_name'],
-        run_id
-    )
     return config
 
 
-def experiment_setup(mongodb_cfg_file):
+def parse_argmuents():
     parser = argparse.ArgumentParser(
         formatter_class=argparse.ArgumentDefaultsHelpFormatter
     )
@@ -672,12 +597,6 @@ def experiment_setup(mongodb_cfg_file):
         '--repeat_run',
         type=int,
         help='Run ID of training to repeat.'
-    )
-    parser.add_argument(
-        '--check_commit',
-        type=bool,
-        default=False,
-        help='If set to True, enforce that the current commit of the repo matches the commit of the pretrained model.'
     )
     parser.add_argument(
         '--continue_run',
@@ -697,46 +616,100 @@ def experiment_setup(mongodb_cfg_file):
 
     if args.repeat_run is not None:
         config = load_run(
-            mongodb_cfg_file,
-            args.repeat_run,
-            args.check_commit)
-
-        return config
+            args.repeat_run)
 
     elif args.continue_run is not None:
         config = load_run(
-            mongodb_cfg_file,
-            args.continue_run,
-            args.check_commit)
+            args.continue_run)
 
         config['training']['continue_id'] = args.continue_run
-        return config
 
     elif args.start_from is not None:
         prev_model_id, _ = args.start_from
         config = load_run(
-            mongodb_cfg_file,
-            int(prev_model_id),
-            args.check_commit)
+            int(prev_model_id))
         config['training']['start_from'] = args.start_from
-        return config
 
     else:
-        return None
+        config = None
+
+    return config, args, remaining_argv
 
 
 if __name__ == '__main__':
-    mongodb_cfg_file = observer_setup()
-    config = experiment_setup(mongodb_cfg_file)
+    config, args, remaining_argv = parse_argmuents()
+
     if config is not None:
         logger.debug(config)
-        ex.add_config(config)
     else:
-        ex.add_config('config_training.yaml')
+        config = {}
+        with open("config_training.yaml", 'r') as file:
+            yaml_data = yaml.safe_load(file)
 
-    # sacred_default_flags = ['--enforce_clean', '-C', 'no']
-    sacred_default_flags = ['-C', 'no']
+    val_arg_dict = {}
+    train_arg_dict = {}
+    torch_arg_dict = {}
 
-    argv = [*sys.argv, *sacred_default_flags]
+    if "--name"in remaining_argv:
+        name_idx = remaining_argv.index("--name") + 1
+        name = remaining_argv[name_idx]
+        config['name'] = name
 
-    ex.run_commandline(argv)
+
+    for item in remaining_argv:
+        if "training." in item and "=" in item:
+            pattern = r'\btraining\.(\S+)\s*=\s*(\S+)\b'
+            # Find all matches in the text
+            matches = re.findall(pattern, item)
+            if len(matches)>0:
+                k, v = item.split("training.")[-1].split("=")
+                train_arg_dict[k] = v
+
+        if "validation." in item and "=" in item:
+            pattern = r'\bvalidation\.(\S+)\s*=\s*(\S+)\b'
+            # Find all matches in the text
+            matches = re.findall(pattern, item)
+            if len(matches)>0:
+                k, v = item.split("validation.")[-1].split("=")
+                train_arg_dict[k] = v
+
+        if "torch." in item and "=" in item:
+            pattern = r'\btorch\.(\S+)\s*=\s*(\S+)\b'
+            # Find all matches in the text
+            matches = re.findall(pattern, item)
+            if len(matches)>0:
+                k, v = item.split("torch.")[-1].split("=")
+                train_arg_dict[k] = v
+
+    config["training"] = {**config["training"], **train_arg_dict}
+    config["validation"] = {**config["validation"], **val_arg_dict}
+    config["torch"] = {**config["torch"], **torch_arg_dict}
+
+    _run_dummy = TrainingRunDummy()
+
+    try:
+        name = config["name"]
+    except KeyError:
+        name = "training"
+
+    name = name + f"_{_run_dummy._id}"
+
+    # Update ledger
+    with open('../../mock_db/ledger.json') as fp:
+        ledger = json.load(fp)
+
+    ledger[str(_run_dummy._id)] = name+".json"
+
+    with open("../../mock_db/ledger.json", mode="w") as f:
+        json.dump(ledger, f)
+
+    # Write config
+    with open(f"../../mock_db/{name}.json", mode="w") as f:
+        json.dump(config, f)
+
+    if not os.path.exists(config['directories']['runs']):
+        os.mkdir(config['directories']['runs'])
+
+    seed_dummy = 42
+
+    train(config, run_dummy, seed_dummy)
