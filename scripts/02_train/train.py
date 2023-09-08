@@ -14,6 +14,7 @@ import gunpowder as gp
 
 import incasem as fos
 
+
 class TrainingRunDummy():
     def __init__(self):
         # Get the highest ID and add 1
@@ -34,6 +35,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 logging.getLogger('gunpowder').setLevel(logging.INFO)
+
 
 def torch_setup(_config):
     torch.backends.cudnn.enabled = True
@@ -107,7 +109,7 @@ def loss_setup(_config, device='cuda'):
             device=device
         )
     # elif loss_type == 'cross_entropy':
-        # loss = torch.nn.CrossEntropyLoss(weight=weight, device=device)
+    # loss = torch.nn.CrossEntropyLoss(weight=weight, device=device)
     else:
         raise ValueError(f"Specified loss {loss_type} does not exist.")
 
@@ -304,13 +306,12 @@ def log_result(
         _run_dummy,
         metric_name='loss',
         metric_val=float('inf')):
-
     # TODO This should be some metric, not the loss function
     try:
         _config["name"]
     except:
         _config["name"] = "training_{}".format(_run_dummy._id)
-            
+
     experiment_name = ("Run {}: {}".format(_run_dummy._id, _config["name"]))
 
     return (f"\n{experiment_name}"
@@ -336,10 +337,10 @@ def directory_structure_setup(_config, _run_dummy):
                 _config['training']['start_from']
             model_to_load = os.path.expanduser(load_run_checkpoint)
             # model_to_load = os.path.join(
-                # os.path.expanduser(_config['directories']['runs']),
-                # "models",
-                # str(load_run_id),
-                # "model_checkpoint_" + str(load_run_checkpoint))
+            # os.path.expanduser(_config['directories']['runs']),
+            # "models",
+            # str(load_run_id),
+            # "model_checkpoint_" + str(load_run_checkpoint))
             new_model = os.path.join(
                 os.path.expanduser(_config['directories']['runs']),
                 "models",
@@ -370,7 +371,6 @@ def log_metrics(
         metric_mask,
         iteration,
         mode):
-
     mask = np.logical_and(mask.astype(bool), metric_mask.astype(bool))
 
     dice_scores = []
@@ -389,19 +389,19 @@ def log_metrics(
         logger.info(f"{mode} | Dice score class {label}: {score}")
 
     # jaccard_scores = fos.metrics.jaccard(
-        # target,
-        # prediction_probas,
-        # mask
+    # target,
+    # prediction_probas,
+    # mask
     # )
     # for label, score in enumerate(jaccard_scores):
-        # _run_dummy.log_scalar(f"jaccard_class_{label}_{mode}", score, iteration)
+    # _run_dummy.log_scalar(f"jaccard_class_{label}_{mode}", score, iteration)
 
     # average_precision_scores = fos.metrics.average_precision(
-        # target,
-        # prediction_probas
+    # target,
+    # prediction_probas
     # )
     # for label, score in enumerate(average_precision_scores):
-        # _run_dummy.log_scalar(f"AP_class_{label}_{mode}", score, iteration)
+    # _run_dummy.log_scalar(f"AP_class_{label}_{mode}", score, iteration)
 
 
 def log_labels_balance(_run, labels, num_classes, iteration):
@@ -438,7 +438,7 @@ def train(_config, _run, _seed):
     """
 
     torch_setup(_config)
-    #log_data_config(_config, _run)
+    # log_data_config(_config, _run)
 
     run_dir = directory_structure_setup(_config, _run)
 
@@ -579,7 +579,6 @@ def train(_config, _run, _seed):
 
 
 def load_run(run_id):
-
     # Check if the previous run ID is in training_runs or mock_db
     with open("../../mock_db/ledger.json") as f:
         ledger = json.load(f)
@@ -652,18 +651,17 @@ if __name__ == '__main__':
     train_arg_dict = {}
     torch_arg_dict = {}
 
-    if "--name"in remaining_argv:
+    if "--name" in remaining_argv:
         name_idx = remaining_argv.index("--name") + 1
         name = remaining_argv[name_idx]
         config['name'] = name
-
 
     for item in remaining_argv:
         if "training." in item and "=" in item:
             pattern = r'\btraining\.(\S+)\s*=\s*(\S+)\b'
             # Find all matches in the text
             matches = re.findall(pattern, item)
-            if len(matches)>0:
+            if len(matches) > 0:
                 k, v = item.split("training.")[-1].split("=")
                 train_arg_dict[k] = v
 
@@ -671,7 +669,7 @@ if __name__ == '__main__':
             pattern = r'\bvalidation\.(\S+)\s*=\s*(\S+)\b'
             # Find all matches in the text
             matches = re.findall(pattern, item)
-            if len(matches)>0:
+            if len(matches) > 0:
                 k, v = item.split("validation.")[-1].split("=")
                 train_arg_dict[k] = v
 
@@ -679,10 +677,11 @@ if __name__ == '__main__':
             pattern = r'\btorch\.(\S+)\s*=\s*(\S+)\b'
             # Find all matches in the text
             matches = re.findall(pattern, item)
-            if len(matches)>0:
+            if len(matches) > 0:
                 k, v = item.split("torch.")[-1].split("=")
                 train_arg_dict[k] = v
 
+    config = {**config, **yaml_data}
     config["training"] = {**config["training"], **train_arg_dict}
     config["validation"] = {**config["validation"], **val_arg_dict}
     config["torch"] = {**config["torch"], **torch_arg_dict}
@@ -700,7 +699,7 @@ if __name__ == '__main__':
     with open('../../mock_db/ledger.json') as fp:
         ledger = json.load(fp)
 
-    ledger[str(_run_dummy._id)] = name+".json"
+    ledger[str(_run_dummy._id)] = name + ".json"
 
     with open("../../mock_db/ledger.json", mode="w") as f:
         json.dump(ledger, f)
@@ -713,7 +712,5 @@ if __name__ == '__main__':
         os.mkdir(config['directories']['runs'])
 
     seed_dummy = 42
-
-    print(">>>", config["name"])
 
     train(config, _run_dummy, seed_dummy)
