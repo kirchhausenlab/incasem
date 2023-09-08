@@ -9,6 +9,7 @@ import yaml
 
 import numpy as np
 import torch
+import tensorboardX
 
 import gunpowder as gp
 
@@ -238,8 +239,10 @@ def training_setup(_config, _run_dummy, _seed, run_dir, model):
 
 
 def multiple_validation_setup(_config, _run_dummy, _seed, run_dir, model):
+
     val_datasets = fos.utils.create_multiple_config(
         _config['validation']['data'])
+
     validations = []
     for val_ds in val_datasets:
         validations.append(
@@ -436,6 +439,7 @@ def train(_config, _run, _seed):
         data_config:
         val_data_config:
     """
+
 
     torch_setup(_config)
     # log_data_config(_config, _run)
@@ -671,7 +675,7 @@ if __name__ == '__main__':
             matches = re.findall(pattern, item)
             if len(matches) > 0:
                 k, v = item.split("validation.")[-1].split("=")
-                train_arg_dict[k] = v
+                val_arg_dict[k] = v
 
         if "torch." in item and "=" in item:
             pattern = r'\btorch\.(\S+)\s*=\s*(\S+)\b'
@@ -679,7 +683,7 @@ if __name__ == '__main__':
             matches = re.findall(pattern, item)
             if len(matches) > 0:
                 k, v = item.split("torch.")[-1].split("=")
-                train_arg_dict[k] = v
+                torch_arg_dict[k] = v
 
     config = {**config, **yaml_data}
     config["training"] = {**config["training"], **train_arg_dict}
@@ -708,8 +712,8 @@ if __name__ == '__main__':
     with open(f"../../mock_db/{name}.json", mode="w") as f:
         json.dump(config, f)
 
-    if not os.path.exists(config['directories']['runs']):
-        os.mkdir(config['directories']['runs'])
+    # if not os.path.exists(config['directories']['runs']):
+    #     os.mkdir(config['directories']['runs'])
 
     seed_dummy = 42
 
