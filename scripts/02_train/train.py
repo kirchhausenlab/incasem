@@ -5,6 +5,7 @@ import logging
 import argparse
 import json
 import re
+import yaml
 
 import numpy as np
 import torch
