@@ -305,9 +305,12 @@ def log_result(
         metric_val=float('inf')):
 
     # TODO This should be some metric, not the loss function
-    experiment_name = (
-        f"Run {_run_dummy._id}: {_config["name"]}"
-    )
+    try:
+        _config["name"]
+    except:
+        _config["name"] = "training_{}".format(_run_dummy._id)
+            
+    experiment_name = ("Run {}: {}".format(_run_dummy._id, _config["name"]))
 
     return (f"\n{experiment_name}"
             f"\nval {metric_name}: {metric_val:.6f}")
