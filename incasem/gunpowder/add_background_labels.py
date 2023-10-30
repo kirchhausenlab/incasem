@@ -9,7 +9,7 @@ class AddBackgroundLabels(gp.BatchFilter):
             raw_array: gp.ArrayKey,
             output_array: gp.ArrayKey,
             value: Optional[int] = 0,
-            dtype: Optional[str] = 'uint32'):
+            dtype: Optional[str] = 'uint8'):
 
         self.raw_array = raw_array
         self.output_array = output_array
