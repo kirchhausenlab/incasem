@@ -33,7 +33,7 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 ```
 Optional: In case of permission issues, run
 ```bash
-chmod +x Miniconda3-latest-Linux-x86_64.sh`
+chmod +x Miniconda3-latest-Linux-x86_64.sh
 ```
 
 Install anaconda.
