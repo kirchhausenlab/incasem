@@ -7,6 +7,8 @@ from time import time as now
 import numpy as np
 import configargparse as argparse
 
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 
 
@@ -50,14 +52,14 @@ def extract_segmentation_with_threshold(
         threshold,
         num_workers):
 
-    probas = daisy.open_ds(
+    probas = open_ds(
         filename,
         ds_name,
         mode='r'
     )
 
     try:
-        mask = daisy.open_ds(
+        mask = open_ds(
             mask_filename,
             mask_ds_name,
             mode='r'
@@ -69,25 +71,25 @@ def extract_segmentation_with_threshold(
         ))
         mask = None
 
-    out = daisy.prepare_ds(
+    out = prepare_ds(
         filename=filename,
         ds_name=out_ds_name,
         total_roi=probas.roi,
         voxel_size=probas.voxel_size,
         dtype=np.uint32,
-        write_size=probas.voxel_size * daisy.Coordinate(chunk_shape),
+        write_size=probas.voxel_size * Coordinate(chunk_shape),
         compressor={'id': 'zlib', 'level': 3}
     )
 
     # Spawn a worker per chunk
-    block_roi = daisy.Roi(
+    block_roi = Roi(
         (0, 0, 0),
-        probas.voxel_size * daisy.Coordinate(chunk_shape)
+        probas.voxel_size * Coordinate(chunk_shape)
     )
 
     start = now()
 
-    daisy.run_blockwise(
+    task = daisy.Task(
         total_roi=probas.roi,
         read_roi=block_roi,
         write_roi=block_roi,
@@ -101,7 +103,10 @@ def extract_segmentation_with_threshold(
         read_write_conflict=False,
         fit='shrink',
         num_workers=num_workers,
+        task_id = "extract_segmentation_with_threshold"
     )
+
+    daisy.run_blockwise([task])
 
     logger.info(f"Done in {now() - start} s")
 

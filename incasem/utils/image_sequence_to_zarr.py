@@ -10,6 +10,8 @@ import numpy as np
 import PIL
 from PIL import Image
 
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 import daisy
 
 from .image_conversions import *
@@ -65,7 +67,7 @@ def determine_roi(image_paths, offset=(0, 0, 0), shape=(None, None, None)):
         daisy.Roi
     """
 
-    offset = daisy.Coordinate(offset)
+    offset = Coordinate(offset)
 
     # get image x,y sizes
     img = Image.open(image_paths[0])
@@ -90,9 +92,9 @@ def determine_roi(image_paths, offset=(0, 0, 0), shape=(None, None, None)):
             'desired x shape exceeds data shape'
         x_shape = shape[2]
 
-    shape_cropped = daisy.Coordinate([z_shape, y_shape, x_shape])
+    shape_cropped = Coordinate([z_shape, y_shape, x_shape])
 
-    roi = daisy.Roi(
+    roi = Roi(
         offset,
         shape_cropped
     )
@@ -238,7 +240,7 @@ def image_sequence_to_zarr(
 
     image_paths = get_image_paths(raw_dir, image_regex)
     roi = determine_roi(image_paths, offset, shape)
-    voxel_size = daisy.Coordinate(resolution)
+    voxel_size = Coordinate(resolution)
     metric_roi = roi * voxel_size
     if conversion:
         conversion = globals()[conversion](
@@ -252,22 +254,22 @@ def image_sequence_to_zarr(
         logger.warning(
             f'output dtype {output_dt} does not match input dtype {input_dt}')
 
-    ds = daisy.prepare_ds(output_file,
+    ds = prepare_ds(output_file,
                           output_dataset,
                           total_roi=metric_roi,
                           voxel_size=voxel_size,
-                          write_size=voxel_size * daisy.Coordinate(chunks),
+                          write_size=voxel_size * Coordinate(chunks),
                           dtype=dtype,
                           compressor={'id': 'zlib', 'level': 3})
 
     start = now()
     # Spawn a worker per chunk
-    block_roi = daisy.Roi(
+    block_roi = Roi(
         (0, 0, 0),
-        voxel_size * daisy.Coordinate(chunks)
+        voxel_size * Coordinate(chunks)
     )
 
-    daisy.run_blockwise(
+    task = daisy.Task(
         total_roi=metric_roi,
         read_roi=block_roi,
         write_roi=block_roi,
@@ -283,6 +285,9 @@ def image_sequence_to_zarr(
         fit='shrink',
         read_write_conflict=False,
         num_workers=num_workers,
+        task_id="image_sequence_to_zarr"
     )
+
+    daisy.run_blockwise([task])
 
     logger.info(f'Saved to persistent zarr array in {now() - start} s')
