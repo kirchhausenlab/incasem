@@ -6,7 +6,8 @@ import webbrowser
 import numpy as np
 import neuroglancer
 
-import daisy
+from funlib.persistence import Array, open_ds, prepare_ds
+from funlib.geometry import Roi, Coordinate
 from funlib.show.neuroglancer import add_layer
 
 
@@ -101,20 +102,20 @@ else:
 file_path = os.path.expanduser(
     os.path.join(args.data_prefix, roi['file'].rstrip('/'))
 )
-raw = daisy.open_ds(file_path, roi['raw'])
-labels = daisy.open_ds(file_path, list(roi['labels'].keys())[0])
-offset = daisy.Coordinate(roi['offset'])
-shape = daisy.Coordinate(roi['shape'])
-voxel_size = daisy.Coordinate(roi['voxel_size'])
+raw = open_ds(file_path, roi['raw'])
+labels = open_ds(file_path, list(roi['labels'].keys())[0])
+offset = Coordinate(roi['offset'])
+shape = Coordinate(roi['shape'])
+voxel_size = Coordinate(roi['voxel_size'])
 
 
 def add_bounding_box(s, nickname, attributes, context):
     print(f"Adding bounding box for {nickname}.")
-    offset = daisy.Coordinate(attributes['offset'])
+    offset = Coordinate(attributes['offset'])
     print(f"{offset=}")
-    shape = daisy.Coordinate(attributes['shape'])
+    shape = Coordinate(attributes['shape'])
     print(f"{shape=}")
-    context = daisy.Coordinate((context,) * 3)
+    context = Coordinate((context,) * 3)
     print(f"{context=}")
 
     roi = neuroglancer.AxisAlignedBoundingBoxAnnotation(
