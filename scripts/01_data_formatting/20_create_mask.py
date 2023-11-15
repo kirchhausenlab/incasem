@@ -102,7 +102,7 @@ def create_mask(
         read_write_conflict=False,
         fit='shrink',
         num_workers=num_workers,
-        task_id="create_mask
+        task_id="create_mask"
     )
 
     daisy.run_blockwise([task])
