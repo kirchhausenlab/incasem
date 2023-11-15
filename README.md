@@ -66,12 +66,8 @@ pip install -e ./incasem
 
 #### 5. Install pytorch as outlined [here](https://pytorch.org/get-started/locally/).
 
-#### 6. Install our neuroglancer scripts
-```bash
-pip install git+https://github.com/kirchhausenlab/funlib.show.neuroglancer.git@more_scripts_v2#egg=funlib.show.neuroglancer
-```
 
-#### 7. Set up the experiment tracking databases for training and prediction
+#### 6. Set up the experiment tracking databases for training and prediction
 - If not already installed on your system (check by running `mongod`), install [MongoDB](https://docs.mongodb.com/manual/administration/install-community/).
 - Start up the MongoDB service (refer to [documentation](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/#run-mongodb-community-edition)):
     - on Ubuntu:
@@ -88,7 +84,7 @@ pip install git+https://github.com/kirchhausenlab/funlib.show.neuroglancer.git@m
 cd ~/incasem; python download_models.py
 ```
 
-#### 9. Install Omniboard for viewing the experiment databases
+#### 7. Install Omniboard for viewing the experiment databases
 Install Nodeenv.
 ```bash
 pip install nodeenv
