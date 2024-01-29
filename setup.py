@@ -25,5 +25,4 @@ setup(
         'funlib.show.neuroglancer @ git+https://github.com/funkelab/funlib.show.neuroglancer.git@master',
         'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
     ],
-    python_requires='>=3.8, <3.10',
 )
