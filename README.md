@@ -62,7 +62,7 @@ conda activate incasem
 Install
 ```bash
 pip install -e ./incasem
-```~~~~
+```
 
 #### 5. Install pytorch as outlined [here](https://pytorch.org/get-started/locally/).
 
