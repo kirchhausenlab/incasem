@@ -51,7 +51,7 @@ git clone https://github.com/kirchhausenlab/incasem.git ~/incasem
 
 #### 3. Create a new anaconda python environment.
 ```bash
-conda create -n incasem --no-default-packages python=3.8
+conda create -n incasem --no-default-packages python=3.9
 ```
 
 #### 4. Pip-install the incasem package contained in this repository into the environment.
@@ -67,7 +67,13 @@ pip install -e ./incasem
 #### 5. Install pytorch as outlined [here](https://pytorch.org/get-started/locally/).
 
 
-#### 6. Set up the experiment tracking databases for training and prediction
+#### 6. Install neuroglancer scripts
+```bash
+pip install git+https://github.com/kirchhausenlab/funlib.show.neuroglancer.git@incasem_scripts#egg=funlib.show.neuroglancer
+```
+
+
+#### 7. Set up the experiment tracking databases for training and prediction
 - If not already installed on your system (check by running `mongod`), install [MongoDB](https://docs.mongodb.com/manual/administration/install-community/).
 - Start up the MongoDB service (refer to [documentation](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/#run-mongodb-community-edition)):
     - on Ubuntu:
@@ -84,7 +90,7 @@ pip install -e ./incasem
 cd ~/incasem; python download_models.py
 ```
 
-#### 7. Install Omniboard for viewing the experiment databases
+#### 8. Install Omniboard for viewing the experiment databases
 Install Nodeenv.
 ```bash
 pip install nodeenv
