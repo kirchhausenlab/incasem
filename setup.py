@@ -21,8 +21,8 @@ setup(
         'daisy',
         'neuroglancer',
         'funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch@master',
-        'funlib.persistence @ git+https://github.com/funkelab/funlib.persistence',
+        'funlib.persistence @ git+https://github.com/funkelab/funlib.persistence@main',
         'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
     ],
-    python_requires='>=3.8,',
+    python_requires='>=3.9, <3.10',
 )
