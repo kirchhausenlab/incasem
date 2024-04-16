@@ -1,7 +1,7 @@
 directories:
-    runs: /root/incasem/training_runs
-    data: /root/incasem/data
-    db: /root/incasem/mock_db
+    runs: /workspace/src/incasem/training_runs
+    data: /workspace/src/incasem/data
+    db: /workspace/src/incasem/mock_db
 
 training:
     pipeline: baseline_with_context
