@@ -11,6 +11,7 @@ Please cite the publication if you are using this code in your research.
 Our semi-automated annotation tool from the same publication is available at [https://github.com/kirchhausenlab/gc_segment](https://github.com/kirchhausenlab/gc_segment).
 
 ## Table of Contents
+- [Interactive Demo](#Interactive-Demo)
 - [Installation](#Installation)
 - [Optional: Download our data](#Optional-Download-our-data)
 - [Prepare your own data for prediction](#Prepare-your-own-data-for-prediction)
@@ -18,6 +19,11 @@ Our semi-automated annotation tool from the same publication is available at [ht
 - [Prepare your own ground truth annotations for fine-tuning or training](#Prepare-your-own-ground-truth-annotations-for-fine-tuning-or-training)
 - [Fine-Tuning](#Fine-tuning)
 - [Training](#Training)
+
+## Interactive Demo
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/10iB700oB93i_BmXazaz88LXkfPSbgu4A)     
+- An interactive demo is provided via Google Colab. This notebook can be used to work with sample data in and learn the basics of `incasem`. You can also work with your own data in the notebook, but it will require some modifications as specified in the notebook.
+- A [cell viewing tool](http://asem-viewer-env.eba-rrnvmfwa.us-east-1.elasticbeanstalk.com/) is available to better visualize our sample data (as well as some other cells from the lab). You can use this to gain familiarity with `neuroglancer`, browse raw data, labels and predictions, and download our sample data.
 
 ## Installation
 This package is written for machines with either a Linux or a MacOS operating system.
