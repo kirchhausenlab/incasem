@@ -1,6 +1,6 @@
 directories:
-    data: /root/incasem/data
-    db: /root/incasem/mock_db
+    data: /workspace/src/incasem/data
+    db: /workspace/src/incasem/mock_db
 
 prediction:
     pipeline: baseline
