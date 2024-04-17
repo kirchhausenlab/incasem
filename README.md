@@ -150,7 +150,7 @@ If you are not familiar with inspecting 3D data with neuroglancer, you might wan
 
 
 ## Optional: Docker
-If you are interested in a Docker installation, refer to the steps in [docker/README](https://github.com/kirchhausenlab/incasem/main/docker)
+If you are interested in a Docker installation, refer to the steps in [docker/README](https://github.com/kirchhausenlab/incasem/tree/main/docker)
 
 
 ## Prepare your own data for prediction
