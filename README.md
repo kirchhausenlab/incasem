@@ -14,6 +14,7 @@ Our semi-automated annotation tool from the same publication is available at [ht
 - [Interactive Demo](#Interactive-Demo)
 - [Installation](#Installation)
 - [Optional: Download our data](#Optional-Download-our-data)
+- [Optional: Docker](#Optional-Docker)
 - [Prepare your own data for prediction](#Prepare-your-own-data-for-prediction)
 - [Prediction](#Prediction)
 - [Prepare your own ground truth annotations for fine-tuning or training](#Prepare-your-own-ground-truth-annotations-for-fine-tuning-or-training)
@@ -146,6 +147,10 @@ Navigate to position `520, 1164, 2776` (z,y,x) to focus on the Endoplasmic Retic
 If you are not familiar with inspecting 3D data with neuroglancer, you might want to have a look at this [video tutorial](https://youtu.be/TwBTyWWnbxc?t=75).
 
 > Note: `neuroglancer` might not work in Safari. In this case, simply copy the link given by `neuroglancer` to Chrome or Firefox.
+
+
+## Optional: Docker
+If you are interested in a Docker installation, refer to the steps in [docker/README](https://github.com/kirchhausenlab/incasem/main/docker)
 
 
 ## Prepare your own data for prediction
