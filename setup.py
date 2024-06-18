@@ -10,6 +10,7 @@ setup(
     license='MIT',
     py_modules=[],
     install_requires=[
+        'numpy<2',
         'zarr',
         'scikit-learn',
         'pyyaml',
