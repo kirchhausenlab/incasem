@@ -12,6 +12,7 @@ Our semi-automated annotation tool from the same publication is available at [ht
 
 ## Table of Contents
 - [Interactive Demo](#Interactive-Demo)
+- [Datasets](#Datasets)
 - [Installation](#Installation)
 - [Optional: Download our data](#Optional-Download-our-data)
 - [Optional: Docker](#Optional-Docker)
@@ -23,8 +24,10 @@ Our semi-automated annotation tool from the same publication is available at [ht
 
 ## Interactive Demo
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1sk9UDe4t1qL_iz-nkJJPDVClMxRD8Avh)     
-- An interactive demo is provided via Google Colab. This notebook can be used to work with sample data in and learn the basics of `incasem`. You can also work with your own data in the notebook, but it will require some modifications as specified in the notebook.
-- A [cell viewing tool](http://asem-viewer-env.eba-rrnvmfwa.us-east-1.elasticbeanstalk.com/) is available to better visualize our sample data (as well as some other cells from the lab). You can use this to gain familiarity with `neuroglancer`, browse raw data, labels and predictions, and download our sample data.
+An interactive demo is provided via Google Colab. This notebook can be used to work with sample data in and learn the basics of `incasem`. You can also work with your own data in the notebook, but it will require some modifications as specified in the notebook.
+
+## Datasets 
+[Take a look](http://asem-viewer-env.eba-rrnvmfwa.us-east-1.elasticbeanstalk.com/) at the lab's FIB-SEM datasets (raw, labels, predictions) directly in the browser with our simple-to-use cell viewing tool based on [neuroglancer](https://github.com/google/neuroglancer).
 
 ## Installation
 This package is written for machines with either a Linux or a MacOS operating system.
