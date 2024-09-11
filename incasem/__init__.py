@@ -12,3 +12,5 @@ from . import utils
 from . import torch
 from . import pipeline
 from . import metrics
+from . import automate
+from . import logger

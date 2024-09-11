@@ -1,7 +1,7 @@
 directories:
-    runs: /root/incasem/training_runs
-    data: /root/incasem/data
-    db: /root/incasem/mock_db
+    runs: /nfs/scratch/ajain/training_runs
+    data: /nfs/scratch/ajain/incasem/incasem/data
+    db: /nfs/scractch/ajain/incasem/mock_db
 
 training:
     pipeline: baseline_with_context
