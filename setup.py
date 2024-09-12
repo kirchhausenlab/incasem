@@ -25,5 +25,5 @@ setup(
         'funlib.persistence @ git+https://github.com/funkelab/funlib.persistence@ff4c78f8572334e04fc84ca79f10dc754534e3e9',
         'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
     ],
-    python_requires='>=3.8,',
+    python_requires='>=3.9,',
 )

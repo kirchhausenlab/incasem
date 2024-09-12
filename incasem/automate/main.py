@@ -9,7 +9,6 @@ from incasem.automate.utils import handle_exceptions
 from prediction import take_input_and_run_predictions
 from training_run import main as take_input_and_create_configs
 from view import view_cells_and_flatten_them
-from incasem.logger.config import logger
 
 
 @dataclass
@@ -30,17 +29,6 @@ class IncasemApp:
         }
         self.data_downloader = DataDownloader()
         self.conda_manager = CondaEnvironmentManager()
-
-    @staticmethod
-    def log_function_call(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            logger.info(f"Executing {func.__name__} in {func.__module__} ")
-            result = func(*args, **kwargs)
-            logger.info(f"Finished {func.__name__} in {func.__module__} at {result}")
-            return result
-
-        return wrapper
 
     @handle_exceptions
     def __call__(self):
@@ -68,7 +56,6 @@ class IncasemApp:
         for step in workflow_steps:
             st.sidebar.write(step)
 
-    @log_function_call
     def setup(self):
         st.title("Incasem Setup")
         st.write("Welcome to the Incasem setup")
@@ -100,7 +87,6 @@ class IncasemApp:
                 st.write("Note that this step is optional.")
                 self.conda_manager.export_env()
 
-    @log_function_call
     def data_download(self):
         st.title("Data Download")
         curr_name = st.text_input(
@@ -113,19 +99,15 @@ class IncasemApp:
         self.data_downloader.input_dataset_name(curr_name)
         self.data_downloader.download_data()
 
-    @log_function_call
     def view_cells(self):
         view_cells_and_flatten_them()
 
-    @log_function_call
     def prediction(self):
         take_input_and_run_predictions()
 
-    @log_function_call
     def fine_tuning(self):
         fine_tuning_workflow()
 
-    @log_function_call
     def training(self):
         take_input_and_create_configs()
 
