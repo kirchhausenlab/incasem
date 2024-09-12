@@ -131,6 +131,6 @@ def view_cells_and_flatten_them():
                                 st.write("Neuroglancer Command:")
                                 st.code(neuroglancer_cmd, language="bash")
 
-                                if st.button("Run Neuroglancer"):
-                                    subprocess.run(neuroglancer_cmd, shell=True)
-                                    st.success("Neuroglancer command executed!")
+                                st.write(
+                                    "Run the command in your terminal to view the data in Neuroglancer."
+                                )

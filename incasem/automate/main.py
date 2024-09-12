@@ -1,7 +1,6 @@
 import streamlit as st
 from dataclasses import dataclass
 from typing import Callable
-from functools import wraps
 from data_download import DataDownloader
 from fine_tuning import fine_tuning_workflow
 from incasem_setup import CondaEnvironmentManager
@@ -22,10 +21,10 @@ class IncasemApp:
         self.app_modes = {
             "Setup": AppMode(title="Setup", handler=self.setup),
             "Data Download": AppMode(title="Data Download", handler=self.data_download),
-            "Prediction": AppMode(title="Prediction", handler=self.prediction),
             "View Cells": AppMode(title="View Cells", handler=self.view_cells),
-            "Fine Tuning": AppMode(title="Fine Tuning", handler=self.fine_tuning),
             "Training": AppMode(title="Training", handler=self.training),
+            "Prediction": AppMode(title="Prediction", handler=self.prediction),
+            "Fine Tuning": AppMode(title="Fine Tuning", handler=self.fine_tuning),
         }
         self.data_downloader = DataDownloader()
         self.conda_manager = CondaEnvironmentManager()
@@ -60,18 +59,36 @@ class IncasemApp:
         st.title("Incasem Setup")
         st.write("Welcome to the Incasem setup")
 
+        st.write(
+            "Incasem requires one to use a virtual environment to manage dependencies. We can either use Conda or virtualenv."
+        )
+
+        st.markdown("""
+        This package is written for machines with either a Linux or a MacOS operating system.
+        Conda lets you isolate your environment and get the necessary packages for your project.
+        We do the following here:
+        1. Install anaconda for creating a conda python environment.
+        2. Create a conda environment.
+        3. Export the conda environment.    
+        """)
         # write some instructions and explanations for what the code does below
         st.write(
             "This setup will guide you through the installation of Conda, setting up a Conda environment, and downloading the necessary data."
         )
 
         st.write("Firstly, we will setup Conda.")
+        st.markdown("""
+        Conda is a package manager that will help us manage our Python environment. One can create, save, load, and switch between different environments on your local machine.
+                    """)
         with st.expander("Setup Conda", expanded=True, icon="🐍"):
             if st.button("Setup Conda"):
                 st.write(
                     "Setting up Conda..., please wait. Conda is a package manager that will help us manage our Python environment."
                 )
                 self.conda_manager.setup_conda()
+        st.markdown("""
+        Once we have conda installed, now we will create a new environment.
+        """)
         with st.expander("Setup Environment", expanded=False, icon="🛠"):
             env_name = st.text_input("Enter environment name", "incasem")
             if st.button("Setup Environment"):
@@ -79,6 +96,9 @@ class IncasemApp:
                     "Setting up the Conda environment..., please wait. This will create a new Conda environment with the specified name."
                 )
                 self.conda_manager.setup_environment(env_name)
+        st.markdown("""
+        Finally, we will export the environment.
+        """)
         with st.expander("Export Environment", expanded=False, icon="📦"):
             if st.button("Export Environment"):
                 st.write(

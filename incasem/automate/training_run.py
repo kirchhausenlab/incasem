@@ -12,6 +12,7 @@ from incasem.automate.fine_tuning import IncasemFineTuning
 
 path_to_scripts_config: Path = Path(__name__).resolve().parents[2]
 DATA_CONFIG_PATH: Path = path_to_scripts_config / "scripts/02_train/data_configs"
+import yaml
 
 
 @dataclass
@@ -253,40 +254,73 @@ def create_configs():
 
 
 def run_training():
-    with st.expander("Step 3: Run Training 🚀", expanded=True):
-        st.write("Start the training process with your configured settings.")
+    st.write("Start the training process with your configured settings.")
 
-        model_name = st.text_input(
-            label="Enter the name of the model",
-            value=f"example_training_",
-            help="This will be used to name the output directory for the model.",
-        )
+    model_name = st.text_input(
+        label="Enter the name of the model",
+        value=f"example_training_",
+        help="This will be used to name the output directory for the model.",
+    )
 
-        path_to_train_script_dir = (
-            Path(__name__).resolve().parents[2] / "scripts/02_train"
-        )
-        yaml_config_path = st.text_input(
-            label="Path to YAML configuration file",
-            value=f"{path_to_train_script_dir}/config_training.yaml",
-            help="Path to the YAML configuration file for training.",
-        )
+    path_to_train_script_dir = Path(__name__).resolve().parents[2] / "scripts/02_train"
+    yaml_config_path = st.text_input(
+        label="Path to YAML configuration file",
+        value=f"{path_to_train_script_dir}/config_training.yaml",
+        help="Path to the YAML configuration file for training.",
+    )
 
-        training_data_path = st.text_input(
-            label="Path to training data config",
-            value=st.session_state.get("train_config_path", ""),
-            help="Path to the training data configuration file.",
-        )
+    training_data_path = st.text_input(
+        label="Path to training data config",
+        value=st.session_state.get("train_config_path", ""),
+        help="Path to the training data configuration file.",
+    )
 
-        validation_data_path = st.text_input(
-            label="Path to validation data config",
-            value=st.session_state.get("val_config_path", ""),
-            help="Path to the validation data configuration file.",
-        )
+    validation_data_path = st.text_input(
+        label="Path to validation data config",
+        value=st.session_state.get("val_config_path", ""),
+        help="Path to the validation data configuration file.",
+    )
 
-        train_cmd_str = ""
-        train_cmd = f"python {path_to_train_script_dir}/train.py --name {model_name} with {yaml_config_path} training.data={training_data_path} validation.data={validation_data_path} torch.device=0"
-        st.code(train_cmd, language="bash")
-        st.write("Run the training script from your terminal with the above command.")
+    # update yaml config
+
+    with open(f"{path_to_train_script_dir}/config_training.yaml", "r") as file:
+        config = yaml.load(file, Loader=yaml.FullLoader)
+
+    path_to_parent_dir = Path(__name__).resolve().parents[3]
+    runs_dir = st.text_input(
+        label="Enter the paths to the runs directory where you will store the configuration for every run. (Whenever you run a training, you are supposed to create a new directory for it.)",
+        value=path_to_parent_dir.joinpath("runs"),
+        key="runs_dir",
+    )
+    data_dir = st.text_input(
+        "Enter the path to the data directory where the data you want to train on is stored.",
+        value=path_to_parent_dir.joinpath("incasem", "data"),
+        key="data_dir",
+    )
+
+    database_dir = st.text_input(
+        "*(In most cases you do not need to modify this)* Enter the path to the database directory where the database is stored.",
+        value=path_to_parent_dir.joinpath("incasem", "mock_db"),
+        key="database_dir",
+    )
+
+    iterations = st.number_input(
+        "Enter the number of iterations for training.",
+        value=200000,
+        key="iterations",
+    )
+
+    if st.button("Update Yaml"):
+        config["directories"]["runs"] = runs_dir
+        config["directories"]["data"] = data_dir
+        config["directories"]["db"] = database_dir
+        config["training"]["iterations"] = iterations
+        with open(f"{path_to_train_script_dir}/config_training.yaml", "w") as f:
+            _ = yaml.dump(config, stream=f, default_flow_style=False, sort_keys=False)
+
+    train_cmd = f"python {path_to_train_script_dir}/train.py --name {model_name} with {yaml_config_path} training.data={training_data_path} validation.data={validation_data_path} torch.device=0"
+    st.code(train_cmd, language="bash")
+    st.write("Run the training script from your terminal with the above command.")
 
 
 def main():
@@ -302,9 +336,11 @@ def main():
                     This mask, which we refer to as exclusion zone, simply sets the pixels at the object boundaries to 0, 
                     as we do not want that small errors close to the object boundaries affect the overall prediction score.
                     For our example with Endoplasmic Reticulum annotations on cell_1 and cell_2, we run (from the data formatting directory):
-                    python 60_create_metric_mask.py -f ~/incasem/data/cell_1/cell_1.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
+
+                    ```python 60_create_metric_mask.py -f ~/incasem/data/cell_1/cell_1.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2```
                     and 
-                    python 60_create_metric_mask.py -f ~/incasem/data/cell_2/cell_2.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
+                    
+                    ```python 60_create_metric_mask.py -f ~/incasem/data/cell_2/cell_2.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2```
                     """
         )
         path_to_data = Path(__name__).resolve().parents[1] / "data"
@@ -315,7 +351,8 @@ def main():
         st.write("Configuration files have been created.")
         create_configs()
 
-    run_training()
+    with st.expander("Step 3: Run Training 🚀", expanded=False):
+        run_training()
 
 
 if __name__ == "__main__":

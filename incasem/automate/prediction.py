@@ -40,8 +40,13 @@ class PredictionConfig:
     config_entries: List[ConfigEntry]
     file_name: str = "prediction_sample_file_"
     path_to_scripts: Path = Path(__name__).resolve().parents[2] / "scripts"
-    path_to_store_conf: Path = Path(__name__).resolve().parents[1] / "data"
-    path_to_store_run: Path = Path(__name__).resolve().parents[2] / "runs"
+    path_to_store_conf: Path = (
+        Path(__name__)
+        .resolve()
+        .parents[2]
+        .joinpath("scripts", "03_predict", "data_configs")
+    )
+    path_to_store_run: Path = Path(__name__).resolve().parents[2].joinpath("mock_db")
 
     def create_config_file(self) -> None:
         """Creates and saves the configuration file."""
@@ -86,7 +91,7 @@ class PredictionRunner:
         self.checkpoint_path = checkpoint_path
         self.is_tiff = is_tiff
         self.curr_path = Path(__file__).parent
-        self.path_to_scripts = self.curr_path.parent / "scripts"
+        self.path_to_scripts = self.curr_path.parent.parent.joinpath("scripts")
 
     def equalize_histogram(self):
         """Equalize the intensity histogram of the data."""
@@ -94,13 +99,16 @@ class PredictionRunner:
             self.path_to_scripts / "01_data_formatting/40_equalize_histogram.py"
         )
         logger.info("Equalizing intensity histogram of the data...")
-        equalize_cmd = (
-            f"python {path_to_histogram_script}"
-            f"-f {self.config.output_path} -d volumes/raw -o volumes/raw_equalized_0.02"
+        path_to_data = self.curr_path.parent.joinpath("data")
+        path_to_data_to_equalize = st.text_input(
+            label="Enter the data file you want to equalize",
+            value=path_to_data.joinpath("cell_6/cell_6.zarr"),
         )
+        equalize_cmd = f"python {path_to_histogram_script} -f {path_to_data_to_equalize} -d volumes/raw -o volumes/raw_equalized_0.02"
         st.write("Equalizing histogram...")
         st.code(equalize_cmd)
-        run_command(equalize_cmd, "Histogram equalization complete!")
+        if st.button("Equalize Histogram"):
+            run_command(equalize_cmd, "Histogram equalization complete!")
 
     def preprocess_data(self):
         """Convert TIFF to zarr format if required, and equalize histogram."""
@@ -141,52 +149,59 @@ class PredictionRunner:
             if file.is_file():
                 st.write(file)
 
+        with open(
+            f"{PredictionConfig.path_to_scripts.joinpath('03_predict', 'config_prediction.yaml')}",
+            "r",
+        ) as file:
+            config = yaml.load(file, Loader=yaml.FullLoader)
+
+        path_to_parent_dir = Path(__file__).resolve().parents[2]
+        data_dir = st.text_input(
+            "Enter the path to the data directory where the data you want to train on is stored.",
+            value=path_to_parent_dir.joinpath("incasem", "data"),
+            key="data_dir",
+        )
+
+        database_dir = st.text_input(
+            "*(In most cases you do not need to modify this)* Enter the path to the database directory where the database is stored.",
+            value=path_to_parent_dir.joinpath("incasem", "mock_db"),
+            key="database_dir",
+        )
+
+        if st.button("Update Yaml"):
+            config["directories"]["data"] = data_dir
+            config["directories"]["db"] = database_dir
+            config["prediction"]["prefix"] = data_dir
+            with open(
+                f"{PredictionConfig.path_to_scripts.joinpath('03_predict', 'config_prediction.yaml')}",
+                "w",
+            ) as f:
+                _ = yaml.dump(
+                    config, stream=f, default_flow_style=False, sort_keys=False
+                )
+
         predict_cmd = (
             f"python "
-            f"../../scripts/predictions/predict.py "
+            f"scripts/03_predict/predict.py "
             f"--run_id {self.model_id} --name example_prediction "
-            f"with ../../scripts/predictions/config_prediction.yaml 'prediction.data={prediction_config_path}' "
+            f"with scripts/03_predict/config_prediction.yaml 'prediction.data={prediction_config_path}' "
             f"'prediction.checkpoint={self.checkpoint_path}'"
         )
         st.markdown("""
         We will highly recommend that you look at the configuration file before running the prediction.
         A test configuration file looks like:
-            {
-                "directories": {
-                    "data": "../../incasem/data"
-                },
-                "prediction": {
-                    "pipeline": "baseline",
-                    "data": null,
-                    "run_id_training": null,
-                    "checkpoint": null,
-                    "directories": {
-                        "prefix": "../../incasem/data"
-                    },
-                    "input_size_voxels": [
-                        204,
-                        204,
-                        204
-                    ],
-                    "output_size_voxels": [
-                        110,
-                        110,
-                        110
-                    ],
-                    "num_workers": 8,
-                    "log_metrics": false,
-                    "torch": {
-                        "device": 0
-                    }
-                }
-            } 
-            Generate your own configuration file and run the prediction command below based on what your run id, model checkpoint path and configuration file path is.
+        ```json
+            
+            ```
             """)
+        st.write(
+            "Generate your own configuration file and run the prediction command below based on what your run id, model checkpoint path and configuration file path is."
+        )
 
         if st.button("generate prediction configuration"):
             # Check if the model run ID exists
             st.write("Checking if the model run ID exists...")
-            run_exists = False
+            run_exists = True
             for file in Path(PredictionConfig.path_to_store_run).iterdir():
                 if file.is_dir() and self.model_id in file.name:
                     run_exists = True
@@ -217,13 +232,42 @@ def take_input_and_run_predictions():
     st.write("Welcome to the Incasem prediction interface")
     st.markdown(
         """
-        For running a prediction you need to create a configuration file in JSON format that specifies which data should be used. Here is an example, also available at ~/incasem/scripts/03_predict/data_configs/example_cell6.json:
+        For running a prediction you need to create a configuration file in JSON format that specifies which data should be used. An example is also available at `/incasem/scripts/03_predict/data_configs/example_cell6.json`:
         """
     )
-    with st.expander("File Navigation", expanded=True, icon="📂"):
+    with st.expander("Instructions", expanded=True, icon="ℹ️"):
+        st.markdown("""
+        ## Welcome to the Incasem prediction workflow
+
+        This interface will guide you through running predictions with Incasem models.
+
+        **_Please follow the steps below:_**
+
+        ### Step 1: Input paths
+        - Select the input file type (TIFF or ZARR).
+        - Enter the input path for your data.
+        - Convert TIFF to Zarr if necessary.
+
+        **_If you choose TIFF:_**
+        - The system will convert the TIFF file to Zarr for optimal processing.
+        - Ensure the file follows the required naming conventions for further processing.
+
+        ### Step 2: Create configuration entries
+        - Add configuration entries for the prediction.
+        - Specify the path, offsets, shape, and voxel size for the entries.
+
+        ### Step 3: Choose a model
+        - Select a model for your prediction from the available options.
+
+        ### Step 4: Run prediction
+        - Run the prediction using the specified model and configuration.
+        - Optionally visualize the results using Neuroglancer.
+        """)
+
+    with st.expander("File Navigation", expanded=False, icon="📂"):
         get_dir()
 
-    with st.expander("Prediction Configuration", expanded=True, icon="⚙️"):
+    with st.expander("Choose your data", expanded=False, icon="⚙️"):
         current_data_path = Path(__name__).resolve().parents[1] / "data"
         # Gather inputs
         file_type = st.radio("Select file type", ("TIFF", "ZARR"))
@@ -236,19 +280,19 @@ def take_input_and_run_predictions():
             ",
         )
 
-        if file_type == "TIFF" and not validate_tiff_filename(input_path):
-            st.error(
-                "Invalid TIFF filename format. Please ensure the filename follows the pattern: .*_(\\d+).*\\.tif$"
-            )
-            return
-        else:
-            st.success("Valid TIFF filename format.")
+        # if file_type == "TIFF" and not validate_tiff_filename(input_path):
+        #     st.error(
+        #         "Invalid TIFF filename format. Please ensure the filename follows the pattern: .*_(\\d+).*\\.tif$"
+        #     )
+        #     return
+        # else:
+        #     st.success("Valid TIFF filename format.")
 
         validate_path(input_path)
 
-    with st.expander("Configuration File", expanded=True, icon="📄"):
+    with st.expander("Configuration File", expanded=False, icon="📄"):
         show_sample_config()
-    with st.expander("Configuration Entries", expanded=True, icon="📝"):
+    with st.expander("Generate Configuration Entries", expanded=False, icon="📝"):
         # Config Entries
         st.write("Create prediction configuration entries")
         if "config_entries" not in st.session_state:
@@ -343,7 +387,27 @@ def take_input_and_run_predictions():
         st.text(
             "Please only run a prediction if you have completed the previous steps."
         )
-    with st.expander("Run Prediction", expanded=True, icon="🚀"):
+    with st.expander(
+        "View sample prediction run configuration", expanded=False, icon="📄"
+    ):
+        st.json(
+            {
+                "directories": {"data": "../../incasem/data"},
+                "prediction": {
+                    "pipeline": "baseline",
+                    "data": None,
+                    "run_id_training": None,
+                    "checkpoint": None,
+                    "directories": {"prefix": "../../incasem/data"},
+                    "input_size_voxels": [204, 204, 204],
+                    "output_size_voxels": [110, 110, 110],
+                    "num_workers": 8,
+                    "log_metrics": False,
+                    "torch": {"device": 0},
+                },
+            }
+        )
+    with st.expander("Run Prediction", expanded=False, icon="🚀"):
         # Run Prediction
         runner = PredictionRunner(
             config=config,

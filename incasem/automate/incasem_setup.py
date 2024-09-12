@@ -81,9 +81,8 @@ class CondaEnvironmentManager:
         else:
             st.write(f"Creating and setting up the Conda environment '{env_name}'...")
             setup_cmds = [
-                f"conda create --name {env_name} python=3.11 -y",
+                f"conda create --name {env_name} python=3.9 -y",
                 f"conda activate {env_name}",
-                "pip3 install quilt3 streamlit",
                 f"pip install -e {self.path_to_reqs}",
             ]
             st.write(

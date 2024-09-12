@@ -36,7 +36,12 @@ class FineTuneConfig:
 
     input_path: str
     path_to_scripts: Path = Path(__name__).resolve().parents[2] / "scripts"
-    path_to_data: Path = Path(__name__).resolve().parents[1] / "data"
+    path_to_data: Path = (
+        Path(__name__)
+        .resolve()
+        .parents[2]
+        .joinpath("scripts", "02_train", "data_configs")
+    )
     file_name: str = "fine_tuning_sample"
     config_entries: List[ConfigEntry] = field(default_factory=list)
     output_path: str = ""
@@ -97,16 +102,29 @@ class IncasemFineTuning:
         st.code(
             "python train.py --name example_finetune --start_from 1847 ~/incasem/models/pretrained_checkpoints/model_checkpoint_1847_mito_CF.pt with config_training.yaml training.data=data_configs/example_finetune_mito.json validation.data=data_configs/example_finetune_mito.json torch.device=0 training.iterations=15000"
         )
-        path_to_train_script = config.path_to_scripts / "02_train" / "train.py"
-        fine_tune_cmd = f"python {path_to_train_script} --name {name} --start_from {model_id} {checkpoint_path} with config_training.yaml training.data={config.output_path} validation.data={config.output_path} torch.device=0 training.iterations={iterations}"
-        if st.button("Run Fine-Tuning"):
-            run_command(fine_tune_cmd, "Fine-tuning complete!")
+        path_to_train_script = config.path_to_scripts.joinpath("02_train", "train.py")
+        path_training_data = st.text_input(
+            label="Enter the path to the training data",
+            value=config.path_to_data.joinpath(
+                "data_configs", "example_finetune_mito.json"
+            ),
+        )
+        path_to_validation_data = st.text_input(
+            label="Enter the path to the validation data",
+            value=config.path_to_data.joinpath(
+                "data_configs", "example_finetune_mito.json"
+            ),
+        )
+        fine_tune_cmd = f"python {path_to_train_script} --name {name} --start_from {model_id} {checkpoint_path} with config_training.yaml training.data={path_training_data} validation.data={path_to_validation_data} torch.device=0 training.iterations={iterations}"
+        st.write("Your command to run is: ")
+        st.code(fine_tune_cmd)
 
-        with st.echo():
-            st.write("Starting TensorBoard...")
-            tensorboard_cmd = f"tensorboard --logdir={output_path}/tensorboard --host 0.0.0.0 --port 6006"
-            subprocess.Popen(tensorboard_cmd, shell=True)
-            st.write("TensorBoard running at http://localhost:6006")
+        st.write("Starting TensorBoard...")
+        tensorboard_cmd = (
+            f"tensorboard --logdir={output_path}/tensorboard --host 0.0.0.0 --port 6006"
+        )
+        subprocess.Popen(tensorboard_cmd, shell=True)
+        st.write("TensorBoard running at http://localhost:6006")
 
     @staticmethod
     @handle_exceptions
@@ -209,39 +227,39 @@ def fine_tuning_workflow() -> None:
         ### Step 5: Run Fine-Tuning
         - Run fine-tuning using the specified model and configuration.
         """)
-    with st.expander("File Navigation", expanded=True, icon="📂"):
+    with st.expander("File Navigation", expanded=False, icon="📂"):
         get_dir()
     try:
-        path_to_data = Path(__name__).resolve().parents[1] / "data"
+        path_to_data = Path(__name__).resolve().parents[1].joinpath("data")
         # Step 1: Input paths
-        with st.expander("1. Input Paths", expanded=True, icon="🔨"):
+        with st.expander("1. Input Paths", expanded=False, icon="🔨"):
             file_type = st.radio("Select file type", ("TIFF", "ZARR"))
             input_path = st.text_input(
                 label="Enter the input path for annotations",
-                value=f"{path_to_data}/example_dataset",
+                value=f"{path_to_data}/cell_1",
                 help="Specify the input path for annotations (local or cloud).",
             )
-            if file_type == "TIFF" and not validate_tiff_filename(input_path):
-                st.error(
-                    "Invalid TIFF filename format. Please ensure the filename follows the pattern: .*_(\\d+).*\\.tif$"
-                )
-            elif file_type == "TIFF":
+            # if file_type == "TIFF" and not validate_tiff_filename(input_path):
+            #     st.error(
+            #         "Invalid TIFF filename format. Please ensure the filename follows the pattern: .*_(\\d+).*\\.tif$"
+            #     )
+            if file_type == "TIFF":
                 if st.button("Convert TIFF to Zarr"):
                     convert_tiff_to_zarr(input_path=input_path)
                     st.success("Valid TIFF filename format.")
             validate_path(input_path)
-            output_path = f"{input_path}/.zarr" if file_type == "TIFF" else input_path
+            output_path = f"{input_path}" if file_type == "TIFF" else input_path
             st.write(
                 "*If the prediction quality on a new dataset is not satisfactory, consider fine-tuning.*"
             )
         path_to_scripts = Path(__name__).resolve().parents[2] / "scripts"
         # Step 2: Metric Mask
-        with st.expander("2. Mask", expanded=True, icon="🛠️"):
+        with st.expander("2. Mask", expanded=False, icon="🛠️"):
             IncasemFineTuning.create_metric_mask(
                 output_path=str(output_path), path_to_scripts=path_to_scripts
             )
 
-        with st.expander("3. Show Configuration Entries", expanded=True, icon="📝"):
+        with st.expander("3. Show Configuration Entries", expanded=False, icon="📝"):
             """Print a sample JSON file."""
             st.write("This is a sample JSON file for fine-tuning.")
             st.json(
@@ -259,7 +277,7 @@ def fine_tuning_workflow() -> None:
 
         # Step 3: Fine-Tuning Configuration Entries
         with st.expander(
-            "4. Create Fine-Tuning Configuration Entries", expanded=True, icon="📝"
+            "4. Create Fine-Tuning Configuration Entries", expanded=False, icon="📝"
         ):
             st.write(
                 "Fill in the details for your dataset. You can define the location of labels, offsets, and other parameters."
@@ -355,7 +373,7 @@ def fine_tuning_workflow() -> None:
                 if model_choice:
                     model_id = model_options[model_choice]
                 checkpoint_path = f"../models/pretrained_checkpoints/model_checkpoint_{model_id}_er_CF.pt"
-        with st.expander("5. Run Fine-Tuning", expanded=True, icon="🚀"):
+        with st.expander("5. Run Fine-Tuning", expanded=False, icon="🚀"):
             st.write("Start the fine-tuning process.")
 
             IncasemFineTuning.run_fine_tuning(
