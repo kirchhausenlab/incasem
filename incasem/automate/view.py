@@ -23,7 +23,7 @@ class ZarrFileNavigator:
         """
         Recursively find all Zarr files within the specified `sub_dir`.
         """
-        return list(sub_dir.rglob("*.zarr"))
+        return sub_dir.joinpath(f"{sub_dir}.zarr")
 
     def list_zarr_components(self, zarr_file_path: Path) -> List[str]:
         """
@@ -43,29 +43,6 @@ class ZarrFileNavigator:
                     else:
                         components.append(f"volumes/{key}")
         return components
-
-    # def find_segmentation_folder(
-    #     self, selected_components: List[str], selected_file: Path
-    # ) -> str:
-    #     """
-    #     Find the segmentation folder path inside the predictions folder.
-    #     """
-    #     for component in selected_components:
-    #         if component.startswith("volumes/predictions/"):
-    #             prediction_key = component.split("/")[
-    #                 2
-    #             ]  # Extract the key after 'predictions'
-
-    #             # Traverse into the 'predict' folder for segmentation
-    #             prediction_path = (
-    #                 selected_file / f"volumes/predictions/{prediction_key}"
-    #             )
-    #             for predict_folder in prediction_path.iterdir():
-    #                 if predict_folder.is_dir() and "predict" in predict_folder.name:
-    #                     segmentation_path = predict_folder / "segmentation"
-    #                     if segmentation_path.exists():
-    #                         return f"volumes/predictions/{prediction_key}/{predict_folder.name}/segmentation"
-    #     return ""
 
     def find_segmentation_folders(
         self, selected_components: List[str], selected_file: Path
