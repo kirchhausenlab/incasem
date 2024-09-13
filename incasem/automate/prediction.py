@@ -11,7 +11,6 @@ from utils import (
     convert_tiff_to_zarr,
     create_config_file,
     run_command,
-    validate_tiff_filename,
     validate_path,
 )
 from pathlib import Path
