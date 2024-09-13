@@ -19,12 +19,14 @@ setup(
         "configargparse",
         "protobuf",
         "daisy",
+        "streamlit",
+        "watchdog",
         "torch",
-        "neuroglancer",
-        "git+https://github.com/kirchhausenlab/funlib.show.neuroglancer.git@incasem_scripts#egg=funlib.show.neuroglancer"
-        "funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch@master",
+        "loguru",
+        # "sacred @ git+https://github.com/kirchhausenlab/sacred@master",
+        "funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch@5590fb51aef8381eeae99bbe75800ecb186684a1",
         "funlib.persistence @ git+https://github.com/funkelab/funlib.persistence@ff4c78f8572334e04fc84ca79f10dc754534e3e9",
         "gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array",
     ],
-    python_requires=">=3.9,",
+    python_requires=">=3.9",
 )
