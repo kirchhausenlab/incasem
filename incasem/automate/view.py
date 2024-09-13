@@ -7,29 +7,23 @@ from typing import List
 import streamlit as st
 import zarr
 from incasem.automate.utils import handle_exceptions
-from pathlib import Path
 
 
 @dataclass
 class ZarrFileNavigator:
     data_dir: Path
 
-    def find_cells(self) -> List[str]:
+    def find_subdirectories(self) -> List[Path]:
         """
-        Find directories within the specified `data_dir` that start with 'cell'.
+        Find all subdirectories within the specified `data_dir`.
         """
-        cells = [
-            d.name
-            for d in self.data_dir.iterdir()
-            if d.is_dir() and d.name.startswith("cell")
-        ]
-        return cells
+        return [d for d in self.data_dir.iterdir() if d.is_dir()]
 
-    def find_zarr_files(self, cell_dir: Path) -> List[Path]:
+    def find_zarr_files(self, sub_dir: Path) -> List[Path]:
         """
-        Recursively find all Zarr files within the specified `cell_dir`.
+        Recursively find all Zarr files within the specified `sub_dir`.
         """
-        return list(cell_dir.rglob("*.zarr"))
+        return list(sub_dir.rglob("*.zarr"))
 
     def list_zarr_components(self, zarr_file_path: Path) -> List[str]:
         """
@@ -50,23 +44,54 @@ class ZarrFileNavigator:
                         components.append(f"volumes/{key}")
         return components
 
-    def find_segmentation_folder(
+    # def find_segmentation_folder(
+    #     self, selected_components: List[str], selected_file: Path
+    # ) -> str:
+    #     """
+    #     Find the segmentation folder path inside the predictions folder.
+    #     """
+    #     for component in selected_components:
+    #         if component.startswith("volumes/predictions/"):
+    #             prediction_key = component.split("/")[
+    #                 2
+    #             ]  # Extract the key after 'predictions'
+
+    #             # Traverse into the 'predict' folder for segmentation
+    #             prediction_path = (
+    #                 selected_file / f"volumes/predictions/{prediction_key}"
+    #             )
+    #             for predict_folder in prediction_path.iterdir():
+    #                 if predict_folder.is_dir() and "predict" in predict_folder.name:
+    #                     segmentation_path = predict_folder / "segmentation"
+    #                     if segmentation_path.exists():
+    #                         return f"volumes/predictions/{prediction_key}/{predict_folder.name}/segmentation"
+    #     return ""
+
+    def find_segmentation_folders(
         self, selected_components: List[str], selected_file: Path
-    ) -> str:
+    ) -> List[str]:
         """
-        Find the segmentation folder path based on selected components and Zarr file.
+        Find all possible segmentation folder paths inside the predictions folder.
         """
+        segmentation_folders = []
         for component in selected_components:
-            if component.startswith("volumes/labels/") or component.startswith(
-                "volumes/predictions/"
-            ):
-                label_key = component.split("/")[2]
+            if component.startswith("volumes/predictions/"):
+                prediction_key = component.split("/")[
+                    2
+                ]  # Extract the key after 'predictions'
+
+                # Traverse into the 'predict' folder for segmentation
                 prediction_path = (
-                    selected_file / f"volumes/predictions/{label_key}/segmentation"
+                    selected_file / f"volumes/predictions/{prediction_key}"
                 )
-                if prediction_path.exists():
-                    return f"volumes/predictions/{label_key}/segmentation"
-        return ""
+                for predict_folder in prediction_path.iterdir():
+                    if predict_folder.is_dir() and "predict" in predict_folder.name:
+                        segmentation_path = predict_folder / "segmentation"
+                        if segmentation_path.exists():
+                            segmentation_folders.append(
+                                f"volumes/predictions/{prediction_key}/{predict_folder.name}/segmentation"
+                            )
+        return segmentation_folders
 
     def construct_neuroglancer_command(
         self, selected_file: Path, selected_components: List[str]
@@ -93,15 +118,16 @@ def view_cells_and_flatten_them():
         help="Enter the path to the data directory containing Zarr files to explore.",
         placeholder="Enter the path to the data directory",
     )
+
     navigator = ZarrFileNavigator(Path(data_dir))
 
     if navigator.data_dir.is_dir():
-        cells = navigator.find_cells()
-        if cells:
-            selected_cell = st.selectbox("Select a cell:", cells)
-            if selected_cell:
-                cell_dir = navigator.data_dir / selected_cell
-                zarr_files = navigator.find_zarr_files(cell_dir)
+        subdirs = navigator.find_subdirectories()
+        if subdirs:
+            selected_subdir = st.selectbox("Select a subdirectory:", subdirs)
+            if selected_subdir:
+                sub_dir_path = Path(selected_subdir)
+                zarr_files = navigator.find_zarr_files(sub_dir_path)
                 if zarr_files:
                     st.write("Found Zarr files:")
                     selected_file = st.selectbox("Select a Zarr file:", zarr_files)
@@ -115,19 +141,29 @@ def view_cells_and_flatten_them():
                                 st.write("Selected components:")
                                 st.write(selected_components)
 
-                                segmentation_folder = (
-                                    navigator.find_segmentation_folder(
+                                # Find all segmentation folders in predictions
+                                segmentation_folders = (
+                                    navigator.find_segmentation_folders(
                                         selected_components, Path(selected_file)
                                     )
                                 )
-                                if segmentation_folder:
-                                    selected_components.append(segmentation_folder)
+
+                                if segmentation_folders:
+                                    # Allow user to select which segmentation folder they want
+                                    selected_segmentation_folder = st.selectbox(
+                                        "Select a segmentation folder:",
+                                        segmentation_folders,
+                                    )
+                                    selected_components.append(
+                                        selected_segmentation_folder
+                                    )
 
                                 neuroglancer_cmd = (
                                     navigator.construct_neuroglancer_command(
                                         Path(selected_file), selected_components
                                     )
                                 )
+
                                 st.write("Neuroglancer Command:")
                                 st.code(neuroglancer_cmd, language="bash")
 

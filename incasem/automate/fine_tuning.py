@@ -1,5 +1,6 @@
 import subprocess
 from incasem.automate.directory_navigator import get_dir
+import glob
 import streamlit as st
 from incasem.logger.config import logger
 from incasem.automate.utils import handle_exceptions
@@ -141,6 +142,13 @@ class IncasemFineTuning:
             - Nuclear Pores: 1 inwards, 1 outwards
             - Coated Pits: 2 inwards, 2 outwards
         """)
+        for path in Path(output_path).iterdir():
+            if path.is_dir():
+                st.write(f"Directory: {path}")
+                # within the path find a .zarr
+                zarr_folders = glob.glob(f"{path}/*.zarr")
+                for zarr_folder in zarr_folders:
+                    st.write(f"Found .zarr folder: {zarr_folder}")
         f_output_path = st.text_input(
             "Enter the output path",
             value=output_path,
