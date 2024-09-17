@@ -11,7 +11,6 @@ logger.setLevel(logging.INFO)
 
 class DataSourcesBase(ABC):
     def __init__(self, config_file, keys, data_path_prefix):
-
         self._config_file = os.path.expanduser(config_file)
         self._keys = keys
         self._data_path_prefix = data_path_prefix
@@ -29,30 +28,29 @@ class DataSourcesBase(ABC):
     ###################
 
     @abstractmethod
-    def _assemble_pipeline(
-            self, attributes, file_path, key_suffix, voxel_size, roi):
+    def _assemble_pipeline(self, attributes, file_path, key_suffix, voxel_size, roi):
         pass
 
     def _assemble(self):
         # parse config file
-        with open(self._config_file, 'r') as f:
+        with open(self._config_file, "r") as f:
             data_sources = json.load(f)
 
         # process each dataset
         pipelines = []
         for name, attributes in data_sources.items():
             file_path, key_suffix, voxel_size, roi = self._parse_metadata(
-                name=name,
-                attributes=attributes
+                name=name, attributes=attributes
             )
             pl = self._assemble_pipeline(
-                attributes, file_path, key_suffix, voxel_size, roi)
+                attributes, file_path, key_suffix, voxel_size, roi
+            )
             pipelines.append(pl)
             self._dataset_count += 1
             self._names.append(name)
-            self._filenames.append(attributes['file'])
+            self._filenames.append(attributes["file"])
 
-        logger.debug(f'{len(pipelines)=}')
+        logger.debug(f"{len(pipelines)=}")
         return pipelines
 
     def _parse_metadata(self, name, attributes):
@@ -62,34 +60,34 @@ class DataSourcesBase(ABC):
         key_suffix = name.strip().upper()
 
         # parse file path
-        assert 'file' in attributes
+        assert "file" in attributes
         file_path = os.path.expanduser(
-            os.path.join(self._data_path_prefix, attributes['file'])
+            os.path.join(self._data_path_prefix, attributes["file"])
         )
 
         # parse voxel_size, offset, shape
         try:
-            voxel_size = gp.Coordinate(attributes['voxel_size'])
+            voxel_size = gp.Coordinate(attributes["voxel_size"])
             logger.debug(f"{voxel_size=}")
         except KeyError:
-            raise ValueError(
-                f"Voxel size for {name} not specified in data config."
-            )
+            raise ValueError(f"Voxel size for {name} not specified in data config.")
         self._check_voxel_size(voxel_size)
 
         try:
-            offset = gp.Coordinate(attributes['offset']) * voxel_size
+            offset = gp.Coordinate(attributes["offset"]) * voxel_size
             logger.debug(f"{offset=}")
-            shape = gp.Coordinate(attributes['shape']) * voxel_size
+            shape = gp.Coordinate(attributes["shape"]) * voxel_size
             logger.debug(f"{shape=}")
             roi = gp.Roi(offset=offset, shape=shape)
             self._rois.append(roi)
             logger.debug(f"{roi=}")
         except KeyError:
-            logger.warning((
-                f"Offset/shape for {name} not specified, "
-                "therefore not setting a ROI"
-            ))
+            logger.warning(
+                (
+                    f"Offset/shape for {name} not specified, "
+                    "therefore not setting a ROI"
+                )
+            )
             roi = None
 
         return file_path, key_suffix, voxel_size, roi
@@ -100,10 +98,9 @@ class DataSourcesBase(ABC):
             self._voxel_size = voxel_size
         else:
             if self._voxel_size != voxel_size:
-                raise ValueError((
-                    "The datasets have different voxel sizes, "
-                    "unable to proceed."
-                ))
+                raise ValueError(
+                    ("The datasets have different voxel sizes, " "unable to proceed.")
+                )
 
     # PROPERTIES
     ############

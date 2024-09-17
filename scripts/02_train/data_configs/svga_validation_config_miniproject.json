@@ -1,0 +1,26 @@
+{
+  "svga_val1": {
+    "name": "svga_val1",
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [493, 1648, 2075],
+    "shape": [120, 120, 120],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/vesc"],
+    "labels": {
+      "volumes/predictions/train_2632/predict_4341/segmentation": 1
+    }
+  },
+  "svga_val2": {
+    "name": "svga_val2",
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [445, 1196, 3700],
+    "shape": [110, 110, 110],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/vesc"],
+    "labels": {
+      "volumes/predictions/train_2632/predict_4341/segmentation": 1
+    }
+  }
+}

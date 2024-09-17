@@ -3,6 +3,8 @@
 ###############
 /daisy_logs
 /models
+/incasem/models
+/incasem/automate/daisy_logs
 /training_runs
 /incasem/data
 ##############
