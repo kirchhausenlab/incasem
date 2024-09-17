@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 import streamlit as st
 from incasem.logger.config import logger
+from functools import lru_cache
 
 
 class DirectoryNavigator:
@@ -14,6 +15,7 @@ class DirectoryNavigator:
         """
         self.current_directory = start_dir
 
+    @lru_cache(maxsize=16)
     def list_directories_in_directory(self) -> list:
         """
         List all subdirectories in the current directory.
@@ -34,6 +36,14 @@ class DirectoryNavigator:
                 "Permission denied to access directory: %s", self.current_directory
             )
             return []
+        except Exception as e:
+            st.error("An error occurred while listing directories.")
+            logger.error(
+                "Error occurred while listing directories in %s: %s",
+                self.current_directory,
+                str(e),
+            )
+            return []
 
     def navigate_directory(self, direction: str, selected_subdir: Optional[str] = None):
         """
@@ -51,6 +61,7 @@ class DirectoryNavigator:
             new_dir = self.current_directory / selected_subdir
             if new_dir.is_dir():
                 self.current_directory = new_dir
+        self.list_directories_in_directory.cache_clear()
 
     def display_current_directory(self):
         """

@@ -1,18 +1,17 @@
-import os
-from shutil import copyfile
-import sys
-import logging
 import argparse
 import json
+import logging
+import os
 import re
-import yaml
+import sys
 from pathlib import Path
-
-import numpy as np
-import torch
-import tensorboardX
+from shutil import copyfile
 
 import gunpowder as gp
+import numpy as np
+import tensorboardX
+import torch
+import yaml
 
 import incasem as fos
 
@@ -48,6 +47,20 @@ def torch_setup(_config):
     torch.backends.cudnn.benchmark = True
     if _config["torch"]["device"] == "cpu":
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
+    # ------------- GPU setup ------------- #
+    else:
+        available_gpus = torch.cuda.device_count()
+        if available_gpus > 1:
+            _config["torch"]["multi_gpu"] = True
+            logger.info(f"Found {available_gpus} GPUs. Enabling multi-GPU training.")
+        elif available_gpus == 1:
+            _config["torch"]["multi_gpu"] = False
+            logger.info("Found 1 GPU. Using single-GPU training.")
+        else:
+            logger.warning("No GPUs found. Using CPU.")
+            _config["torch"]["device"] = "cpu"
+            os.environ["CUDA_VISIBLE_DEVICES"] = ""
+            _config["torch"]["multi_gpu"] = False
 
 
 def model_setup(_config, _run_dummy):
@@ -89,6 +102,15 @@ def model_setup(_config, _run_dummy):
         )
     else:
         raise ValueError(f"Model type {model_type} does not exist.")
+
+    # -------------
+    device = _config["torch"]["device"]
+    model.to(f"cuda:{device}" if device != "cpu" else "cpu")
+
+    # Wrap the model with DataParallel if multi-GPU is enabled
+    if _config["torch"].get("multi_gpu", False):
+        model = torch.nn.DataParallel(model)
+        logger.info(f"Using DataParallel on {torch.cuda.device_count()} GPUs.")
 
     total_params = sum(p.numel() for p in model.parameters())
     logger.info(f"{total_params=}")
@@ -148,6 +170,13 @@ def training_setup(_config, _run_dummy, _seed, run_dir, model):
     )
 
     device = _config["torch"]["device"]
+    # -------------------------------
+    if _config["torch"].get("multi_gpu", False):
+        training.train_node.gpus = list(range(torch.cuda.device_count()))
+    else:
+        training.train_node.gpus = [] if device == "cpu" else [int(device)]
+    # -------------------------------
+
     training.train_node.gpus = [] if device == "cpu" else [int(device)]
 
     training.train_node.save_every = int(_config["training"]["save_every"])
@@ -165,7 +194,7 @@ def training_setup(_config, _run_dummy, _seed, run_dir, model):
             _config["loss"]["balance_labels"]["clipmax"]
         )
     except AttributeError:
-        logger.warning(f"Trying to set BalanceLabels attributes, but it is not used.")
+        logger.warning("Trying to set BalanceLabels attributes, but it is not used.")
         _config["loss"]["balance_labels"]["clipmin"] = None
         _config["loss"]["balance_labels"]["clipmax"] = None
 
@@ -225,10 +254,10 @@ def training_setup(_config, _run_dummy, _seed, run_dir, model):
             _config["training"]["precache"]["num_workers"]
         )
     except AttributeError:
-        logger.warning(f"Trying to set Precache attributes, but it is not used.")
+        logger.warning("Trying to set Precache attributes, but it is not used.")
     except KeyError:
         logger.warning(
-            f"Trying to set Precache attributes, but not specified in config."
+            "Trying to set Precache attributes, but not specified in config."
         )
 
     # Snapshot
@@ -283,6 +312,11 @@ def validation_setup(_config, _run_dummy, _seed, run_dir, model, val_dataset):
         random_seed=_seed,
     )
     device = _config["torch"]["device"]
+    if _config["torch"].get("multi_gpu", False):
+        validation.predict.gpus = list(range(torch.cuda.device_count()))
+    else:
+        validation.predict.gpus = [] if device == "cpu" else [int(device)]
+
     validation.predict.gpus = [] if device == "cpu" else [int(device)]
 
     # Downsample
@@ -296,8 +330,10 @@ def validation_setup(_config, _run_dummy, _seed, run_dir, model, val_dataset):
         validation.balance_labels.clipmax = float(
             _config["loss"]["balance_labels"]["clipmax"]
         )
-    except AttributeError:
-        logger.warning(f"Trying to set BalanceLabels attributes, but it is not used.")
+    except AttributeError as e:
+        logger.warning(
+            "Trying to set BalanceLabels attributes, but it is not used. %s" % e
+        )
         _config["loss"]["balance_labels"]["clipmin"] = None
         _config["loss"]["balance_labels"]["clipmax"] = None
 
@@ -311,24 +347,9 @@ def log_result(
     _config,
     metric_name="loss",
     metric_val=float("inf"),
-):
-    # TODO This should be some metric, not the loss function
-    try:
-        _config["name"]
-    except:
-        _config["name"] = "training_{}".format(_run_dummy._id)
-
-    experiment_name = "Run {}: {}".format(_run_dummy._id, _config["name"])
-
+) -> str:
+    experiment_name = f"Run {_run_dummy._id}: "
     return f"\n{experiment_name}" f"\nval {metric_name}: {metric_val:.6f}"
-
-
-# def log_data_config(_config, _run_dummy):
-#     _run_dummy.add_artifact(_config['training']['data'])
-
-#     val_config_files = _config['validation']['data'].split(',')
-#     for f in val_config_files:
-#         _run_dummy.add_artifact(f)
 
 
 def directory_structure_setup(_config, _run_dummy):
@@ -339,18 +360,12 @@ def directory_structure_setup(_config, _run_dummy):
         try:
             load_run_id, load_run_checkpoint = _config["training"]["start_from"]
             model_to_load = os.path.expanduser(load_run_checkpoint)
-            # model_to_load = os.path.join(
-            # os.path.expanduser(_config['directories']['runs']),
-            # "models",
-            # str(load_run_id),
-            # "model_checkpoint_" + str(load_run_checkpoint))
             new_model = os.path.join(
                 os.path.expanduser(_config["directories"]["runs"]),
                 "models",
                 str(_run_dummy._id),
                 "model_checkpoint_0",
             )
-
             os.makedirs(os.path.dirname(new_model), exist_ok=True)
             copyfile(model_to_load, new_model)
             dir_run_id = _run_dummy._id
@@ -385,21 +400,6 @@ def log_metrics(_run, target, prediction_probas, mask, metric_mask, iteration, m
     for label, score in enumerate(dice_scores):
         _run_dummy.log_scalar(f"dice_class_{label}_{mode}", score, iteration)
         logger.info(f"{mode} | Dice score class {label}: {score}")
-
-    # jaccard_scores = fos.metrics.jaccard(
-    # target,
-    # prediction_probas,
-    # mask
-    # )
-    # for label, score in enumerate(jaccard_scores):
-    # _run_dummy.log_scalar(f"jaccard_class_{label}_{mode}", score, iteration)
-
-    # average_precision_scores = fos.metrics.average_precision(
-    # target,
-    # prediction_probas
-    # )
-    # for label, score in enumerate(average_precision_scores):
-    # _run_dummy.log_scalar(f"AP_class_{label}_{mode}", score, iteration)
 
 
 def log_labels_balance(_run, labels, num_classes, iteration):
@@ -437,7 +437,6 @@ def train(_config, _run, _seed):
 
     torch_setup(_config)
     # log_data_config(_config, _run)
-
     run_dir = directory_structure_setup(_config, _run)
 
     model = model_setup(_config, _run)

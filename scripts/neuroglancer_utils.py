@@ -63,7 +63,6 @@ class ScalePyramid(neuroglancer.LocalVolume):
         return self.volume_layers[(1,) * self.dims].token
 
     def info(self):
-
         reference_layer = self.volume_layers[(1,) * self.dims]
         # return reference_layer.info()
 
@@ -116,7 +115,7 @@ def add_layer(
     scale_rgb=False,
     c=[0, 1, 2],
     h=[0.0, 0.0, 1.0],
-    layer_type='im'
+    layer_type="im",
 ):
     """Add a layer to a neuroglancer context.
 
@@ -162,7 +161,6 @@ def add_layer(
     is_multiscale = isinstance(array, list)
 
     if not is_multiscale:
-
         a = array if not is_multiscale else array[0]
 
         spatial_dim_names = ["t", "z", "y", "x"]
@@ -182,14 +180,12 @@ def add_layer(
             attrs = {k: v[::-1] for k, v in attrs.items()}
         dimensions = neuroglancer.CoordinateSpace(**attrs)
 
-        voxel_offset = [0] * channel_dims + \
-            list(a.roi.get_offset() / a.voxel_size)
+        voxel_offset = [0] * channel_dims + list(a.roi.get_offset() / a.voxel_size)
 
     else:
         dimensions = []
         voxel_offset = None
         for i, a in enumerate(array):
-
             spatial_dim_names = ["t", "z", "y", "x"]
             channel_dim_names = ["b^", "c^"]
 
@@ -276,7 +272,7 @@ void main() {
   emitGrayscale(255.0*toNormalized(getDataValue()));
 }"""
 
-    elif shader == 'heatmap':
+    elif shader == "heatmap":
         shader = """
 #uicontrol float thres slider(min=0.0, max=1.0, default=0.0)
 void main () {
@@ -289,7 +285,7 @@ void main () {
     }
     emitRGBA(rgba);
 }"""
-    elif shader == 'probmap':
+    elif shader == "probmap":
         shader = """
 #uicontrol float thres slider(min=0.0, max=1.0, default=0.5)
 void main () {
@@ -309,45 +305,45 @@ void main () {
         kwargs["opacity"] = opacity
 
     if is_multiscale:
-
-        if layer_type == 'im':
-            tt = 'image'
+        if layer_type == "im":
+            tt = "image"
         else:
-            tt = 'segmentation'
+            tt = "segmentation"
 
         layer = ScalePyramid(
             [
                 neuroglancer.LocalVolume(
-                    data=a.data, voxel_offset=voxel_offset, dimensions=array_dims, volume_type=tt
+                    data=a.data,
+                    voxel_offset=voxel_offset,
+                    dimensions=array_dims,
+                    volume_type=tt,
                 )
                 for a, array_dims in zip(array, dimensions)
             ]
         )
 
     else:
-        if layer_type == 'im':
-            tt = 'image'
+        if layer_type == "im":
+            tt = "image"
         else:
-            tt = 'segmentation'
+            tt = "segmentation"
 
         layer = neuroglancer.LocalVolume(
             data=array.data,
             voxel_offset=voxel_offset,
             dimensions=dimensions,
-            volume_type=tt
+            volume_type=tt,
         )
-
 
     context.layers.append(name=name, layer=layer, visible=visible, **kwargs)
 
-def str_rstrip_slash(x):
-    return x.rstrip('/')
 
+def str_rstrip_slash(x):
+    return x.rstrip("/")
 
 
 def to_slice(slice_str):
-
-    values = [int(x) for x in slice_str.split(':')]
+    values = [int(x) for x in slice_str.split(":")]
     if len(values) == 1:
         return values[0]
 
@@ -355,55 +351,53 @@ def to_slice(slice_str):
 
 
 def parse_ds_name(ds):
-
-    tokens = ds.split('[')
+    tokens = ds.split("[")
 
     if len(tokens) == 1:
         return ds, None
 
     ds, slices = tokens
-    slices = list(map(to_slice, slices.rstrip(']').split(',')))
+    slices = list(map(to_slice, slices.rstrip("]").split(",")))
 
     return ds, slices
 
 
 class Project:
-
     def __init__(self, array, dim, value):
         self.array = array
         self.dim = dim
         self.value = value
-        self.shape = array.shape[:self.dim] + array.shape[self.dim + 1:]
+        self.shape = array.shape[: self.dim] + array.shape[self.dim + 1 :]
         self.dtype = array.dtype
 
     def __getitem__(self, key):
-        slices = key[:self.dim] + (self.value,) + key[self.dim:]
+        slices = key[: self.dim] + (self.value,) + key[self.dim :]
         ret = self.array[slices]
         return ret
 
 
 def slice_dataset(a, slices):
-
     dims = a.roi.dims
 
     for d, s in list(enumerate(slices))[::-1]:
-
         if isinstance(s, slice):
             raise NotImplementedError("Slicing not yet implemented!")
         else:
             index = (s - a.roi.get_begin()[d]) // a.voxel_size[d]
             a.data = Project(a.data, d, index)
             a.roi = Roi(
-                a.roi.get_begin()[:d] + a.roi.get_begin()[d + 1:],
-                a.roi.get_shape()[:d] + a.roi.get_shape()[d + 1:])
-            a.voxel_size = a.voxel_size[:d] + a.voxel_size[d + 1:]
+                a.roi.get_begin()[:d] + a.roi.get_begin()[d + 1 :],
+                a.roi.get_shape()[:d] + a.roi.get_shape()[d + 1 :],
+            )
+            a.voxel_size = a.voxel_size[:d] + a.voxel_size[d + 1 :]
 
     return a
+
 
 def open_dataset(f, ds):
     original_ds = ds
     ds, slices = parse_ds_name(ds)
-    slices_str = original_ds[len(ds):]
+    slices_str = original_ds[len(ds) :]
 
     try:
         dataset_as = []
@@ -432,8 +426,7 @@ def open_dataset(f, ds):
 
         if a.roi.dims == 2:
             print("ROI is 2D, recruiting next channel to z dimension")
-            a.roi = Roi((0,) + a.roi.get_begin(),
-                              (a.shape[-3],) + a.roi.get_shape())
+            a.roi = Roi((0,) + a.roi.get_begin(), (a.shape[-3],) + a.roi.get_shape())
             a.voxel_size = Coordinate((1,) + a.voxel_size)
 
         if a.roi.dims == 4:
@@ -447,40 +440,31 @@ def open_dataset(f, ds):
 
         return [(a, ds)]
     else:
-        return [([open_ds(f, f"{ds}/{key}")
-                  for key in zarr.open(f)[ds].keys()], ds)]
+        return [([open_ds(f, f"{ds}/{key}") for key in zarr.open(f)[ds].keys()], ds)]
 
 
 def add_data_to_viewer(viewer, file, dataset_list):
-
     shader_list = [None] * len(file)
 
     for f, datasets, shaders in zip(file, dataset_list, shader_list):
-
-        name_prefix = '/'.join(f.strip('/').split('/')[-2:])
+        name_prefix = "/".join(f.strip("/").split("/")[-2:])
         arrays = []
         for ds in datasets:
             try:
-
                 print("Adding %s, %s" % (f, ds))
                 dataset_as = open_dataset(f, ds)
 
             except Exception as e:
-
                 print(type(e), e)
                 print("Didn't work, checking if this is multi-res...")
 
-                scales = glob.glob(os.path.join(f, ds, 's*'))
+                scales = glob.glob(os.path.join(f, ds, "s*"))
                 if len(scales) == 0:
                     print(f"Couldn't read {ds}, skipping...")
                     raise e
-                print("Found scales %s" % ([
-                    os.path.relpath(s, f)
-                    for s in scales
-                ],))
+                print("Found scales %s" % ([os.path.relpath(s, f) for s in scales],))
                 a = [
-                    open_dataset(f, os.path.relpath(scale_ds, f))
-                    for scale_ds in scales
+                    open_dataset(f, os.path.relpath(scale_ds, f)) for scale_ds in scales
                 ]
             for a in dataset_as:
                 arrays.append(a)
@@ -488,13 +472,12 @@ def add_data_to_viewer(viewer, file, dataset_list):
         if shaders is None:
             shaders = [None] * len(datasets)
         else:
-            shaders = ['rgb']*len(datasets)
+            shaders = ["rgb"] * len(datasets)
             assert len(shaders) == len(datasets)
-            shaders = [None if s == 'default' else s for s in shaders]
+            shaders = [None if s == "default" else s for s in shaders]
 
         with viewer.txn() as s:
             for (array, dataset), shad in zip(arrays, shaders):
-
                 if "labels" in dataset or "predictions" in dataset:
                     lt = "seg"
                 else:
@@ -502,11 +485,6 @@ def add_data_to_viewer(viewer, file, dataset_list):
 
                 if True:
                     dataset = os.path.join(name_prefix, dataset)
-                add_layer(
-                    context=s,
-                    array=array,
-                    name=dataset,
-                    layer_type=lt
-                )
+                add_layer(context=s, array=array, name=dataset, layer_type=lt)
 
     return viewer
