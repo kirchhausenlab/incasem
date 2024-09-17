@@ -1,18 +1,13 @@
-import logging
-import json
-import random
+import yaml
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List, Dict
-import torch
 import streamlit as st
-from incasem.automate.utils import handle_exceptions
-from utils import create_config_file, run_command
+from utils import create_config_file
 from incasem.automate.fine_tuning import IncasemFineTuning
 
 path_to_scripts_config: Path = Path(__name__).resolve().parents[2]
 DATA_CONFIG_PATH: Path = path_to_scripts_config / "scripts/02_train/data_configs"
-import yaml
 
 
 @dataclass
@@ -27,6 +22,7 @@ class ConfigEntry:
     labels: Dict[str, int] = field(default_factory=dict)
 
 
+@st.cache_data
 def init_session_state():
     if "step" not in st.session_state:
         st.session_state.step = "create_metric_masks"

@@ -47,6 +47,7 @@ class PredictionConfig:
     )
     path_to_store_run: Path = Path(__name__).resolve().parents[2].joinpath("mock_db")
 
+    @st.cache_data
     def create_config_file(self) -> None:
         """Creates and saves the configuration file."""
 
@@ -92,6 +93,7 @@ class PredictionRunner:
         self.curr_path = Path(__file__).parent
         self.path_to_scripts = self.curr_path.parent.parent.joinpath("scripts")
 
+    @st.cache_resource
     def equalize_histogram(self):
         """Equalize the intensity histogram of the data."""
         path_to_histogram_script = (
@@ -187,12 +189,7 @@ class PredictionRunner:
             f"'prediction.checkpoint={self.checkpoint_path}'"
         )
         st.markdown("""
-        We will highly recommend that you look at the configuration file before running the prediction.
-        A test configuration file looks like:
-        ```json
-            
-            ```
-            """)
+        We will highly recommend that you look at the configuration file before running the prediction.""")
         st.write(
             "Generate your own configuration file and run the prediction command below based on what your run id, model checkpoint path and configuration file path is."
         )
@@ -223,9 +220,8 @@ class PredictionRunner:
                 st.code(f"{predict_cmd} --run_prediction")
 
 
-@handle_exceptions
-def take_input_and_run_predictions():
-    """Gather user inputs and run predictions based on the provided configuration."""
+@st.cache_data
+def introduction() -> None:
     # UI Setup
     st.title("Incasem Prediction")
     st.write("Welcome to the Incasem prediction interface")
@@ -262,6 +258,12 @@ def take_input_and_run_predictions():
         - Run the prediction using the specified model and configuration.
         - Optionally visualize the results using Neuroglancer.
         """)
+
+
+@handle_exceptions
+def take_input_and_run_predictions():
+    """Gather user inputs and run predictions based on the provided configuration."""
+    introduction()
 
     with st.expander("File Navigation", expanded=False, icon="📂"):
         get_dir()
@@ -389,23 +391,8 @@ def take_input_and_run_predictions():
     with st.expander(
         "View sample prediction run configuration", expanded=False, icon="📄"
     ):
-        st.json(
-            {
-                "directories": {"data": "../../incasem/data"},
-                "prediction": {
-                    "pipeline": "baseline",
-                    "data": None,
-                    "run_id_training": None,
-                    "checkpoint": None,
-                    "directories": {"prefix": "../../incasem/data"},
-                    "input_size_voxels": [204, 204, 204],
-                    "output_size_voxels": [110, 110, 110],
-                    "num_workers": 8,
-                    "log_metrics": False,
-                    "torch": {"device": 0},
-                },
-            }
-        )
+        show_sample_prediction_config()
+
     with st.expander("Run Prediction", expanded=False, icon="🚀"):
         # Run Prediction
         runner = PredictionRunner(
@@ -420,7 +407,29 @@ def take_input_and_run_predictions():
         runner.run_prediction()
 
 
-def show_sample_config():
+@st.cache_data
+def show_sample_prediction_config() -> None:
+    st.json(
+        {
+            "directories": {"data": "../../incasem/data"},
+            "prediction": {
+                "pipeline": "baseline",
+                "data": None,
+                "run_id_training": None,
+                "checkpoint": None,
+                "directories": {"prefix": "../../incasem/data"},
+                "input_size_voxels": [204, 204, 204],
+                "output_size_voxels": [110, 110, 110],
+                "num_workers": 8,
+                "log_metrics": False,
+                "torch": {"device": 0},
+            },
+        }
+    )
+
+
+@st.cache_data
+def show_sample_config() -> None:
     st.write("This is what a sample configuration file looks like:")
     st.json(
         {

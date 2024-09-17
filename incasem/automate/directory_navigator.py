@@ -3,6 +3,7 @@ from typing import Optional
 import streamlit as st
 from incasem.logger.config import logger
 
+
 class DirectoryNavigator:
     def __init__(self, start_dir: Path = Path.cwd()):
         """
