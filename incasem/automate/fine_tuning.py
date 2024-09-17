@@ -149,8 +149,9 @@ class IncasemFineTuning:
                 zarr_folders = glob.glob(f"{path}/*.zarr")
                 for zarr_folder in zarr_folders:
                     st.write(f"Found .zarr folder: {zarr_folder}")
+        st.code("Use the path to the .zarr folder to create the metric mask.")
         f_output_path = st.text_input(
-            "Enter the output path",
+            "Enter the output path to the zarr files. Sample ending would be /incasem/data/cell_n/cell_n.zarr",
             value=output_path,
             help="Specify the output path for the metric mask.",
         )
@@ -164,6 +165,11 @@ class IncasemFineTuning:
             value="volumes/labels/er",
             help="Specify the path to the dataset for which the mask will be created.",
         )
+
+        path_to_dataset = Path(f_output_path).joinpath(Path(dataset))
+
+        if not path_to_dataset.exists():
+            st.error("Dataset path does not exist. Please ensure the path is correct.")
 
         out_dataset = st.text_input(
             "Enter the output dataset name",
@@ -198,7 +204,10 @@ class IncasemFineTuning:
             )
             run_command(exclusion_cmd, "Metric exclusion zone created successfully!")
             # verify the output path
-            st.write("For verification, check the output path:", f_output_path)
+            st.write(
+                "For verification, check the output path:",
+                f"{f_output_path}/{out_dataset}",
+            )
             # print out the directory structure for the output path
 
 

@@ -13,18 +13,22 @@ from incasem.automate.utils import handle_exceptions
 class ZarrFileNavigator:
     data_dir: Path
 
+    @st.cache_data
     def find_subdirectories(self) -> List[Path]:
         """
         Find all subdirectories within the specified `data_dir`.
         """
         return [d for d in self.data_dir.iterdir() if d.is_dir()]
 
+    @st.cache_data
     def find_zarr_files(self, sub_dir: Path) -> List[Path]:
         """
         Recursively find all Zarr files within the specified `sub_dir`.
         """
-        return sub_dir.joinpath(f"{sub_dir}.zarr")
+        sub_dir_end_path = str(sub_dir).split("/")[-1]
+        return sub_dir.joinpath(f"{sub_dir_end_path}.zarr")
 
+    @st.cache_data
     def list_zarr_components(self, zarr_file_path: Path) -> List[str]:
         """
         List components (e.g., 'volumes/labels', 'volumes/predictions') within a Zarr file.
@@ -44,6 +48,7 @@ class ZarrFileNavigator:
                         components.append(f"volumes/{key}")
         return components
 
+    @st.cache_data
     def find_segmentation_folders(
         self, selected_components: List[str], selected_file: Path
     ) -> List[str]:
@@ -76,7 +81,13 @@ class ZarrFileNavigator:
         """
         Construct the Neuroglancer command based on selected components and the Zarr file.
         """
-        return f"neuroglancer -f {selected_file} -d " + " ".join(selected_components)
+
+        clean_components = [
+            comp
+            for comp in selected_components
+            if not comp.startswith("volumes/predictions/") or "segmentation" in comp
+        ]
+        return f"neuroglancer -f {selected_file} -d " + " ".join(clean_components)
 
 
 @handle_exceptions
