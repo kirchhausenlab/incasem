@@ -3,20 +3,22 @@
     "file": "jrc_hela-2/jrc_hela-2.zarr",
     "offset": [4058, 1395, 5614],
     "shape": [241, 476, 528],
-    "voxel_size": [5, 5, 5],
+    "voxel_size": [4, 4, 4],
     "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/vesc"],
     "labels": {
-      "volumes/labels/vesc": 1
+      "volumes/predictions/train_2631/predict_4351/segmentation": 1
     }
   },
   "2": {
     "file": "jrc_hela-2/jrc_hela-2.zarr",
     "offset": [3329, 1423, 3571],
     "shape": [272, 464, 496],
-    "voxel_size": [5, 5, 5],
+    "voxel_size": [4, 4, 4],
     "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/vesc"],
     "labels": {
-      "volumes/labels/vesc": 1
+      "volumes/predictions/train_2631/predict_4351/segmentation": 1
     }
   }
 }

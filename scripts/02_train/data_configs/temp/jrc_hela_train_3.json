@@ -1,0 +1,1 @@
+{"4": {"file": "jrc_hela-2/jrc_hela-2.zarr", "offset": [3134, 1328, 2654], "shape": [230, 230, 230], "voxel_size": [4, 4, 4], "raw": "volumes/raw_equalized_0.02", "metric_masks": ["volumes/metric_masks/vesc"], "labels": {"volumes/predictions/train_2631/predict_4351": 1}}}

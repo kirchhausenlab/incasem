@@ -66,9 +66,9 @@ sources:
   class: DataSourcesSemantic
 data:
   voxel_size:
-  - 5
-  - 5
-  - 5
+  - 4
+  - 4
+  - 4
   downsample_factor: 1
   num_classes: 2
 model:
