@@ -6,7 +6,16 @@
 /incasem/models
 /incasem/automate/daisy_logs
 /training_runs
-/incasem/data
+data/
+runs/
+
+
+**/daisy_logs/
+**/models/
+**/training_runs/
+**/data/
+**/runs/
+
 ##############
 ### PYTHON ###
 ##############
@@ -15,7 +24,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-
+logs/
 # C extensions
 *.so
 
