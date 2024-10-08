@@ -12,86 +12,71 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 # patch: suppress daisy warnings
-logging.getLogger('daisy.client').setLevel(logging.ERROR)
+logging.getLogger("daisy.client").setLevel(logging.ERROR)
 
 
 def parse_args():
-    ''' TODO '''
-    p = argparse.ArgParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    """TODO"""
+    p = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add("-c", "--config", is_config_file=True, help="config file path")
     p.add(
-        '-c',
-        '--config',
-        is_config_file=True,
-        help='config file path')
-    p.add(
-        '-i',
-        '--input_dir',
-        nargs='+',
+        "-i",
+        "--input_dir",
+        nargs="+",
         required=True,
-        help='Directions with section images')
+        help="Directions with section images",
+    )
+    p.add("-f", "--output_file", required=True, help="Zarr file to be created")
     p.add(
-        '-f',
-        '--output_file',
-        required=True,
-        help='Zarr file to be created')
+        "-d",
+        "--output_dataset",
+        nargs="+",
+        default=["volumes/raw"],
+        help="datasets inside zarr file",
+    )
     p.add(
-        '-d',
-        '--output_dataset',
-        nargs='+',
-        default=['volumes/raw'],
-        help='datasets inside zarr file')
+        "-r",
+        "--image_regex",
+        default=r".*_(\d+).*\.tif$",
+        help="regex to select sections and extract their numbers",
+    )
+    p.add("--dtype", nargs="+", default=["uint8"], help="any numpy datatype")
     p.add(
-        '-r',
-        '--image_regex',
-        default=r'.*_(\d+).*\.tif$',
-        help='regex to select sections and extract their numbers')
+        "--offset", default=[0, 0, 0], type=int, nargs=3, help="z,y,x offset in voxels"
+    )
     p.add(
-        '--dtype',
-        nargs='+',
-        default=['uint8'],
-        help='any numpy datatype')
-    p.add(
-        '--offset',
-        default=[0, 0, 0],
-        type=int,
-        nargs=3,
-        help='z,y,x offset in voxels')
-    p.add(
-        '--shape',
+        "--shape",
         default=[None, None, None],
         type=int,
         nargs=3,
-        help='z,y,x shape in voxels')
+        help="z,y,x shape in voxels",
+    )
     p.add(
-        '--resolution',
+        "--resolution",
         default=[5, 5, 5],
         type=int,
         nargs=3,
-        help='z,y,x resolution in nanometers')
+        help="z,y,x resolution in nanometers",
+    )
     p.add(
-        '--chunks',
+        "--chunks",
         default=[128, 128, 128],
         type=int,
         nargs=3,
-        help='z,y,x chunk size in voxels')
+        help="z,y,x chunk size in voxels",
+    )
     p.add(
-        '--conversion',
+        "--conversion",
         type=str_or_none,
-        nargs='+',
+        nargs="+",
         default=[None],
-        help='conversion of each slice, using Pillow')
-    p.add(
-        '--invert',
-        action='store_true',
-        help='Invert raw data LUT')
-    p.add(
-        '--num_workers',
-        default=32,
-        type=int)
+        help="conversion of each slice, using Pillow",
+    )
+    p.add("--invert", action="store_true", help="Invert raw data LUT")
+    p.add("--num_workers", default=32, type=int)
 
     args = p.parse_args()
-    logger.info(f'\n{p.format_values()}')
+    logger.info(f"\n{p.format_values()}")
 
     return args
 
@@ -105,17 +90,16 @@ def str_or_none(x):
     Returns:
         str or `None`
     """
-    return None if x == 'None' else x
+    return None if x == "None" else x
 
 
 def main():
     args = parse_args()
 
     for i in range(len(args.input_dir)):
-        logger.info((
-            f'Converting from {args.input_dir[i]} '
-            f'to {args.output_dataset[i]}...'
-        ))
+        logger.info(
+            (f"Converting from {args.input_dir[i]} " f"to {args.output_dataset[i]}...")
+        )
         fos.utils.image_sequence_to_zarr(
             args.input_dir[i],
             args.output_file,
@@ -128,8 +112,9 @@ def main():
             args.chunks,
             args.conversion[i],
             args.num_workers,
-            invert=args.invert)
+            invert=args.invert,
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
