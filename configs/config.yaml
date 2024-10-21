@@ -1,0 +1,16 @@
+defaults:
+    - model: unet
+    - train: unet
+    - validate: unet
+    - logging: wandb
+    - ddp: ddp
+    - runs: runs
+    - _self_
+
+seed: 0
+device: cuda
+
+data:
+    voxel_size: [5, 5, 5]
+    downsample_factor: 1
+    num_classes: 2

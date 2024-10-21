@@ -1,0 +1,8 @@
+validation:
+    pipeline: baseline_with_context
+    data:
+    validate_every: 1000
+    input_size_voxels: [204, 204, 204]
+    output_size_voxels: [110, 110, 110]
+    snapshot:
+        every: 10

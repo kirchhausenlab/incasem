@@ -1,0 +1,18 @@
+unet:
+    in_channels: 1
+    num_fmaps: 32
+    num_fmaps_out: 2
+    fmap_inc_factor: 2
+    downsample_factors: [[2,2,2], [2,2,2], [2,2,2]]
+    constant_upsample: True
+    loss:
+        type: cross_entropy_scaling
+        weight: [1.0, 1.0]
+        balance_labels:
+        clipmin: 0.01
+        clipmax: 0.99
+    activation: ReLU
+    num_heads: 1
+    padding: valid
+weights: ""
+

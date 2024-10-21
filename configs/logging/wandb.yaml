@@ -1,0 +1,6 @@
+use_wandb: true
+wandb_config:
+  project: incasem_v2
+  entity: artificial-intelligence-research
+  name: null
+  resume: false

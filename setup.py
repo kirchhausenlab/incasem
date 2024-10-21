@@ -1,34 +1,51 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-    name="incasem",
+    name="incasem_v2",
     version="0.1",
-    description="",
-    url="https://github.com/kirchhausenlab/incasem",
-    author="Benjamin Gallusser",
-    author_email="gallusser@tklab.hms.harvard.edu",
-    license="MIT",
-    py_modules=[],
+    packages=find_packages(where="src"),
+    package_dir={"": "src"},
+    python_requires=">=3.9",  # compatibility with pinned libs
     install_requires=[
+        "numpy<2",
         "zarr",
+        "wheel",  # adding as a safety
+        "imagecodecs",  # prevent image compute errors
         "scikit-learn",
         "pyyaml",
         "quilt3",
-        "tensorboardX",
-        "tensorboard",
         "configargparse",
-        "protobuf",
-        "daisy",
-        "streamlit",
-        "watchdog",
         "torch",
+        "torchvision",
+        "protobuf",
+        "tqdm",
+        "wandb",  # logging
+        "hydra-core",  # config management
+        "watchdog",
+        "omegaconf",
         "loguru",
-        # "sacred @ git+https://github.com/kirchhausenlab/sacred@master",
-        # "funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch@5590fb51aef8381eeae99bbe75800ecb186684a1",
-        "funlib.learn.torch @ git@github.com:ArkashJ/funlib.learn.torch_TKLAB.git",
-        # "funlib.persistence @ git+https://github.com/funkelab/funlib.persistence@ff4c78f8572334e04fc84ca79f10dc754534e3e9",
-        "funlib.persistence @ git@github.com:ArkashJ/funlib.persistence_TKLAB.git",
-        "gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array",
+        "scikit-image",
+        "dask",
+        "matplotlib",
+        "pillow",
+        "numba",
+        "tifffile",  # tiff file handling
+        "streamlit",
+        "ipython",
     ],
-    python_requires=">=3.9",
+    extras_require={
+        "dev": [  # dev dependencies for code quality
+            "pytest",
+            "black",
+            "ruff",
+        ],
+        "xformers": [  # xformers for transformer models
+            "xformers",
+            "triton",
+        ],
+    },
+    dependency_links=[
+        "https://download.pytorch.org/whl/cu118",  # cuda 11.8
+        "https://pypi.nvidia.com",
+    ],
 )
