@@ -1,0 +1,13 @@
+prediction:
+    pipeline: baseline
+    data: 
+    run_id_training: 
+    checkpoint:
+    directories:
+        prefix: /nfs/scratch/ajain/incasem/incasem/data
+    input_size_voxels: [204, 204, 204]
+    output_size_voxels: [110, 110, 110]
+    num_workers: 8
+    log_metrics: False
+    torch:
+        device: 0

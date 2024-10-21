@@ -5,6 +5,8 @@ defaults:
     - logging: wandb
     - ddp: ddp
     - runs: runs
+    - inputs: inputs
+    - inference: unet
     - _self_
 
 seed: 0

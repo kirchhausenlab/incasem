@@ -1,1 +1,10 @@
 #TODO: let users enter the zarr file path from cfg
+
+inference:
+  directories:
+    data: /nfs/scratch/ajain/incasem/incasem/data
+  
+train:
+  directories:
+    runs: /nfs/scratch/ajain/incasem/runs
+    data: /nfs/scratch/ajain/incasem/incasem/data
