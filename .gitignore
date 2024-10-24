@@ -10,7 +10,7 @@ data/
 runs/
 wandb/
 
-outputs
+outputs/
 
 **/daisy_logs/
 **/models/
