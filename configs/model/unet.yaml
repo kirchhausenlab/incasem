@@ -9,8 +9,8 @@ unet:
         type: cross_entropy_scaling
         weight: [1.0, 1.0]
         balance_labels:
-        clipmin: 0.01
-        clipmax: 0.99
+            clipmin: 0.01
+            clipmax: 0.9
     activation: ReLU
     num_heads: 1
     padding: valid

@@ -21,8 +21,7 @@ class Squeeze(gp.BatchFilter):
         self.axis = axis
 
         if self.axis != 0:
-            raise NotImplementedError(
-                'Squeeze only supported for leading dimension')
+            raise NotImplementedError("Squeeze only supported for leading dimension")
 
     def setup(self):
         self.enable_autoskip()
@@ -40,6 +39,6 @@ class Squeeze(gp.BatchFilter):
         for array in self.arrays:
             outputs[array] = copy.deepcopy(batch[array])
             outputs[array].data = np.squeeze(batch[array].data, self.axis)
-            logger.debug(f'{array} shape: {outputs[array].data.shape}')
+            logger.debug(f"{array} shape: {outputs[array].data.shape}")
 
         return outputs

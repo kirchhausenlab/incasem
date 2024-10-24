@@ -29,3 +29,6 @@ precache:
     cache_size: 20
     num_workers: 8
 resume: True
+checkpointing:
+    continue_run: ${training_runs.continue_id}
+    resume_checkpoint: ${training_runs.run_id}
