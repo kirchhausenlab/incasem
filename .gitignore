@@ -8,7 +8,9 @@
 /training_runs
 data/
 runs/
+wandb/
 
+outputs
 
 **/daisy_logs/
 **/models/

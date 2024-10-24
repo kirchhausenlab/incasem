@@ -6,11 +6,10 @@ defaults:
     - ddp: ddp
     - runs: runs
     - inputs: inputs
-    - inference: unet
     - _self_
 
 seed: 42
-device: cuda
+device: "cuda:2"
 
 model_type: "UNet"
 loss_type: "cross_entropy_scaling"
@@ -27,6 +26,8 @@ directories:
     runs: ${incasem_dir}/runs 
     data: ${incasem_dir}/incasem/data
 
+
 training_runs:
     continue_id: null
-    run_id: null
+    run_id: 0
+log_every: 1000

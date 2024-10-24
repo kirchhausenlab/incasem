@@ -1,6 +1,7 @@
 use_wandb: true
 wandb_config:
-  project: incasem_v2
+  project: incasem
   entity: artificial-intelligence-research
-  name: null
+  name: incasem_train
   resume: false
+  run_name: incasem_test_
