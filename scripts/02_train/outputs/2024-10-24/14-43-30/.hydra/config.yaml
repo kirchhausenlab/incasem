@@ -1,0 +1,149 @@
+model:
+  unet:
+    in_channels: 1
+    num_fmaps: 32
+    num_fmaps_out: 2
+    fmap_inc_factor: 2
+    downsample_factors:
+    - - 2
+      - 2
+      - 2
+    - - 2
+      - 2
+      - 2
+    - - 2
+      - 2
+      - 2
+    constant_upsample: true
+    loss:
+      type: cross_entropy_scaling
+      weight:
+      - 1.0
+      - 1.0
+      balance_labels:
+        clipmin: 0.01
+        clipmax: 0.9
+    activation: ReLU
+    num_heads: 1
+    padding: valid
+  weights: ''
+train:
+  pipeline: baseline_with_context
+  data: []
+  iterations: 200000
+  input_size_voxels:
+  - 204
+  - 204
+  - 204
+  output_size_voxels:
+  - 110
+  - 110
+  - 110
+  save_every: 1000
+  log_every: 1
+  optimizer:
+    lr: 3.0e-05
+    weight_decay: 3.0e-05
+  reject:
+    min_masked: 0.05
+    reject_probability: 0.9
+  augmentation:
+    elastic:
+      control_point_spacing:
+      - 32
+      - 32
+      - 32
+      jitter_sigma:
+      - 2
+      - 2
+      - 2
+      subsample: 4
+    intensity:
+      scale: 0.15
+      shift: 0.15
+    simple:
+      transpose_only:
+      - 0
+      - 1
+      - 2
+  snapshot:
+    every: 1000
+  profiling_stats:
+    every: 1000
+  precache:
+    cache_size: 20
+    num_workers: 8
+  resume: true
+  checkpointing:
+    continue_run: ${training_runs.continue_id}
+    resume_checkpoint: ${training_runs.run_id}
+validate:
+  pipeline: baseline_with_context
+  data: null
+  validate_every: 1000
+  input_size_voxels:
+  - 204
+  - 204
+  - 204
+  output_size_voxels:
+  - 110
+  - 110
+  - 110
+  snapshot:
+    every: 10
+logging:
+  use_wandb: true
+  wandb_config:
+    project: incasem
+    entity: artificial-intelligence-research
+    name: incasem_train
+    resume: false
+ddp: {}
+runs: {}
+inputs:
+  inference:
+    directories:
+      data: /nfs/scratch/ajain/incasem/incasem/data
+  train:
+    directories:
+      runs: /nfs/scratch/ajain/incasem/runs
+      data: /nfs/scratch/ajain/incasem/incasem/data
+inference:
+  prediction:
+    pipeline: baseline
+    data: null
+    run_id_training: null
+    checkpoint: null
+    directories:
+      prefix: /nfs/scratch/ajain/incasem/incasem/data
+    input_size_voxels:
+    - 204
+    - 204
+    - 204
+    output_size_voxels:
+    - 110
+    - 110
+    - 110
+    num_workers: 8
+    log_metrics: false
+    torch:
+      device: 0
+seed: 42
+device: cuda
+model_type: UNet
+loss_type: cross_entropy_scaling
+data:
+  voxel_size:
+  - 5
+  - 5
+  - 5
+  downsample_factor: 1
+  num_classes: 2
+base: /nfs/scratch/ajain
+incasem_dir: ${base}/incasem
+directories:
+  runs: ${incasem_dir}/runs
+  data: ${incasem_dir}/incasem/data
+training_runs:
+  continue_id: null
+  run_id: null

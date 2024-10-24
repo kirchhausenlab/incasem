@@ -14,11 +14,34 @@ import yaml
 from loguru import logger
 import wandb
 import hydra
-from typing import Optional, Union, Tuple, List, Dict
+from typing import Optional, Union, Tuple, List, Dict, Any
 from omegaconf import DictConfig
 import incasem as fos
 
 import torch.distributed as dist
+
+
+def setup_wandb(
+    cfg: DictConfig,
+    hyperparameters: Dict[str, Any],
+) -> wandb.run:
+    run = wandb.init(
+        project=cfg.logging.wandb_config.project,
+        entity=cfg.logging.wandb_config.entity,
+        config=hyperparameters,
+        name=cfg.logging.wandb_config.run_name,
+        resume=cfg.logging.wandb_config.resume,
+    )
+    return run
+
+
+def _log(
+    run: wandb.run,
+    metrics: Dict[str, Any],
+    **kwargs: Any,
+) -> None:
+    logger.info("Logging metrics: %s" % metrics)
+    run.log(metrics, **kwargs)
 
 
 def setup(
@@ -117,12 +140,10 @@ def loss_setup(
 
 def training_setup(
     cfg: DictConfig,
-    run_dir: str,
     model: torch.nn.Module,
 ):
     try:
         loss = loss_setup(cfg)
-        logger.info("Loss returned scuccessfully")
 
         optimizer = torch.optim.Adam(
             model.parameters(),
@@ -240,24 +261,6 @@ def training_setup(
         raise e
 
 
-# def multiple_validation_setup(_config, _run_dummy, _seed, run_dir, model):
-#     val_datasets = fos.utils.create_multiple_config(_config["validation"]["data"])
-
-#     validations = []
-#     for val_ds in val_datasets:
-#         validations.append(
-#             validation_setup(
-#                 _config,
-#                 _run_dummy,
-#                 _seed,
-#                 run_dir,
-#                 model,
-#                 val_ds,
-#             )
-#         )
-#     return validations
-
-
 def multiple_validation_setup(
     cfg: DictConfig,
     model: torch.nn.Module,
@@ -317,48 +320,34 @@ def validation_setup(
     return validation
 
 
-def log_result(
-    _run_dummy,
-    _config,
-    metric_name="loss",
-    metric_val=float("inf"),
-) -> str:
-    experiment_name = f"Run {_run_dummy._id}: "
-    return f"\n{experiment_name}" f"\nval {metric_name}: {metric_val:.6f}"
+def log_metrics(
+    run: wandb.run,
+    target: np.ndarray,
+    prediction_probas: np.ndarray,
+    mask: np.ndarray,
+    metric_mask: np.ndarray,
+    iteration: int,
+    mode: str,
+) -> None:
+    mask = np.logical_and(mask.astype(bool), metric_mask.astype(bool))
+
+    dice_scores = []
+    for i in range(prediction_probas.shape[0]):
+        dic_score = fos.metrics.pairwise_distance_metric_thresholded(
+            target=target,
+            prediction_probas=prediction_probas,
+            threshold=0.5,
+            metric="dice",
+            foreground_class=i,
+            mask=mask,
+        )
+        dice_scores.append(dic_score)
+    for label, score in enumerate(dice_scores):
+        run.log_scalar(f"dice_class_{label}_{mode}", score, iteration)
+        logger.info(f"{mode} | Dice score class {label}: {score}")
 
 
-def directory_structure_setup(_config, _run_dummy):
-    try:
-        dir_run_id = _config["training"]["continue_id"]
-        logger.info(f"Continue training run {dir_run_id}")
-    except KeyError:
-        try:
-            load_run_id, load_run_checkpoint = _config["training"]["start_from"]
-            model_to_load = os.path.expanduser(load_run_checkpoint)
-            new_model = os.path.join(
-                os.path.expanduser(_config["directories"]["runs"]),
-                "models",
-                str(_run_dummy._id),
-                "model_checkpoint_0",
-            )
-            os.makedirs(os.path.dirname(new_model), exist_ok=True)
-            copyfile(model_to_load, new_model)
-            dir_run_id = _run_dummy._id
-
-            logger.info(
-                f"Starting new training run {dir_run_id}, \
-                from previous run {load_run_id}, \
-                checkpoint {load_run_checkpoint}"
-            )
-        except KeyError:
-            dir_run_id = _run_dummy._id
-            logger.info(f"Starting new training run {dir_run_id}")
-
-    dir_run_id = f"{dir_run_id:04d}"
-    return dir_run_id
-
-
-def log_metrics(_run, target, prediction_probas, mask, metric_mask, iteration, mode):
+def _log_metrics(_run, target, prediction_probas, mask, metric_mask, iteration, mode):
     mask = np.logical_and(mask.astype(bool), metric_mask.astype(bool))
 
     dice_scores = []
@@ -409,16 +398,12 @@ def train(_config, _run, _seed):
         data_config:
         val_data_config:
     """
-
-    torch_setup(_config)
-    # log_data_config(_config, _run)
-    run_dir = directory_structure_setup(_config, _run)
-
-    model = model_setup(_config, _run)
-    training = training_setup(_config, _run, _seed, run_dir=run_dir, model=model)
-
+    setup_torch(cfg=_config)
+    model = model_setup(cfg=_config)
+    training = training_setup(cfg=_config, model=model)
     validations = multiple_validation_setup(
-        _config, _run, _seed, run_dir=run_dir, model=model
+        cfg=_config,
+        model=model,
     )
     validation_loss = float("inf")
 
@@ -612,6 +597,9 @@ def main(cfg: DictConfig):
     model = model_setup(cfg)
     training = training_setup(cfg, model)
     logger.info(f"Training pipeline: {training.pipeline}")
+    runs = setup_wandb(cfg, hyperparameters={})
+    validations = multiple_validation_setup(cfg, model)
+    logger.info(f"Validation pipelines: {validations}")
     sync()
     cleanup()
 
