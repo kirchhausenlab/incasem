@@ -9,7 +9,7 @@
 data/
 runs/
 wandb/
-
+cell_*
 outputs/
 
 **/daisy_logs/
