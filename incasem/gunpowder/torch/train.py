@@ -114,7 +114,6 @@ class Train(GenericTrain):
         gpus=[0],
         spawn_subprocess: bool = False,
     ):
-
         if not model.training:
             logger.warning(
                 "Model is in evaluation mode during training. "
@@ -149,8 +148,7 @@ class Train(GenericTrain):
         else:
             self.summary_writer = None
             if log_dir is not None:
-                logger.warning(
-                    "log_dir given, but tensorboardX is not installed")
+                logger.warning("log_dir given, but tensorboardX is not installed")
 
         self.intermediate_layers = {}
         self.register_hooks()
@@ -182,20 +180,21 @@ class Train(GenericTrain):
             tensor.retain_grad()
 
     def start(self):
-
         self.use_cuda = torch.cuda.is_available() and self.device_string == "cuda"
 
         if self.use_cuda:
             if len(self.gpus) != 1:
                 raise NotImplementedError(
-                    f"Training only implemented for a single GPU.")
+                    f"Training only implemented for a single GPU."
+                )
             torch.cuda.set_device(self.gpus[0])
             logger.info(f"Training on gpu {torch.cuda.current_device()}.")
         else:
             logger.info("Training on cpu.")
 
         self.device = torch.device(
-            f"cuda:{torch.cuda.current_device()}" if self.use_cuda else "cpu")
+            f"cuda:{torch.cuda.current_device()}" if self.use_cuda else "cpu"
+        )
 
         try:
             self.model = self.model.to(self.device)
@@ -212,18 +211,17 @@ class Train(GenericTrain):
             self.checkpoint_basename
         )
 
-        if checkpoint is not None:
+        # if checkpoint is not None:
+        #     logger.info("Resuming training from iteration %d", self.iteration)
+        #     logger.info("Loading %s", checkpoint)
+        #     print(f"***************{self.device}***************")
+        #     print(f"{torch.cuda.device_count()}***************")
+        #     checkpoint = torch.load(checkpoint, map_location=self.device)
+        #     self.model.load_state_dict(checkpoint["model_state_dict"])
+        #     self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
-            logger.info("Resuming training from iteration %d", self.iteration)
-            logger.info("Loading %s", checkpoint)
-
-            checkpoint = torch.load(checkpoint, map_location=self.device)
-            self.model.load_state_dict(checkpoint["model_state_dict"])
-            self.optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
-
-        else:
-
-            logger.info("Starting training from scratch")
+        # else:
+        logger.info("Starting training from scratch")
 
         logger.info("Using device %s", self.device)
 
@@ -236,14 +234,14 @@ class Train(GenericTrain):
         # keys are argument names of model forward pass
         if self.use_cuda:
             pinned_inputs = {
-                k: torch.as_tensor(v).pin_memory() for k,
-                v in inputs.items()}
+                k: torch.as_tensor(v).pin_memory() for k, v in inputs.items()
+            }
             device_inputs = {
-                k: v.to(device=self.device, non_blocking=True) for k,
-                v in pinned_inputs.items()}
+                k: v.to(device=self.device, non_blocking=True)
+                for k, v in pinned_inputs.items()
+            }
         else:
-            device_inputs = {
-                k: torch.as_tensor(v) for k, v in inputs.items()}
+            device_inputs = {k: torch.as_tensor(v) for k, v in inputs.items()}
 
         # get outputs. Keys are tuple indices or model attr names as in
         # self.outputs
@@ -272,13 +270,16 @@ class Train(GenericTrain):
         if self.use_cuda:
             pinned_loss_inputs = {
                 k: torch.as_tensor(v).pin_memory()
-                for k, v in provided_loss_inputs.items()}
+                for k, v in provided_loss_inputs.items()
+            }
             device_loss_inputs = {
                 k: v.to(device=self.device, non_blocking=True)
-                for k, v in pinned_loss_inputs.items()}
+                for k, v in pinned_loss_inputs.items()
+            }
         else:
             device_loss_inputs = {
-                k: torch.as_tensor(v) for k, v in provided_loss_inputs.items()}
+                k: torch.as_tensor(v) for k, v in provided_loss_inputs.items()
+            }
 
         # Some inputs to the loss function should come from the outputs of the model
         # Update device loss inputs with tensors from outputs if available
@@ -354,14 +355,11 @@ class Train(GenericTrain):
                 )
             spec = self.spec[array_key].copy()
             spec.roi = request[array_key].roi
-            batch.arrays[array_key] = Array(
-                tensor.grad.detach().cpu().numpy(), spec
-            )
+            batch.arrays[array_key] = Array(tensor.grad.detach().cpu().numpy(), spec)
 
         batch.loss = loss.detach().cpu().numpy()
 
         if batch.iteration % self.save_every == 0:
-
             checkpoint_name = self._checkpoint_name(
                 self.checkpoint_basename, batch.iteration
             )
@@ -384,7 +382,6 @@ class Train(GenericTrain):
         self.iteration += 1
 
     def __collect_requested_outputs(self, request):
-
         array_outputs = {}
 
         for output_name, array_key in self.outputs.items():
@@ -394,27 +391,20 @@ class Train(GenericTrain):
         return array_outputs
 
     def __collect_provided_inputs(self, batch):
-
         return self.__collect_provided_arrays(
             {k: v for k, v in self.inputs.items() if k not in self.loss_inputs}, batch
         )
 
     def __collect_provided_loss_inputs(self, batch):
-
         return self.__collect_provided_arrays(
             self.loss_inputs, batch, expect_missing_arrays=True
         )
 
-    def __collect_provided_arrays(
-            self,
-            reference,
-            batch,
-            expect_missing_arrays=False):
-
+    def __collect_provided_arrays(self, reference, batch, expect_missing_arrays=False):
         arrays = {}
 
         for array_name, array_key in reference.items():
-            logger.debug(f'{array_name=}, {array_key=}')
+            logger.debug(f"{array_name=}, {array_key=}")
             if isinstance(array_key, ArrayKey):
                 msg = f"batch does not contain {array_key}, array {array_name} will not be set"
                 if array_key in batch.arrays:
@@ -429,8 +419,9 @@ class Train(GenericTrain):
                 arrays[array_name] = getattr(batch, array_key)
             else:
                 raise Exception(
-                    "Unknown network array key {}, can't be given to "
-                    "network".format(array_key)
+                    "Unknown network array key {}, can't be given to " "network".format(
+                        array_key
+                    )
                 )
 
         return arrays

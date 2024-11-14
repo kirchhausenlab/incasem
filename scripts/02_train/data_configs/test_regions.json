@@ -1,0 +1,13 @@
+{
+  "region_1": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [314, 1253, 3591],
+    "shape": [204, 204, 204],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/1909_seg"],
+    "labels": {
+      "volumes/predictions/1909/5/segmentation": 1
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python Debugger: Current File with Arguments",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": "${command:pickArgs}"
+        },
+        {
+            "name": "Predict",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/scripts/03_predict/predict.py",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}/scripts/03_predict",  // Add this line
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"  // Add this line
+            },
+            "args": [
+                "--run_id", "1909",
+                "--name", "2",
+                "with", "config_prediction.yaml",
+                "prediction.data='${workspaceFolder}/scripts/03_predict/data_configs/test_regions.json'",
+                "prediction.checkpoint='../../models/models/2822/model_checkpoint_60000'"
+            ],
+        }
+    ]
+}

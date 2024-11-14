@@ -1,0 +1,12 @@
+{
+  "region_1": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [685, 1825, 1879],
+    "shape": [204, 204, 350],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2822/predict_5054/segmentation": 1
+    }
+  }
+}

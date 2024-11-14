@@ -576,13 +576,11 @@ def train(_config, _run, _seed):
 
 def load_run(run_id):
     # Check if the previous run ID is in training_runs or mock_db
-    ledger_path = Path(__file__).resolve().parents[3].joinpath("mock_db/ledger.json")
-    with open(f"{ledger_path}") as f:
+    with open("../../mock_db/ledger.json") as f:
         ledger = json.load(f)
     assert str(run_id) in ledger.keys(), "Run ID not found in ~/incasem/mock_db"
 
-    mock_db_path = Path(__file__).resolve().parents[3].joinpath("mock_db")
-    with open(f"{mock_db_path}/{ledger[str(run_id)]}") as f:
+    with open(f"../../mock_db/{ledger[str(run_id)]}") as f:
         config = json.load(f)
 
     return config
@@ -629,13 +627,11 @@ def parse_argmuents():
 if __name__ == "__main__":
     config, args, remaining_argv = parse_argmuents()
 
-    curr_path = Path(__file__).resolve().parent
-    path_to_conf = curr_path.joinpath("config_training.yaml")
     if config is not None:
         logger.debug(config)
     else:
         config = {}
-        with open(f"{path_to_conf}", "r") as file:
+        with open("config_training.yaml", "r") as file:
             yaml_data = yaml.safe_load(file)
 
     val_arg_dict = {}
@@ -686,23 +682,21 @@ if __name__ == "__main__":
 
     name = name + f"_{_run_dummy._id}"
 
-    path_to_mock_db = curr_path.parents[1].joinpath("mock_db")
-    # mock_db_path = curr_path.joinpath("mock_db")
-
     # Update ledger
-    ledger_json = path_to_mock_db.joinpath("ledger.json")
-    with open(ledger_json) as fp:
+    with open("../../mock_db/ledger.json") as fp:
         ledger = json.load(fp)
 
     ledger[str(_run_dummy._id)] = name + ".json"
 
-    with open(ledger_json, mode="w") as f:
+    with open("../../mock_db/ledger.json", mode="w") as f:
         json.dump(ledger, f)
 
     # Write config
-    path_to_config = path_to_mock_db.joinpath(f"{name}.json")
-    with open(f"{path_to_config}", mode="w") as f:
+    with open(f"../../mock_db/{name}.json", mode="w") as f:
         json.dump(config, f)
+
+    # if not os.path.exists(config['directories']['runs']):
+    #     os.mkdir(config['directories']['runs'])
 
     seed_dummy = 42
 

@@ -1,4 +1,5 @@
 import os
+from shutil import copyfile
 from pathlib import Path
 import gunpowder as gp
 import numpy as np
@@ -31,8 +32,9 @@ def _log(
     metrics: Dict[str, Any],
     **kwargs: Any,
 ) -> None:
+    iteration = kwargs.get("iteration", None)
     logger.info("Logging metrics: %s" % metrics)
-    run.log(metrics, **kwargs)
+    run.log(metrics, step=iteration)
 
 
 def setup(
@@ -126,9 +128,38 @@ def loss_setup(
     return loss
 
 
+def directory_structure_setup(
+    cfg: DictConfig,
+) -> str:
+    try:
+        dir_run_id = cfg.training_runs.continue_id
+        logger.info(f"Continue training from run {dir_run_id}")
+    except KeyError:
+        try:
+            load_run_id, load_run_ckpt = cfg.training_runs.start_from
+            model_to_load = os.path.expanduser(load_run_ckpt)
+            new_model = os.path.join(
+                os.path.expanduser(cfg.directories.runs),
+                "models",
+                str(load_run_id),
+                "model_checkpoint_0",
+            )
+            os.makedirs(os.path.dirname(new_model), exist_ok=True)
+            copyfile(model_to_load, new_model)
+            dir_run_id = load_run_id
+
+            logger.info(f"Starting training from run {dir_run_id}")
+        except KeyError:
+            dir_run_id = cfg.training.run_id
+            logger.info(f"Starting new training run {dir_run_id}")
+    dir_run_id = f"{dir_run_id:04d}"
+    return dir_run_id
+
+
 def training_setup(
     cfg: DictConfig,
     model: torch.nn.Module,
+    run_dir: str,
 ):
     try:
         loss = loss_setup(cfg)
@@ -145,7 +176,7 @@ def training_setup(
 
         training = pipeline_type(
             data_config=cfg.train.data,
-            run_dir=cfg.directories.runs,
+            run_dir=run_dir,
             run_path_prefix=os.path.expanduser(cfg.directories.runs),
             data_path_prefix=os.path.expanduser(cfg.directories.data),
             model=model,
@@ -162,7 +193,7 @@ def training_setup(
 
         device = cfg.device
         # device is stored as cuda:2, get gpu number
-        training.train_node.gpus = [] if device == "cpu" else [1]
+        training.train_node.gpus = [] if device == "cpu" else [0]
         training.train_node.save_every = int(cfg.train.save_every)
         training.train_node.log_every = int(cfg.train.log_every)
         training.downsample.factor = int(cfg.data.downsample_factor)
@@ -243,7 +274,6 @@ def training_setup(
 
         training.snapshot.every = int(cfg.train.snapshot.every)
         training.profiling_stats.every = int(cfg.train.profiling_stats.every)
-        print(f"****\n {training.pipeline} \n****")
         return training
     except Exception as e:
         logger.error("Error in training_setup: %s" % e)
@@ -253,11 +283,14 @@ def training_setup(
 def multiple_validation_setup(
     cfg: DictConfig,
     model: torch.nn.Module,
+    run_dir: str,
 ) -> List[fos.pipeline.ValidationBaselineWithContext]:
     val_datasets = fos.utils.create_multiple_config(cfg.validate.data)
     validations = []
     for val_ds in val_datasets:
-        validations.append(validation_setup(cfg=cfg, model=model, val_dataset=val_ds))
+        validations.append(
+            validation_setup(cfg=cfg, model=model, val_dataset=val_ds, run_dir=run_dir)
+        )
     return validations
 
 
@@ -265,6 +298,7 @@ def validation_setup(
     val_dataset,
     cfg: DictConfig,
     model: torch.nn.Module,
+    run_dir: str,
 ):
     loss = loss_setup(cfg)
 
@@ -274,7 +308,7 @@ def validation_setup(
 
     validation = pipeline_type(
         data_config=val_dataset,
-        run_dir=cfg.directories.runs,
+        run_dir=run_dir,
         run_path_prefix=os.path.expanduser(cfg.directories.runs),
         data_path_prefix=os.path.expanduser(cfg.directories.data),
         model=model,
@@ -287,9 +321,8 @@ def validation_setup(
         random_seed=cfg.seed,
     )
     device = cfg.device
-    validation.predict.gpus = [] if device == "cpu" else [1]
+    validation.predict.gpus = [] if device == "cpu" else [0]
     validation.downsample.factor = int(cfg.data.downsample_factor)
-    # Balance Labels
     try:
         validation.balance_labels.clipmin = float(
             cfg.model.unet.loss.balance_labels.clipmin
@@ -357,8 +390,8 @@ def log_labels_balance(
                     "iteration": iteration,
                 }
             )
-    except KeyError as e:
-        logger.error(e)
+    except Exception as e:
+        logger.error("Error in log_labels_balance: %s" % e)
 
 
 def log_tb_batch_position(
@@ -366,18 +399,21 @@ def log_tb_batch_position(
     i: int,
     raw_pos: np.ndarray,
 ):
-    logger.debug(f"{i=}, {raw_pos=}")
-    run.log(
-        {
-            "offset_z": int(raw_pos[0][0]),
-            "offset_y": int(raw_pos[0][1]),
-            "offset_x": int(raw_pos[0][2]),
-            "shape_z": int(raw_pos[1][0]),
-            "shape_y": int(raw_pos[1][1]),
-            "shape_x": int(raw_pos[1][2]),
-            "iteration": i,
-        }
-    )
+    try:
+        logger.debug(f"{i=}, {raw_pos=}")
+        run.log(
+            {
+                "offset_z": int(raw_pos[0][0]),
+                "offset_y": int(raw_pos[0][1]),
+                "offset_x": int(raw_pos[0][2]),
+                "shape_z": int(raw_pos[1][0]),
+                "shape_y": int(raw_pos[1][1]),
+                "shape_x": int(raw_pos[1][2]),
+                "iteration": i,
+            }
+        )
+    except Exception as e:
+        logger.error("Error in log_tb_batch_position: %s" % e)
 
 
 def train(
@@ -390,10 +426,12 @@ def train(
         val_data_config:
     """
     model = model_setup(cfg=cfg)
-    training = training_setup(cfg=cfg, model=model)
+    run_dir = "2100"
+    training = training_setup(cfg=cfg, model=model, run_dir=run_dir)
     validations = multiple_validation_setup(
         cfg=cfg,
         model=model,
+        run_dir=run_dir,
     )
     validation_loss = float("inf")
 
@@ -402,114 +440,119 @@ def train(
     run_wandb = setup_wandb(cfg=cfg, hyperparameters={})
     # ### START ITERATING ### #
 
-    try:
-        with gp.build(training.pipeline) as p:
-            # Hack for validation in continued training
-            logger.info(
-                (
-                    f"Training iteration is {training.train_node.iteration}, "
-                    "copying into validation pipeline"
-                )
+    with gp.build(training.pipeline) as p:
+        # Hack for validation in continued training
+        logger.info(
+            (
+                f"Training iteration is {training.train_node.iteration}, "
+                "copying into validation pipeline"
             )
-            start_iteration = training.train_node.iteration
+        )
+        start_iteration = training.train_node.iteration
+        logger.info(
+            f"**************************\nStarting iteration: {start_iteration}"
+        )
+        # build validation pipelines
+        for idx_pipeline, validation in enumerate(validations):
+            try:
+                validations[idx_pipeline].pipeline.setup()
+            except BaseException:
+                logger.error(
+                    f"something went wrong during the setup of pipeline {idx_pipeline}, calling tear down"
+                )
+                validations[idx_pipeline].pipeline.internal_teardown()
+                logger.debug("tear down completed")
+                raise
 
-            # build validation pipelines
-            for idx_pipeline, validation in enumerate(validations):
-                try:
-                    validations[idx_pipeline].pipeline.setup()
-                except BaseException:
-                    logger.error(
-                        f"something went wrong during the setup of pipeline {idx_pipeline}, calling tear down"
+            validations[idx_pipeline].validation_loss.iteration = start_iteration
+        # from 0 to iterations+1, for logging once more in the end.
+        for i in range(start_iteration, cfg.train.iterations + 1):
+            batch = p.request_batch(training.request)
+            # logger.debug(f'batch {i}:\n{batch}')
+            log_tb_batch_position(
+                run=run_wandb,
+                i=i,
+                raw_pos=batch[gp.ArrayKey("RAW_POS")].data,
+            )
+            log_labels_balance(
+                run=run_wandb,
+                labels=batch[gp.ArrayKey("LABELS")].data,
+                iteration=i,
+                num_classes=cfg.data.num_classes,
+            )
+
+            if i % cfg.log_every == 0:
+                for l_i, l in enumerate(np.atleast_1d(batch.loss)):
+                    _log(
+                        run=run_wandb,
+                        metrics={f"loss_train_type_{l_i}": l},
+                        iteration=i,
                     )
-                    validations[idx_pipeline].pipeline.internal_teardown()
-                    logger.debug("tear down completed")
-                    raise
 
-                validations[idx_pipeline].validation_loss.iteration = start_iteration
-            # from 0 to iterations+1, for logging once more in the end.
-            for i in range(start_iteration, cfg.train.iterations + 1):
-                batch = p.request_batch(training.request)
-                # logger.debug(f'batch {i}:\n{batch}')
-                log_tb_batch_position(run_wandb, i, batch[gp.ArrayKey("RAW_POS")].data)
                 log_labels_balance(
-                    run_wandb,
-                    i,
-                    batch[gp.ArrayKey("LABELS")].data,
-                    cfg.data.num_classes,
+                    run=run_wandb,
+                    labels=batch[gp.ArrayKey("LABELS")].data,
+                    num_classes=cfg.data.num_classes,
+                    iteration=i,
+                )
+                # Log metrics training
+                log_metrics(
+                    run=run_wandb,
+                    target=batch[gp.ArrayKey("LABELS")].data,
+                    prediction_probas=batch[gp.ArrayKey("PREDICTIONS")].data,
+                    mask=batch[gp.ArrayKey("MASK")].data,
+                    metric_mask=batch[gp.ArrayKey("METRIC_MASK")].data,
+                    iteration=i,
+                    mode="train",
                 )
 
-                if i % cfg.log_every == 0:
-                    for l_i, l in enumerate(np.atleast_1d(batch.loss)):
+            if i % cfg.validate.validate_every == 0:
+                model.eval()
+                # loop over validation objects; each one has a pipeline
+                for val_idx, validation in enumerate(validations):
+                    # current validation pipeline
+                    val_p = validation.pipeline
+
+                    val_request = gp.BatchRequest()
+                    provider_spec = validation.scan.spec
+                    for key, spec in provider_spec.items():
+                        if key in validation.request:
+                            request_spec = spec.copy()
+                            request_spec.dtype = None
+                            val_request[key] = request_spec
+
+                    val_batch = val_p.request_batch(val_request)
+
+                    val_losses = np.atleast_1d(val_batch.loss)
+                    for l_i, l in enumerate(val_losses):
                         _log(
                             run=run_wandb,
-                            metrics={f"loss_train_type_{l_i}": l},
+                            metrics={f"loss_val_type_{l_i}": l},
                             iteration=i,
                         )
 
-                    log_labels_balance(
-                        run=run_wandb,
-                        labels=batch[gp.ArrayKey("LABELS")].data,
-                        num_classes=cfg.data.num_classes,
-                        iteration=i,
-                    )
-                    # Log metrics training
-                    log_metrics(
-                        run=run_wandb,
-                        target=batch[gp.ArrayKey("LABELS")].data,
-                        prediction_probas=batch[gp.ArrayKey("PREDICTIONS")].data,
-                        mask=batch[gp.ArrayKey("MASK")].data,
-                        metric_mask=batch[gp.ArrayKey("METRIC_MASK")].data,
-                        iteration=i,
-                        mode="train",
-                    )
-
-                if i % cfg.validate.validate_every == 0:
-                    model.eval()
-                    # loop over validation objects; each one has a pipeline
-                    for val_idx, validation in enumerate(validations):
-                        # current validation pipeline
-                        val_p = validation.pipeline
-
-                        val_request = gp.BatchRequest()
-                        provider_spec = validation.scan.spec
-                        for key, spec in provider_spec.items():
-                            if key in validation.request:
-                                request_spec = spec.copy()
-                                request_spec.dtype = None
-                                val_request[key] = request_spec
-
-                        val_batch = val_p.request_batch(val_request)
-
-                        val_losses = np.atleast_1d(val_batch.loss)
-                        for l_i, l in enumerate(val_losses):
-                            _log(
-                                run=run_wandb,
-                                metrics={f"loss_val_type_{l_i}": l},
-                                iteration=i,
-                            )
-
-                        if i % cfg.log_every == 0:
-                            log_metrics(
-                                run=run_wandb,
-                                target=val_batch[gp.ArrayKey("LABELS")].data,
-                                prediction_probas=val_batch[
-                                    gp.ArrayKey("PREDICTIONS")
-                                ].data,
-                                mask=val_batch[gp.ArrayKey("MASK")].data,
-                                metric_mask=val_batch[gp.ArrayKey("METRIC_MASK")].data,
-                                iteration=i,
-                                mode=f"validation_ds_{val_idx}",
-                            )
-                    model.train()
-            # release (teardown) validation pipelines
-            logger.debug("tearing down val pipelines")
-            for idx_pipeline, validation in enumerate(validations):
-                validations[idx_pipeline].pipeline.internal_teardown()
-            logger.debug("tear down completed")
-        logger.info(f"Validation loss: {validation_loss}")
-    except Exception as e:
-        logger.error(f"Error in training: {e}")
-        raise e
+                    if i % cfg.log_every == 0:
+                        log_metrics(
+                            run=run_wandb,
+                            target=val_batch[gp.ArrayKey("LABELS")].data,
+                            prediction_probas=val_batch[
+                                gp.ArrayKey("PREDICTIONS")
+                            ].data,
+                            mask=val_batch[gp.ArrayKey("MASK")].data,
+                            metric_mask=val_batch[gp.ArrayKey("METRIC_MASK")].data,
+                            iteration=i,
+                            mode=f"validation_ds_{val_idx}",
+                        )
+                model.train()
+        # release (teardown) validation pipelines
+        logger.debug("tearing down val pipelines")
+        for idx_pipeline, validation in enumerate(validations):
+            validations[idx_pipeline].pipeline.internal_teardown()
+        logger.debug("tear down completed")
+    logger.info(f"Validation loss: {validation_loss}")
+    # except Exception as e:
+    #     logger.error(f"Error in training: {e}")
+    #     raise e
 
 
 config_path = Path(__file__).resolve().parents[2].joinpath("configs")
@@ -517,7 +560,6 @@ config_path = Path(__file__).resolve().parents[2].joinpath("configs")
 
 @hydra.main(version_base=None, config_path=str(config_path), config_name="config.yaml")
 def main(cfg: DictConfig):
-    # print(cfg)
     setup_torch(cfg)
     train(cfg)
     sync()

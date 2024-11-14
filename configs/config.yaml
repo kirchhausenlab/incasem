@@ -1,33 +1,33 @@
 defaults:
-    - model: unet
-    - train: unet
-    - validate: unet
-    - logging: wandb
-    - ddp: ddp
-    - runs: runs
-    - inputs: inputs
-    - _self_
+  - model: unet
+  - train: unet
+  - validate: unet
+  - logging: wandb
+  - ddp: ddp
+  - runs: runs
+  - inputs: inputs
+  - _self_
 
 seed: 42
-device: "cuda:2"
+device: "cuda:0"
 
 model_type: "UNet"
 loss_type: "cross_entropy_scaling"
 
 data:
-    voxel_size: [5, 5, 5]
-    downsample_factor: 1
-    num_classes: 2
+  voxel_size: [5, 5, 5]
+  downsample_factor: 1
+  num_classes: 2
 
 base: /nfs/scratch/ajain
 incasem_dir: ${base}/incasem
 
 directories:
-    runs: ${incasem_dir}/runs 
-    data: ${incasem_dir}/incasem/data
-
+  runs: ${incasem_dir}/runs
+  data: ${incasem_dir}/incasem/data
 
 training_runs:
-    continue_id: null
-    run_id: 0
-log_every: 1000
+  continue_id: 0
+  run_id: 0
+
+log_every: 100

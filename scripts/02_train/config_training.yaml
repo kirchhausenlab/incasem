@@ -6,14 +6,8 @@ training:
   pipeline: baseline_with_context
   data: null
   iterations: 200000
-  input_size_voxels:
-  - 204
-  - 204
-  - 204
-  output_size_voxels:
-  - 110
-  - 110
-  - 110
+  input_size_voxels: [204, 204, 204]
+  output_size_voxels: [110, 110, 110]
   save_every: 1000
   log_every: 1
   optimizer:
@@ -25,22 +19,22 @@ training:
   augmentation:
     elastic:
       control_point_spacing:
-      - 32
-      - 32
-      - 32
+        - 32
+        - 32
+        - 32
       jitter_sigma:
-      - 2
-      - 2
-      - 2
+        - 2
+        - 2
+        - 2
       subsample: 4
     intensity:
       scale: 0.15
       shift: 0.15
     simple:
       transpose_only:
-      - 0
-      - 1
-      - 2
+        - 0
+        - 1
+        - 2
   snapshot:
     every: 1000
   profiling_stats:
@@ -51,24 +45,24 @@ training:
 validation:
   pipeline: baseline_with_context
   data: null
-  validate_every: 1000
+  validate_every: 10000
   input_size_voxels:
-  - 204
-  - 204
-  - 204
+    - 204
+    - 204
+    - 204
   output_size_voxels:
-  - 110
-  - 110
-  - 110
+    - 110
+    - 110
+    - 110
   snapshot:
     every: 10
 sources:
   class: DataSourcesSemantic
 data:
   voxel_size:
-  - 5
-  - 5
-  - 5
+    - 5
+    - 5
+    - 5
   downsample_factor: 1
   num_classes: 2
 model:
@@ -77,21 +71,21 @@ model:
   num_fmaps_out: 2
   fmap_inc_factor: 2
   downsample_factors:
-  - - 2
-    - 2
-    - 2
-  - - 2
-    - 2
-    - 2
-  - - 2
-    - 2
-    - 2
+    - - 2
+      - 2
+      - 2
+    - - 2
+      - 2
+      - 2
+    - - 2
+      - 2
+      - 2
   constant_upsample: true
 loss:
   type: cross_entropy_scaling
   weight:
-  - 1.0
-  - 1.0
+    - 1.0
+    - 1.0
   balance_labels:
     clipmin: 0.01
     clipmax: 0.99

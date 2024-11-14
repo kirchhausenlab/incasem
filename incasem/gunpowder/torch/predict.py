@@ -77,7 +77,7 @@ class Predict(GenericPredict):
         checkpoint: str = None,
         gpus=[0],
         device="cuda",
-        spawn_subprocess=False
+        spawn_subprocess=False,
     ):
         if model.training:
             logger.warning(
@@ -86,10 +86,8 @@ class Predict(GenericPredict):
             )
 
         super(Predict, self).__init__(
-            inputs,
-            outputs,
-            array_specs,
-            spawn_subprocess=spawn_subprocess)
+            inputs, outputs, array_specs, spawn_subprocess=spawn_subprocess
+        )
 
         self.device_string = device
         self.device = None  # to be set in start()
@@ -101,22 +99,21 @@ class Predict(GenericPredict):
         self.register_hooks()
 
     def start(self):
-
-        self.use_cuda = (
-            torch.cuda.is_available() and
-            self.device_string == "cuda")
+        self.use_cuda = torch.cuda.is_available() and self.device_string == "cuda"
 
         if self.use_cuda:
             if len(self.gpus) != 1:
                 raise NotImplementedError(
-                    f"Prediction only implemented for a single GPU.")
+                    f"Prediction only implemented for a single GPU."
+                )
             torch.cuda.set_device(self.gpus[0])
             logger.info(f"Predicting on gpu {torch.cuda.current_device()}")
         else:
             logger.info("Predicting on cpu")
 
         self.device = torch.device(
-            f"cuda:{torch.cuda.current_device()}" if self.use_cuda else "cpu")
+            f"cuda:{torch.cuda.current_device()}" if self.use_cuda else "cpu"
+        )
 
         try:
             self.model = self.model.to(self.device)
@@ -178,8 +175,7 @@ class Predict(GenericPredict):
         for array_key, tensor in requested_outputs.items():
             spec = self.spec[array_key].copy()
             spec.roi = request[array_key].roi
-            batch.arrays[array_key] = Array(
-                tensor.cpu().detach().numpy(), spec)
+            batch.arrays[array_key] = Array(tensor.cpu().detach().numpy(), spec)
 
     def stop(self):
         pass

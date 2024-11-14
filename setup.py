@@ -9,7 +9,7 @@ setup(
     package_dir={"": "incasem"},
     python_requires=">=3.9",  # compatibility with pinned libs
     install_requires=[
-        "numpy<2",
+        "numpy",
         "zarr",
         "wheel",  # adding as a safety
         "imagecodecs",  # prevent image compute errors
@@ -35,8 +35,9 @@ setup(
         "tifffile",  # tiff file handling
         "streamlit",
         "ipython",
+        "sacred @ git+https://github.com/kirchhausenlab/sacred@master",
         "funlib.learn.torch @ git+https://github.com/kirchhausenlab/funlib.learn.torch_TKLAB",
-        "funlib.persistence @ git+https://github.com/kirchhausenlab/funlib.persistence_TKLAB"
+        "funlib.persistence @ git+https://github.com/kirchhausenlab/funlib.persistence_TKLAB",
         "gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array",
     ],
     extras_require={

@@ -1,0 +1,22 @@
+{
+  "region_1": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [57, 1566, 2422],
+    "shape": [400, 400, 400],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2822/predict_5054/segmentation": 1
+    }
+  },
+  "region_3": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [599, 1433, 2754],
+    "shape": [300, 400, 400],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2822/predict_5054/segmentation": 1
+    }
+  }
+}

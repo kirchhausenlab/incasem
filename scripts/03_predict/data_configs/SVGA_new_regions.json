@@ -1,0 +1,72 @@
+{
+  "region_1": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [380, 976, 3220],
+    "shape": [204, 204, 204],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2632/predict_4341/segmentation": 1
+    }
+  },
+  "region_2": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [398, 1526, 2109],
+    "shape": [204, 204, 204],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2632/predict_4341/segmentation": 1
+    }
+  },
+  "region_3": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [231, 1953, 1943],
+    "shape": [204, 204, 285],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2632/predict_4341/segmentation": 1
+    }
+  },
+  "region_5": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [261, 1989, 1542],
+    "shape": [204, 204, 204],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2632/predict_4341/segmentation": 1
+    }
+  },
+  "region_6": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [292, 2259, 1480],
+    "shape": [204, 204, 350],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2632/predict_4341/segmentation": 1
+    }
+  },
+  "region_7": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [94, 1666, 2312],
+    "shape": [204, 204, 204],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2632/predict_4341/segmentation": 1
+    }
+  },
+  "region_9": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [687, 1645, 1999],
+    "shape": [204, 204, 204],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/predictions/train_2632/predict_4341/segmentation": 1
+    }
+  }
+}

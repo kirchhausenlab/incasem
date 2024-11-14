@@ -1,0 +1,16 @@
+{
+  "region_1": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [57, 1566, 2422],
+    "shape": [230, 230, 230],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02"
+  },
+  "region_3": {
+    "file": "SVGA1/SVGA1.zarr",
+    "offset": [599, 1433, 2754],
+    "shape": [230, 230, 230],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02"
+  }
+}
