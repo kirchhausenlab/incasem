@@ -4,13 +4,15 @@ https://user-images.githubusercontent.com/8866751/200858874-af9220c9-60ac-4b3b-9
 
 This repository contains the segmentation pipeline described in
 
-> Benjamin Gallusser, Giorgio Maltese, Giuseppe Di Caprio et al.<br>[*Deep neural network automated segmentation of cellular structures in volume electron microscopy*](https://rupress.org/jcb/article/222/2/e202208005/213736/Deep-neural-network-automated-segmentation-of),<br>Journal of Cell Biology, 2022.
+> Benjamin Gallusser, Giorgio Maltese, Giuseppe Di Caprio et al.<br>[_Deep neural network automated segmentation of cellular structures in volume electron microscopy_](https://rupress.org/jcb/article/222/2/e202208005/213736/Deep-neural-network-automated-segmentation-of),<br>Journal of Cell Biology, 2022.
 
 Please cite the publication if you are using this code in your research.
 
 Our semi-automated annotation tool from the same publication is available at [https://github.com/kirchhausenlab/gc_segment](https://github.com/kirchhausenlab/gc_segment).
 
 ## Table of Contents
+
+- [Setup](#Setup)
 - [Installation](#Installation)
 - [Optional: Download our data](#Optional-Download-our-data)
 - [Prepare your own data for prediction](#Prepare-your-own-data-for-prediction)
@@ -19,106 +21,175 @@ Our semi-automated annotation tool from the same publication is available at [ht
 - [Fine-Tuning](#Fine-tuning)
 - [Training](#Training)
 
-## Installation
-This package is written for machines with either a Linux or a MacOS operating system.
-> This README was written to work with the `bash` console. If you want to use `zsh` (default on newer versions of MacOS) or any other console, please make sure that you adapt things accordingly.
+### Machine Setup💻
 
-> Newer versions of MacOS (Catalina or newer): the following commands work correctly if you run the Terminal under Rosetta.
-In Finder, go to `Applications/Utilities`, right click on `Terminal`, select `Get Info`, tick `Open using Rosetta`.
+You can use the following machines to run the Cell Interactome pipeline:
+
+1. Ubuntu <img src="https://user-images.githubusercontent.com/25181517/186884153-99edc188-e4aa-4c84-91b0-e2df260ebc33.png" width="15">
+2. MacOS <img src="https://user-images.githubusercontent.com/25181517/186884152-ae609cca-8cf1-4175-8d60-1ce1fa078ca2.png" width="15"> [*Please Use Docker*] <img src="https://user-images.githubusercontent.com/25181517/117207330-263ba280-adf4-11eb-9b97-0ac5b40bc3be.png" width="15">
+3. Windows - <img src="https://user-images.githubusercontent.com/25181517/186884150-05e9ff6d-340e-4802-9533-2c3f02363ee3.png" width="18"> [*Please Use Docker*]<img src="https://user-images.githubusercontent.com/25181517/117207330-263ba280-adf4-11eb-9b97-0ac5b40bc3be.png" width="18">
+
+### CUDA Installation 🛠
+
+This project requires CUDA version 12.x. Veri️fy the correct version of CUDA installed by running the following command:
+
+```bash
+nvcc --version
+```
+
+### Installation 🛠️
+
+1. Clone the repository:
+
+```bash
+git clone --recursive git@github.com:kirchhausenlab/cell_interactome.git
+```
+
+2. 📦 In case of errors, please ensure you have the required dependencies for Python installed:
+
+```bash
+sudo apt-get install -y make build-essential libssl-dev zlib1g-dev \
+libbz2-dev libreadline-dev libsqlite3-dev wget curl llvm libncurses5-dev \
+libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python-openssl \
+ninja-build cmake libegl1-mesa-dev python3-dev
+```
+
+1. Create a conda environment.
+
+```bash
+conda create -n cell3d python=3.10
+```
+
+4. Add required third-party libraries to the project.
+
+## Setup
+
+**Incasem** can be setup in one of three ways:
+
+1. **Jupter Notebook**: The easiest way to get started is to use the Jupyter Notebook `incasem.ipynb` in the `notebooks` directory. This notebook provides a step-by-step guide to the main functionalities of the package. It is recommended to use this notebook if you are new to the package. Kindly move your tiff and zarr files to google drive to start using the notebook. Furthermore, google colab provides free GPU access which can be used to train the models, run predictions and visualize the results. The link to the notebook is [here](https://colab.research.google.com/drive/1)
+
+2. **Streamlit UI**: A user-friendly interface, for which you need to install miniforge first. Follow the instructions [here](https://github.com/conda-forge/miniforge) to install miniforge. Once installed, follow the instructions to start using Mamba. Mamba works exactly like conda so you can use the same commands you would use as if it were conda WITHOUT having to change the command. So if you started a virtual environment with conda using `conda activate test-env`, with mamba the command remains the same. If you have conda installed ensure that it doesnt conflict with mamba as show [here](https://mamba.readthedocs.io/en/latest/user_guide/troubleshooting.html#defaults-channels).
+   Please run the following:
+
+```bash
+python -m pip install -e ".[dev,xformers]" \
+--extra-index-url https://download.pytorch.org/whl/cu124 \
+pip3 install -e .
+cd incasem/automate
+streamlit run main.py
+```
+
+Follow the instructions on the UI to start using incasem.
+
+3. **Command Line Interface**: Detailed instructions on how to use the command line interface are provided below.
+
+## Installation
 
 #### 1. Install anaconda for creating a conda python environment.
-Open a terminal window and download anaconda.
+
+Open a terminal window and install miniforge, instructions [here](https://github.com/conda-forge/miniforge)
+
 ```bash
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-```
-Optional: In case of permission issues, run
-```bash
-chmod +x Miniconda3-latest-Linux-x86_64.sh`
+curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+bash Miniforge3-$(uname)-$(uname -m).sh
 ```
 
-Install anaconda.
-```bash
-bash Miniconda3-latest-Linux-x86_64.sh
-```
-
-Type `conda` to check whether the installation worked, if not try to reload your `.bashrc` file with
+Type `mamba` to check whether the installation worked, if not try to reload your `.bashrc` file with
 `source ~/.bashrc`.
 
 #### 2. Clone the main repository.
+
 ```bash
 git clone https://github.com/kirchhausenlab/incasem.git ~/incasem
 ```
 
-#### 3. Create a new anaconda python environment.
+The latest logic is under `arkashj/bug_fixes`.
+
+#### 3. Create a new anaconda python environment and install packages
+
 ```bash
-conda create -n incasem --no-default-packages python=3.8
+create -n incasem --no-default-packages python=3.8
+conda activate incasem # activate using conda
+python -m pip install -e ".[dev,xformers]" \
+--extra-index-url https://download.pytorch.org/whl/cu124 \
+pip3 install -e .
 ```
 
-#### 4. Pip-install the incasem package contained in this repository into the environment.
-Activate the new environment.
-```bash
-conda activate incasem
-```
-Install
-```bash
-pip install -e ./incasem
-```
+**We also have custom neuroglancer scripts that can be installed using the following command**:
 
-#### 5. Install pytorch as outlined [here](https://pytorch.org/get-started/locally/).
-
-#### 6. Install our neuroglancer scripts
 ```bash
 pip install git+https://github.com/kirchhausenlab/funlib.show.neuroglancer.git@more_scripts_v2#egg=funlib.show.neuroglancer
 ```
 
+**Optional**
+If using the arkashj/bug_fixes branch, you can skip this step
+
 #### 7. Set up the experiment tracking databases for training and prediction
+
 - If not already installed on your system (check by running `mongod`), install [MongoDB](https://docs.mongodb.com/manual/administration/install-community/).
 - Start up the MongoDB service (refer to [documentation](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-ubuntu/#run-mongodb-community-edition)):
-    - on Ubuntu:
-        ```
-        bash sudo service mongod start
-        ```
-    - on MacOS (assuming that you have installed mongodb via `homebrew`):
-        ```
-        brew services start mongodb-community
-        ```
+
+  - on Ubuntu:
+    ```
+    bash sudo service mongod start
+    ```
+  - on MacOS (assuming that you have installed mongodb via `homebrew`):
+    ```
+    brew services start mongodb-community
+    ```
 
 - Run
+
 ```bash
 cd ~/incasem; python download_models.py
 ```
 
 #### 9. Install Omniboard for viewing the experiment databases
+
 Install Nodeenv.
+
 ```bash
 pip install nodeenv
 ```
+
 Create a new node.js environment (and thereby install node.js, if not already installed).
+
 > This may take a while.
+
 ```bash
 cd ~; nodeenv omniboard_environment
 ```
 
 Activate the environment.
+
 ```bash
 source omniboard_environment/bin/activate
 ```
+
 Install [omniboard](https://vivekratnavel.github.io/omniboard/#/quick-start).
+
 > This may take a while.
+
 ```bash
 npm install -g omniboard
 ```
 
 ## Optional: Download our data
+
 The datasets in the publication are available in an [AWS bucket](https://open.quiltdata.com/b/asem-project/tree/datasets/) and can be downloaded with the [quilt3 API](https://docs.quiltdata.com/api-reference/api).
 
 #### 1. Download an example dataset from the AWS bucket: cell 6
+
 Navigate to `~/incasem/data`:
+
 ```bash
 cd ~/incasem/data
 ```
+
 Open a python session and run the following lines.
+
 > It may take a while until the download starts. Expected download speed is >= 2MB/s.
+
 ```python
 import quilt3
 b = quilt3.Bucket("s3://asem-project")
@@ -129,16 +200,18 @@ b.fetch("datasets/cell_6/cell_6_example.zarr/", "cell_6/cell_6.zarr/")
 We provide all datasets as 2d `.tiff` images as well as in [`.zarr` format](https://zarr.readthedocs.io/en/stable/), which is more suitable for deep learning on 3D images. Above we only downloaded the `.zarr` format.
 
 #### 2. Explore a dataset
+
 Example: Cell 6 raw electron microscopy data, Endoplasmic Reticulum prediction and corresponding Endoplasmic Reticulum ground-truth annotation.
+
 ```bash
 neuroglancer -f cell_6/cell_6.zarr -d volumes/raw_equalized_0.02 volumes/predictions/er/segmentation volumes/labels/er
 ```
+
 Navigate to position `520, 1164, 2776` (z,y,x) to focus on the Endoplasmic Reticulum predictions. You can simply overwrite the coordinates on the top left to do so.
 
 If you are not familiar with inspecting 3D data with neuroglancer, you might want to have a look at this [video tutorial](https://youtu.be/TwBTyWWnbxc?t=75).
 
 > Note: `neuroglancer` might not work in Safari. In this case, simply copy the link given by `neuroglancer` to Chrome or Firefox.
-
 
 ## Prepare your own data for prediction
 
@@ -149,6 +222,7 @@ We assume that the available 3d data is stored as a sequence of 2d `.tif` images
 ```bash
 cp -r old/data/location ~/incasem/data/my_new_data
 ```
+
 #### 1. Go to the `01_data_formatting` directory
 
 ```bash
@@ -156,17 +230,19 @@ cd ~/incasem/scripts/01_data_formatting
 ```
 
 #### 2. Activate the python environment
+
 > In case you have not installed the python environment yet, refer to the [installation instructions](#Installation).
 
-Before running python scripts, activate the ```incasem``` environment
+Before running python scripts, activate the `incasem` environment
 
 ```bash
 conda activate incasem
 ```
 
-
 #### 3. Conversion from `TIFF` to `zarr` format
+
 Convert the sequence of `.tif` images (3D stack) to [`.zarr` format](https://zarr.readthedocs.io/en/stable/).
+
 ```bash
 python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_data -f ~/incasem/data/my_new_data.zarr
 ```
@@ -179,113 +255,137 @@ If your datasets is hundreds of GB in size, try using the conversion script `01_
 python 01_image_sequences_to_zarr_with_dask.py -i ~/incasem/data/my_new_data -f ~/incasem/data/my_new_data.zarr -d volumes/raw --resolution 5 5 5
 ```
 
-
 #### 4. Equalize intensity histogram of the data
+
 Equalize the raw data with [CLAHE (Contrast limited adaptive histogram equalization)](https://en.wikipedia.org/wiki/Adaptive_histogram_equalization). The default clip limit is `0.02`.
+
 ```bash
 python 40_equalize_histogram.py -f ~/incasem/data/my_new_data.zarr -d volumes/raw -o volumes/raw_equalized_0.02
 ```
+
 #### 5. Inspect the converted data with `neuroglancer`:
+
 ```bash
 neuroglancer -f ~/incasem/data/my_new_data.zarr -d /volumes/raw
 ```
+
 Refer to our [instructions](#2.-Explore-a-dataset) on how to use neuroglancer.
 
-
 ## Prediction
+
 #### 1. Create a data configuration file
+
 For running a prediction you need to create a configuration file in JSON format that specifies which data should be used.
 Here is an example, also available at `~/incasem/scripts/03_predict/data_configs/example_cell6.json`:
+
 ```json
 {
-    "Cell_6_example_roi_nickname" : {
-        "file": "cell_6/cell_6.zarr",
-        "offset": [400, 926, 2512],
-        "shape": [241, 476, 528],
-        "voxel_size": [5, 5, 5],
-        "raw": "volumes/raw_equalized_0.02"
-    }
+  "Cell_6_example_roi_nickname": {
+    "file": "cell_6/cell_6.zarr",
+    "offset": [400, 926, 2512],
+    "shape": [241, 476, 528],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02"
+  }
 }
 ```
+
 `offset` and `shape` are specified in voxels and in **z, y, x** format. They have to outline a _region of interest_ (ROI) that lies within the total available ROI of the dataset (as defined in `.zarray` and `.zattrs` files of each zarr volume).
+
 > Note that the offset in each `.zattr` file is defined in nanometers, while the shape in `.zarray` is defined in voxels.
 
 We assume the data to be in `~/incasem/data`, as defined [here](scripts/03_predict/config_prediction.yaml).
 
 #### 2. Choose a model
+
 We provide the following pre-trained models:
+
 - For FIB-SEM data prepared by chemical fixation, `5x5x5` nm<sup>3</sup> resolution:
-    - Mitochondria (model ID `1847`)
-    - Golgi Apparatus (model ID `1837`)
-    - Endoplasmic Reticulum (model ID `1841`)
+  - Mitochondria (model ID `1847`)
+  - Golgi Apparatus (model ID `1837`)
+  - Endoplasmic Reticulum (model ID `1841`)
 - For FIB-SEM data prepared by high-pressure freezing, `4x4x4` nm<sup>3</sup> resolution:
-    - Mitochondria (model ID `1675`)
-    - Endoplasmic Reticulum (model ID `1669`)
+  - Mitochondria (model ID `1675`)
+  - Endoplasmic Reticulum (model ID `1669`)
 - For FIB-SEM data prepared by high-pressure freezing, `5x5x5` nm<sup>3</sup> resolution:
-    - Clathrin-Coated Pits (model ID `1986`) 
-    - Nuclear Pores (model ID `2000`)
+  - Clathrin-Coated Pits (model ID `1986`)
+  - Nuclear Pores (model ID `2000`)
 
 A checkpoint file for each of these models is stored in `~/incasem/models/pretrained_checkpoints/`.
 
 ##### Optional: For detailed information about the trained modes, refer to the database downloaded above:
+
 Activate the omniboard environment.
+
 ```bash
 source ~/omniboard_environment/bin/activate
 ```
-Run 
+
+Run
+
 ```bash
 omniboard -m localhost:27017:incasem_trainings
 ```
+
 and paste `localhost:9000` into your browser.
 
 #### 3. Run the prediction
+
 Cell 6 has been prepared by chemical fixation and we will generate predictions for Endoplasmic Reticulum in this example, using model ID `1841`. In the prediction scripts folder,
+
 ```bash
 cd ~/incasem/scripts/03_predict
 ```
+
 Run
+
 ```bash
 python predict.py --run_id 1841 --name example_prediction_cell6_ER with config_prediction.yaml 'prediction.data=data_configs/example_cell6.json' 'prediction.checkpoint=../../models/pretrained_checkpoints/model_checkpoint_1841_er_CF.pt'
 ```
+
 Note that we need to specify which model to use twice:
+
 - `--run_id 1841` to load the appropriate settings from the models database.
 - `'prediction.checkpoint=../../models/pretrained_checkpoints/model_checkpoint_1841_er_CF.pt'` to pass the path to the checkpoint file.
 
 You can check the status of the prediction in omniboard:
+
 ```bash
 omniboard -m localhost:27017:incasem_predictions
 ```
 
 #### Optional:
+
 If you have corresponding ground truth annotations, create a metric exclusion zone as [described below](#Prepare-your-own-ground-truth-annotations-for-fine-tuning-or-training). For the example of predicting Endoplasmic Reticulum in cell 6 from above, put the metric exclusion zone in `cell_6/cell_6.zarr/volumes/metric_masks/er` and adapt `data_configs/example_cell6.json` to:
+
 ```json
 {
-    "Cell_6_example_roi_nickname" : {
-        "file": "cell_6/cell_6.zarr",
-        "offset": [400, 926, 2512],
-        "shape": [241, 476, 528],
-        "voxel_size": [5, 5, 5],
-        "raw": "volumes/raw_equalized_0.02",
-        "metric_masks": [
-            "volumes/metric_masks/er"
-        ],
-        "labels": {
-            "volumes/labels/er": 1,
-        }
+  "Cell_6_example_roi_nickname": {
+    "file": "cell_6/cell_6.zarr",
+    "offset": [400, 926, 2512],
+    "shape": [241, 476, 528],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/er"],
+    "labels": {
+      "volumes/labels/er": 1
     }
+  }
 }
 ```
 
 Now run
+
 ```bash
 python predict.py --run_id 1841 --name example_prediction_cell6_ER_with_GT with config_prediction.yaml 'prediction.log_metrics=True' 'prediction.data=data_configs/example_cell6.json' 'prediction.checkpoint=../../models/pretrained_checkpoints/model_checkpoint_1841_er_CF.pt'
 ```
+
 , which will print an F1 score for the generated prediction given the ground truth annotations (`labels`).
 
-
-
 #### 4. Visualize the prediction
+
 Every prediction is stored with a unique identifier (increasing number). If the example above was your first prediction run, you will see a folder `~/incasem/data/cell_6/cell_6.zarr/volumes/predictions/train_1841/predict_0001/segmentation`. To inspect these predictions, together with the corresponding EM data and ground truth, use the following command:
+
 ```bash
 neuroglancer -f ~/incasem/data/cell_6/cell_6.zarr -d volumes/raw_equalized_0.02 volumes/labels/er volumes/predictions/train_1841/predict_0001/segmentation
 ```
@@ -294,23 +394,23 @@ neuroglancer -f ~/incasem/data/cell_6/cell_6.zarr -d volumes/raw_equalized_0.02 
 
 Run `cd ~/incasem/scripts/04_postprocessing` to access the postprocessing scripts.
 
-Now adapt and execute the conversion command below. In this example command, we assume that we have used model ID `1841`  to generate Endoplasmic Reticulum predictions for a subset of cell 6, and the automatically assigned prediction ID is `0001`.
+Now adapt and execute the conversion command below. In this example command, we assume that we have used model ID `1841` to generate Endoplasmic Reticulum predictions for a subset of cell 6, and the automatically assigned prediction ID is `0001`.
+
 ```bash
 python 20_convert_zarr_to_image_sequence.py --filename ~/incasem/data/cell_6/cell_6.zarr --datasets volumes/predictions/train_1841/predict_0001/segmentation --out_directory ~/incasem/data/cell_6 --out_datasets example_er_prediction
 ```
-You can open the resulting TIFF stack for example in ImageJ. Note that since we only made predictions on a subset of cell 6, the prediction TIFF stack is smaller than the raw data TIFF stack.
 
+You can open the resulting TIFF stack for example in ImageJ. Note that since we only made predictions on a subset of cell 6, the prediction TIFF stack is smaller than the raw data TIFF stack.
 
 ## Prepare your own ground truth annotations for fine-tuning or training
 
-Example:  Endoplasmic reticulum (ER) annotations.
+Example: Endoplasmic reticulum (ER) annotations.
 
 We assume that the available 3d pixelwise annotations are stored as a sequence of 2d `.tif` images in a directory and that the size of each `.tif` annotation image matches the size of the corresponding electron microscopy `.tif` image.
 
 Furthermore, we assume that you have already prepared the corresponding electron microscopy images as outlined [above](#Prepare-your-own-data-for-prediction).
 
 > The minimal block size that our training pipeline is set up to process is `(204, 204, 204)` voxels.
-
 
 #### 0. Copy the annotation data into the project directory
 
@@ -324,22 +424,25 @@ cp -r old/annotations/location ~/incasem/data/my_new_er_annotations
 cd ~/incasem/scripts/01_data_formatting
 ```
 
-
 #### 2. Activate the python environment
+
 > In case you have not installed the python environment yet, refer to the [installation instructions](#Installation).
 
-Before running python scripts, activate the ```incasem``` environment
+Before running python scripts, activate the `incasem` environment
 
 ```bash
 conda activate incasem
 ```
 
 #### 3. Conversion from `TIFF` to `zarr` format
+
 Convert the sequence of `.tif` annotations (3D stack) to [.`zarr` format](https://zarr.readthedocs.io/en/stable/).
 In this example, we use
+
 ```bash
 python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_er_annotations -f ~/incasem/data/my_new_data.zarr -d volumes/labels/er --dtype uint32
 ```
+
 We assume the `.tif` file names are in the format `name_number.tif`, as encapsulated by the default regular expression `.*_(\d+).*\.tif$`. If you want to change it, add `-r your_regular_expression` to the line above.
 
 If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](scripts/01_data_formatting/01_image_sequence_to_zarr_with_dask.py).
@@ -349,35 +452,40 @@ python 01_image_sequences_to_zarr_with_dask.py -i ~/incasem/data/my_new_er_annot
 ```
 
 Inspect the converted data with `neuroglancer`:
+
 ```bash
 neuroglancer -f ~/incasem/data/my_new_data.zarr -d volumes/raw volumes/labels/er
 ```
+
 Refer to our [instructions](#2.-Explore-a-dataset) on how to use neuroglancer.
 
 If the position of the labels is wrong, you can correct the offset by directly editing the dataset attributes file on disk:
+
 ```
 cd ~/incasem/data/my_new_data.zarr/volumes/labels/er
 vim .zattrs
 ```
+
 In this file the offset is expressed in nanometers instead of voxels. So if the voxel size is `(5,5,5) nm`, you need to multiply the previous coordinates (z,y,x) by 5.
 
-
 #### 4. Create a metric exclusion zone
+
 We create a mask that will be used to calculate the F1 score for predictions, e.g. in the periodic validation during training.
 This mask, which we refer to as _exclusion zone_, simply sets the pixels at the object boundaries to 0, as we do not want that small errors close to the object boundaries affect the overall prediction score.
 
 We suggest the following exclusion zones in voxels:
-- mito: 4 ```--exclude_voxels_inwards 4 --exclude_voxels_outwards 4```    
-- golgi: 2 ```--exclude_voxels_inwards 2 --exclude_voxels_outwards 2```    
-- ER: 2 ```--exclude_voxels_inwards 2 --exclude_voxels_outwards 2```    
-- NP (nuclear pores): 1 ```--exclude_voxels_inwards 1 --exclude_voxels_outwards 1```    
-- CCP (coated pits): 1 ```--exclude_voxels_inwards 2 --exclude_voxels_outwards 2```    
+
+- mito: 4 `--exclude_voxels_inwards 4 --exclude_voxels_outwards 4`
+- golgi: 2 `--exclude_voxels_inwards 2 --exclude_voxels_outwards 2`
+- ER: 2 `--exclude_voxels_inwards 2 --exclude_voxels_outwards 2`
+- NP (nuclear pores): 1 `--exclude_voxels_inwards 1 --exclude_voxels_outwards 1`
+- CCP (coated pits): 1 `--exclude_voxels_inwards 2 --exclude_voxels_outwards 2`
 
 For our example with Endoplasmic Reticulum annotations, we run
+
 ```bash
 python 60_create_metric_mask.py -f ~/incasem/data/my_new_data.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
 ```
-
 
 ## Fine-Tuning
 
@@ -387,39 +495,46 @@ This is an example based on our datasets, which are publicly available in `.zarr
 We will fine-tune the mitochondria model ID `1847`, which was trained on data from cells 1 and 2, with a small amount of additional data from cell 3.
 
 #### 0. Download training data
+
 If you haven't done so before, download `cell_3` from our published datasets as outlined in the section [_Download our data_](#Optional-Download-our-data).
 
 #### 1. Create a fine-tuning data configuration file
+
 For fine-tuning a model you need to create a configuration file in `JSON` format that specifies which data should be used.
 Here is an example, also available at `~/incasem/scripts/02_train/data_configs/example_finetune_mito.json`:
+
 ```json
 {
-    "cell_3_finetune_mito" : {
-        "file": "cell_3/cell_3.zarr",
-        "offset": [700, 2000, 6200],
-        "shape": [250, 250, 250],
-        "voxel_size": [5, 5, 5],
-        "raw": "volumes/raw_equalized_0.02",
-        "labels" : {
-            "volumes/labels/mito": 1
-        }
+  "cell_3_finetune_mito": {
+    "file": "cell_3/cell_3.zarr",
+    "offset": [700, 2000, 6200],
+    "shape": [250, 250, 250],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "labels": {
+      "volumes/labels/mito": 1
     }
+  }
 }
 ```
+
 Refer to the section [_Training_](#Training) for a detailed walk-through of such a configuration file.
 
-
 #### 2. Launch the fine-tune training
+
 In the training scripts folder,
+
 ```bash
 cd ~/incasem/scripts/02_train
 ```
+
 run
+
 ```bash
 python train.py --name example_finetune --start_from 1847 ~/incasem/models/pretrained_checkpoints/model_checkpoint_1847_mito_CF.pt with config_training.yaml training.data=data_configs/example_finetune_mito.json validation.data=data_configs/example_finetune_mito.json torch.device=0 training.iterations=15000
 ```
 
-Note that since we do not have extra validation data on the target cell 3, we simply pass the training data configuration file to define a dummy validation dataset. 
+Note that since we do not have extra validation data on the target cell 3, we simply pass the training data configuration file to define a dummy validation dataset.
 
 #### 3. Observe the training
 
@@ -427,37 +542,45 @@ Each training run logs information to disk and to the training database, which c
 The log files on disk are stored in `~/incasem/training_runs`.
 
 ##### Tensorboard
+
 To monitor the training loss in detail, open tensorboard:
+
 ```bash
 tensorboard --logdir=~/incasem/training_runs/tensorboard
 ```
 
 ##### Omniboard (training database)
+
 To observe the training and validation F1 scores, as well as the chosen experiment configuration, we use Omniboard.
 
 Activate the omniboard environment:
+
 ```bash
 source ~/omniboard_environment/bin/activate
 ```
-Run 
+
+Run
+
 ```bash
 omniboard -m localhost:27017:incasem_trainings
 ```
+
 and paste `localhost:9000` into your browser.
 
-
 #### 4. Pick a fine-tuned model for prediction
+
 Since we usually do not have any ground truth on the target cell that we fine-tuned for, we cannot rigorously pick the best model iteration.
 
 We find that for example with ground truth in a 2 um<sup>3</sup> region of interest, typically after 5,000 - 10,000 iterations the fine-tuning has converged. The training loss (visible in tensorboard) can serve as a proxy for picking a model iteration in said interval.
 
 Now you can use the fine-tuned model to generate predictions on the new target cell, as described in the section [_Prediction_](#Prediction).
 
-
 ## Training
+
 This is an example based on our datasets, which are publicly available in `.zarr` format via Amazon Web Services.
 
 #### 0. Download training data
+
 Download `cell_1` and `cell_2` from our published datasets as outlined in the section [_Download our data_](#Optional-Download-our-data).
 
 #### 1. Prepare the data
@@ -466,101 +589,108 @@ We create a mask that will be used to calculate the F1 score for predictions, e.
 This mask, which we refer to as _exclusion zone_, simply sets the pixels at the object boundaries to 0, as we do not want that small errors close to the object boundaries affect the overall prediction score.
 
 For our example with Endoplasmic Reticulum annotations on `cell_1` and `cell_2`, we run (from the data formatting directory):
+
 ```bash
 python 60_create_metric_mask.py -f ~/incasem/data/cell_1/cell_1.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
 ```
-and 
+
+and
+
 ```bash
 python 60_create_metric_mask.py -f ~/incasem/data/cell_2/cell_2.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
 ```
 
 #### 2. Create a training data configuration file
+
 For running a training you need to create a configuration file in `JSON` format that specifies which data should be used.
 Here is an example, also available at `~/incasem/scripts/02_train/data_configs/example_train_er.json`:
+
 > We assume the data to be in `~/incasem/data`, as defined [here](scripts/02_train/config_training.yaml).
+
 ```json
 {
-    "cell_1_er" : {
-        "file": "cell_1/cell_1.zarr",
-        "offset": [150, 120, 1295],
-        "shape": [600, 590, 1350],
-        "voxel_size": [5, 5, 5],
-        "raw": "volumes/raw_equalized_0.02",
-        "metric_masks": [
-            "volumes/metric_masks/er"
-        ],
-        "labels" : {
-            "volumes/labels/er": 1
-        }
-    },
-    "cell_2_er": {
-        "file": "cell_2/cell_2.zarr",
-        "offset": [100, 275, 700],
-        "shape": [500, 395, 600],
-        "voxel_size": [5, 5, 5],
-        "raw": "volumes/raw_equalized_0.02",
-        "metric_masks": [
-        	"volumes/metric_masks/er"
-        ],
-        "labels": {
-            "volumes/labels/er": 1
-        }
+  "cell_1_er": {
+    "file": "cell_1/cell_1.zarr",
+    "offset": [150, 120, 1295],
+    "shape": [600, 590, 1350],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/er"],
+    "labels": {
+      "volumes/labels/er": 1
     }
+  },
+  "cell_2_er": {
+    "file": "cell_2/cell_2.zarr",
+    "offset": [100, 275, 700],
+    "shape": [500, 395, 600],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/er"],
+    "labels": {
+      "volumes/labels/er": 1
+    }
+  }
 }
 ```
+
 `offset` and `shape` are specified in voxels and in **z, y, x** format. They have to outline a _region of interest_ (ROI) that lies within the total available ROI of the dataset (as defined in `.zarray` and `.zattrs` files of each zarr volume).
+
 > Note that the offset in each `.zattr` file is defined in nanometers, while the shape in `.zarray` is defined in voxels.
 
 All pixels inside the ROIs that belong to the structure of interest (e.g. endoplasmic reticulum above) in such a data configuration file have to be fully annotated. Additionally, our network architecture requires a context of 47 voxels of raw EM data around each ROI.
 
-
 #### 3. Create a validation data configuration file
+
 Additionally, you need to create a configuration file in `JSON` format that specifies which data should be used for periodic validation of the model during training.
 Here is an example, also available at `~/incasem/scripts/02_train/data_configs/example_validation_er.json`:
+
 ```json
 {
-    "cell_1_er_validation" : {
-        "file": "cell_1/cell_1.zarr",
-        "offset": [150, 120, 2645],
-        "shape": [600, 590, 250],
-        "voxel_size": [5, 5, 5],
-        "raw": "volumes/raw_equalized_0.02",
-        "metric_masks": [
-            "volumes/metric_masks/er"
-        ],
-        "labels" : {
-            "volumes/labels/er": 1
-        }
-    },
-    "cell_2_er_validation": {
-        "file": "cell_2/cell_2.zarr",
-        "offset": [300, 70, 700],
-        "shape": [300, 205, 600],
-        "voxel_size": [5, 5, 5],
-        "raw": "volumes/raw_equalized_0.02",
-        "metric_masks": [
-            "volumes/metric_masks/er"
-        ],
-        "labels": {
-            "volumes/labels/er": 1
-        }
+  "cell_1_er_validation": {
+    "file": "cell_1/cell_1.zarr",
+    "offset": [150, 120, 2645],
+    "shape": [600, 590, 250],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/er"],
+    "labels": {
+      "volumes/labels/er": 1
     }
+  },
+  "cell_2_er_validation": {
+    "file": "cell_2/cell_2.zarr",
+    "offset": [300, 70, 700],
+    "shape": [300, 205, 600],
+    "voxel_size": [5, 5, 5],
+    "raw": "volumes/raw_equalized_0.02",
+    "metric_masks": ["volumes/metric_masks/er"],
+    "labels": {
+      "volumes/labels/er": 1
+    }
+  }
 }
 ```
 
 #### 4. Optional: Adapt the training configuration
+
 The file [`config_training.yaml`](scripts/02_train/config_training.yaml) exposes a lot of parameters of the model training.
 
 Most importantly:
+
 - If you would like to use data with a different resolution, apart from specifying in the data configuration files as outlined above, you need to adapt `data.voxel_size` in `config_training.yaml`.
 - We guide the random sampling of blocks by rejecting blocks that consist of less than a given percentage (`training.reject.min_masked`) of foreground voxels with a chosen probability ('training.reject.probability'). If your dataset contains a lot of background, or no background at all, you might want to adapt these parameters accordingly.
 
 #### 5. Launch the training
+
 At the training scripts folder,
+
 ```bash
 cd ~/incasem/scripts/02_train
 ```
+
 run
+
 ```bash
 python train.py --name example_training with config_training.yaml training.data=data_configs/example_train_er.json validation.data=data_configs/example_validation_er.json torch.device=0
 ```
@@ -571,24 +701,31 @@ Each training run logs information to disk and to the training database, which c
 The log files on disk are stored in `~/incasem/training_runs`.
 
 ##### Tensorboard
+
 To monitor the training loss in detail, open tensorboard:
+
 ```bash
 tensorboard --logdir=~/incasem/training_runs/tensorboard
 ```
 
 ##### Omniboard (training database)
+
 To observe the training and validation F1 scores, as well as the chosen experiment configuration, we use Omniboard.
 
 Activate the omniboard environment:
+
 ```bash
 source ~/omniboard_environment/bin/activate
 ```
-Run 
+
+Run
+
 ```bash
 omniboard -m localhost:27017:incasem_trainings
 ```
+
 and paste `localhost:9000` into your browser.
 
-
 #### 7. Pick a model for prediction
+
 Using Omniboard, pick a model iteration where the validation loss and the validation F1 score have converged. Now use this model to generate predictions on new data, as described in the section [_Prediction_](#Prediction).

@@ -1,4 +1,0 @@
-neuroglancer -f incasem/data/SVGA1/SVGA1.zarr -d volumes/raw_equalized_0.02 volumes/predictions/train_2822/predict_5054/segmentation volumes/predictions/1915/SVGA_ARKASH_10302024/segmentation
-
-
-python predict.py --run_id 1909 --name SVGA_ARKASH_10302024 with config_prediction.yaml prediction.data=data_configs/test_regions.json' 'prediction.checkpoint=../../models/model_checkpoint_45000'
