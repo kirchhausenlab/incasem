@@ -14,6 +14,7 @@ setup(
         'scikit-learn',
         'pyyaml',
         'quilt3',
+        'mlpack',
         'tensorboardX',
         'tensorboard',
         'configargparse',
