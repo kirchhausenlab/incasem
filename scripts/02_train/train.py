@@ -1,389 +1,356 @@
-import argparse
-import json
-import logging
 import os
-import re
-import sys
-from pathlib import Path
 from shutil import copyfile
-
+from pathlib import Path
 import gunpowder as gp
 import numpy as np
-import tensorboardX
 import torch
-import yaml
-
+from loguru import logger
+import wandb
+import hydra
+from typing import Optional, Union, Tuple, List, Dict, Any
+from omegaconf import DictConfig
 import incasem as fos
+import torch.distributed as dist
 
 
-class TrainingRunDummy:
-    def __init__(self):
-        # Get the highest ID and add 1
-        ledger_path = (
-            Path(__file__).resolve().parents[2].joinpath("mock_db/ledger.json")
-        )
-
-        with open(f"{ledger_path}") as f:
-            ledger = json.load(f)
-
-        ids = [int(e) for e in ledger.keys()]
-
-        self._id = max(-1, max(ids)) + 1
-
-        self.log = []
-
-    def log_scalar(self, name, value, step):
-        self.log.append({"name": name, "value": value, "step": step})
+def setup_wandb(
+    cfg: DictConfig,
+    hyperparameters: Dict[str, Any],
+) -> wandb.run:
+    run = wandb.init(
+        project=cfg.logging.wandb_config.project,
+        entity=cfg.logging.wandb_config.entity,
+        config=hyperparameters,
+        name=cfg.logging.wandb_config.run_name,
+        resume=cfg.logging.wandb_config.resume,
+    )
+    return run
 
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-logging.getLogger("gunpowder").setLevel(logging.INFO)
+def _log(
+    run: wandb.run,
+    metrics: Dict[str, Any],
+    **kwargs: Any,
+) -> None:
+    iteration = kwargs.get("iteration", None)
+    logger.info("Logging metrics: %s" % metrics)
+    run.log(metrics, step=iteration)
 
 
-def torch_setup(_config):
-    torch.backends.cudnn.enabled = True
+def setup(
+    rank: int,
+    world_size: int,
+) -> None:
+    dist.init_process_group(backend="nccl", rank=rank, world_size=world_size)
+
+
+def torch_backend_setup() -> None:
     torch.backends.cudnn.benchmark = True
-    if _config["torch"]["device"] == "cpu":
+    torch.backends.cudnn.enabled = True
+    torch.backends.cudnn.deterministic = False
+
+
+def cleanup() -> None:
+    dist.destroy_process_group()
+
+
+def sync() -> None:
+    dist.barrier()
+
+
+def setup_torch(
+    cfg: DictConfig,
+) -> None:
+    rank = int(os.environ["RANK"])
+    world_size = int(os.environ["WORLD_SIZE"])
+    # if rank and world_size are not set, set default values
+    if rank is None:
+        rank = 0
+    if world_size is None:
+        world_size = 1
+
+    setup(rank=rank, world_size=world_size)
+    torch_backend_setup()
+    if cfg.device == "cpu":
+        logger.info("Using CPU, line 55, setup_torch")
         os.environ["CUDA_VISIBLE_DEVICES"] = ""
-    # ------------- GPU setup ------------- #
     else:
-        available_gpus = torch.cuda.device_count()
-        if available_gpus > 1:
-            _config["torch"]["multi_gpu"] = True
-            logger.info(f"Found {available_gpus} GPUs. Enabling multi-GPU training.")
-        elif available_gpus == 1:
-            _config["torch"]["multi_gpu"] = False
-            logger.info("Found 1 GPU. Using single-GPU training.")
-        else:
-            logger.warning("No GPUs found. Using CPU.")
-            _config["torch"]["device"] = "cpu"
-            os.environ["CUDA_VISIBLE_DEVICES"] = ""
-            _config["torch"]["multi_gpu"] = False
+        logger.info(f"Using GPU {cfg.device}, line 58, setup_torch")
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(cfg.device)
 
 
-def model_setup(_config, _run_dummy):
-    model_type = _config["model"]["type"]
-    if model_type == "OneConv3d":
-        model = fos.torch.models.OneConv3d(
-            out_channels=_config["model"]["num_fmaps_out"]
+def model_setup(
+    cfg: DictConfig,
+) -> torch.nn.Module:
+    try:
+        model_type = cfg.model_type
+        if model_type == "UNet":
+            model = fos.torch.models.Unet(
+                in_channels=cfg.model.unet.in_channels,
+                num_fmaps=cfg.model.unet.num_fmaps,
+                fmap_inc_factor=cfg.model.unet.fmap_inc_factor,
+                downsample_factors=tuple(
+                    tuple(i) for i in cfg.model.unet.downsample_factors
+                ),
+                activation=str(cfg.model.unet.activation),
+                voxel_size=cfg.data.voxel_size,
+                num_fmaps_out=cfg.model.unet.num_fmaps_out,
+                num_heads=cfg.model.unet.num_heads,
+                constant_upsample=cfg.model.unet.constant_upsample,
+                padding=cfg.model.unet.padding,
+            )
+        device = cfg.device
+        model.to(device=device)
+
+        total_params = sum(p.numel() for p in model.parameters())
+        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+        logger.info(
+            f"Total parameters: {total_params} and Trainable parameters: {trainable_params}"
         )
-    elif model_type == "Unet":
-        model = fos.torch.models.Unet(
-            in_channels=1,
-            num_fmaps=int(_config["model"]["num_fmaps"]),
-            fmap_inc_factor=int(_config["model"]["fmap_inc_factor"]),
-            downsample_factors=tuple(
-                tuple(i) for i in _config["model"]["downsample_factors"]
-            ),
-            activation="ReLU",
-            voxel_size=_config["data"]["voxel_size"],
-            num_fmaps_out=_config["model"]["num_fmaps_out"],
-            num_heads=1,
-            constant_upsample=_config["model"]["constant_upsample"],
-            padding="valid",
-        )
-    elif model_type == "MultitaskUnet":
-        model = fos.torch.models.MultitaskUnet(
-            _config["model"]["num_fmaps_out"],
-            _config["model"]["num_fmaps_out_auxiliary"],
-            dims=3,
-            in_channels=1,
-            num_fmaps=int(_config["model"]["num_fmaps"]),
-            fmap_inc_factor=int(_config["model"]["fmap_inc_factor"]),
-            downsample_factors=tuple(
-                tuple(i) for i in _config["model"]["downsample_factors"]
-            ),
-            activation="ReLU",
-            voxel_size=_config["data"]["voxel_size"],
-            constant_upsample=_config["model"]["constant_upsample"],
-            padding="valid",
-        )
-    else:
-        raise ValueError(f"Model type {model_type} does not exist.")
-
-    # -------------
-    device = _config["torch"]["device"]
-    model.to(f"cuda:{device}" if device != "cpu" else "cpu")
-
-    # Wrap the model with DataParallel if multi-GPU is enabled
-    if _config["torch"].get("multi_gpu", False):
-        model = torch.nn.DataParallel(model)
-        logger.info(f"Using DataParallel on {torch.cuda.device_count()} GPUs.")
-
-    total_params = sum(p.numel() for p in model.parameters())
-    logger.info(f"{total_params=}")
-
-    _run_dummy.log_scalar("num_params", total_params, 0)
-
-    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    logger.info(f"{trainable_params=}")
-    return model
+        return model
+    except Exception as e:
+        logger.error("Error in model_setup: %s" % e)
+        raise e
 
 
-def loss_setup(_config, device="cuda"):
-    weight = torch.tensor(list(_config["loss"]["weight"]), dtype=torch.float)
-
-    loss_type = _config["loss"]["type"]
+def loss_setup(
+    cfg: DictConfig,
+):
+    weight = torch.tensor(list(cfg.model.unet.loss.weight), dtype=torch.float32)
+    loss_type = cfg.loss_type
     if loss_type == "cross_entropy_scaling":
         loss = fos.torch.loss.CrossEntropyLossWithScalingAndMeanReduction(
-            weight=weight, device=device
+            weight=weight, device=cfg.device
         )
-    # elif loss_type == 'cross_entropy':
-    # loss = torch.nn.CrossEntropyLoss(weight=weight, device=device)
     else:
-        raise ValueError(f"Specified loss {loss_type} does not exist.")
-
+        raise ValueError(f"Loss type {loss_type} not supported.")
     return loss
 
 
-def training_setup(_config, _run_dummy, _seed, run_dir, model):
-    loss = loss_setup(_config)
-
-    # TODO parametrize type of optimizer, move to separate function
-    optimizer = torch.optim.Adam(
-        model.parameters(),
-        lr=float(_config["training"]["optimizer"]["lr"]),
-        weight_decay=float(_config["training"]["optimizer"]["weight_decay"]),
-    )
-
-    pipeline_type = {"baseline_with_context": fos.pipeline.TrainingBaselineWithContext}[
-        _config["training"]["pipeline"]
-    ]
-
-    training = pipeline_type(
-        data_config=_config["training"]["data"],
-        run_dir=run_dir,
-        run_path_prefix=os.path.expanduser(_config["directories"]["runs"]),
-        data_path_prefix=os.path.expanduser(_config["directories"]["data"]),
-        model=model,
-        loss=loss,
-        optimizer=optimizer,
-        num_classes=int(_config["data"]["num_classes"]),
-        voxel_size=_config["data"]["voxel_size"],
-        input_size_voxels=_config["training"]["input_size_voxels"],
-        output_size_voxels=_config["training"]["output_size_voxels"],
-        reject_min_masked=float(_config["training"]["reject"]["min_masked"]),
-        reject_probability=float(_config["training"]["reject"]["reject_probability"]),
-        random_seed=_seed,
-    )
-
-    device = _config["torch"]["device"]
-    # -------------------------------
-    if _config["torch"].get("multi_gpu", False):
-        training.train_node.gpus = list(range(torch.cuda.device_count()))
-    else:
-        training.train_node.gpus = [] if device == "cpu" else [int(device)]
-    # -------------------------------
-
-    training.train_node.gpus = [] if device == "cpu" else [int(device)]
-
-    training.train_node.save_every = int(_config["training"]["save_every"])
-    training.train_node.log_every = int(_config["training"]["log_every"])
-
-    # Downsample
-    training.downsample.factor = int(_config["data"]["downsample_factor"])
-
-    # Balance Labels
+def directory_structure_setup(
+    cfg: DictConfig,
+) -> str:
     try:
-        training.balance_labels.clipmin = float(
-            _config["loss"]["balance_labels"]["clipmin"]
-        )
-        training.balance_labels.clipmax = float(
-            _config["loss"]["balance_labels"]["clipmax"]
-        )
-    except AttributeError:
-        logger.warning("Trying to set BalanceLabels attributes, but it is not used.")
-        _config["loss"]["balance_labels"]["clipmin"] = None
-        _config["loss"]["balance_labels"]["clipmax"] = None
-
-    try:
-        training.augmentation.nodes["simple_0"].transpose_only = _config["training"][
-            "augmentation"
-        ]["simple"]["transpose_only"]
-    except (KeyError, AttributeError):
-        logger.warning("SimpleAugment 0 transpose only not set.")
-
-    try:
-        training.augmentation.nodes["elastic"].control_point_spacing = tuple(
-            _config["training"]["augmentation"]["elastic"]["control_point_spacing"]
-        )
-        training.augmentation.nodes["elastic"].jitter_sigma = tuple(
-            _config["training"]["augmentation"]["elastic"]["jitter_sigma"]
-        )
-        training.augmentation.nodes["elastic"].subsample = int(
-            _config["training"]["augmentation"]["elastic"]["subsample"]
-        )
-    except (KeyError, AttributeError):
-        logger.warning(
-            "Trying to set parameters for ElasticAugment, but it is not used."
-        )
-
-    try:
-        training.augmentation.nodes["simple_1"].transpose_only = _config["training"][
-            "augmentation"
-        ]["simple"]["transpose_only"]
-    except (KeyError, AttributeError):
-        logger.warning("SimpleAugment 1 transpose only not set.")
-
-    try:
-        training.augmentation.nodes["intensity"].scale_min = 1.0 - float(
-            _config["training"]["augmentation"]["intensity"]["scale"]
-        )
-        training.augmentation.nodes["intensity"].scale_max = 1.0 + float(
-            _config["training"]["augmentation"]["intensity"]["scale"]
-        )
-        training.augmentation.nodes["intensity"].shift_min = -1.0 * float(
-            _config["training"]["augmentation"]["intensity"]["shift"]
-        )
-        training.augmentation.nodes["intensity"].shift_max = float(
-            _config["training"]["augmentation"]["intensity"]["shift"]
-        )
-    except (KeyError, AttributeError):
-        logger.warning(
-            "Trying to set parameters for IntensityAugment, but it is not used."
-        )
-
-    # Precache
-    try:
-        training.precache.cache_size = int(
-            _config["training"]["precache"]["cache_size"]
-        )
-        training.precache.num_workers = int(
-            _config["training"]["precache"]["num_workers"]
-        )
-    except AttributeError:
-        logger.warning("Trying to set Precache attributes, but it is not used.")
+        dir_run_id = cfg.training_runs.continue_id
+        logger.info(f"Continue training from run {dir_run_id}")
     except KeyError:
-        logger.warning(
-            "Trying to set Precache attributes, but not specified in config."
+        try:
+            load_run_id, load_run_ckpt = cfg.training_runs.start_from
+            model_to_load = os.path.expanduser(load_run_ckpt)
+            new_model = os.path.join(
+                os.path.expanduser(cfg.directories.runs),
+                "models",
+                str(load_run_id),
+                "model_checkpoint_0",
+            )
+            os.makedirs(os.path.dirname(new_model), exist_ok=True)
+            copyfile(model_to_load, new_model)
+            dir_run_id = load_run_id
+
+            logger.info(f"Starting training from run {dir_run_id}")
+        except KeyError:
+            dir_run_id = cfg.training.run_id
+            logger.info(f"Starting new training run {dir_run_id}")
+    dir_run_id = f"{dir_run_id:04d}"
+    return dir_run_id
+
+
+def training_setup(
+    cfg: DictConfig,
+    model: torch.nn.Module,
+    run_dir: str,
+):
+    try:
+        loss = loss_setup(cfg)
+
+        optimizer = torch.optim.Adam(
+            model.parameters(),
+            lr=float(cfg.train.optimizer.lr),
+            weight_decay=float(cfg.train.optimizer.weight_decay),
         )
 
-    # Snapshot
-    training.snapshot.every = int(_config["training"]["snapshot"]["every"])
+        pipeline_type = {
+            "baseline_with_context": fos.pipeline.TrainingBaselineWithContext
+        }[cfg.train.pipeline]
 
-    # Profiling Stats
-    training.profiling_stats.every = int(
-        _config["training"]["profiling_stats"]["every"]
-    )
+        training = pipeline_type(
+            data_config=cfg.train.data,
+            run_dir=run_dir,
+            run_path_prefix=os.path.expanduser(cfg.directories.runs),
+            data_path_prefix=os.path.expanduser(cfg.directories.data),
+            model=model,
+            loss=loss,
+            optimizer=optimizer,
+            num_classes=int(cfg.data.num_classes),
+            voxel_size=cfg.data.voxel_size,
+            input_size_voxels=cfg.train.input_size_voxels,
+            output_size_voxels=cfg.train.output_size_voxels,
+            reject_probability=float(cfg.train.reject.reject_probability),
+            reject_min_masked=float(cfg.train.reject.min_masked),
+            random_seed=int(cfg.seed),
+        )
 
-    return training
+        device = cfg.device
+        # device is stored as cuda:2, get gpu number
+        training.train_node.gpus = [] if device == "cpu" else [0]
+        training.train_node.save_every = int(cfg.train.save_every)
+        training.train_node.log_every = int(cfg.train.log_every)
+        training.downsample.factor = int(cfg.data.downsample_factor)
+
+        try:
+            training.balance_labels.clipmin = float(
+                cfg.model.unet.loss.balance_labels.clipmin
+            )
+            training.balance_labels.clipmax = float(
+                cfg.model.unet.loss.balance_labels.clipmax
+            )
+        except AttributeError as e:
+            logger.warning(
+                "Trying to set BalanceLabels attributes, but it is not used. %s" % e
+            )
+            cfg.model.unet.loss.balance_labels.clipmin = None
+            cfg.model.unet.loss.balance_labels.clipmax = None
+
+        try:
+            training.augmentation.nodes[
+                "simple_0"
+            ].transpose_only = cfg.train.augmentation.simple_0.transpose_only
+        except (KeyError, AttributeError) as e:
+            logger.warning(
+                "Trying to set Augmentation attributes, but it is not used. %s" % e
+            )
+            # cfg.train.augmentation.simple_0.transpose_only = None
+
+        try:
+            training.augmentation.nodes["elastic"].control_point_spacing = tuple(
+                cfg.train.augmentation.elastic.control_point_spacing
+            )
+            training.augmentation.nodes["elastic"].jitter_sigma = tuple(
+                cfg.train.augmentation.elastic.jitter_sigma
+            )
+            training.augmentation.nodes["elastic"].subsample = int(
+                cfg.train.augmentation.elastic.subsample
+            )
+        except (KeyError, AttributeError):
+            logger.warning(
+                "Trying to set parameters for ElasticAugment, but it is not used."
+            )
+
+        try:
+            training.augmentation.nodes[
+                "simple_1"
+            ].transpose_only = cfg.train.augmentation.simple.transpose_only
+        except (KeyError, AttributeError):
+            logger.warning("SimpleAugment 1 transpose only not set.")
+
+        try:
+            training.augmentation.nodes["intensity"].scale_min = 1.0 - float(
+                cfg.train.augmentation.intensity.scale
+            )
+            training.augmentation.nodes["intensity"].scale_max = 1.0 + float(
+                cfg.train.augmentation.intensity.scale
+            )
+            training.augmentation.nodes["intensity"].shift_min = -1.0 * float(
+                cfg.train.augmentation.intensity.shift
+            )
+            training.augmentation.nodes["intensity"].shift_max = float(
+                cfg.train.augmentation.intensity.shift
+            )
+        except (KeyError, AttributeError):
+            logger.warning(
+                "Trying to set parameters for IntensityAugment, but it is not used."
+            )
+
+        try:
+            training.precache.cache_size = int(cfg.train.precache.cache_size)
+            training.precache.num_workers = int(cfg.train.precache.num_workers)
+        except AttributeError:
+            logger.warning("Trying to set Precache attributes, but it is not used.")
+        except KeyError:
+            logger.warning(
+                "Trying to set Precache attributes, but not specified in config."
+            )
+
+        training.snapshot.every = int(cfg.train.snapshot.every)
+        training.profiling_stats.every = int(cfg.train.profiling_stats.every)
+        return training
+    except Exception as e:
+        logger.error("Error in training_setup: %s" % e)
+        raise e
 
 
-def multiple_validation_setup(_config, _run_dummy, _seed, run_dir, model):
-    val_datasets = fos.utils.create_multiple_config(_config["validation"]["data"])
-
+def multiple_validation_setup(
+    cfg: DictConfig,
+    model: torch.nn.Module,
+    run_dir: str,
+) -> List[fos.pipeline.ValidationBaselineWithContext]:
+    val_datasets = fos.utils.create_multiple_config(cfg.validate.data)
     validations = []
     for val_ds in val_datasets:
         validations.append(
-            validation_setup(
-                _config,
-                _run_dummy,
-                _seed,
-                run_dir,
-                model,
-                val_ds,
-            )
+            validation_setup(cfg=cfg, model=model, val_dataset=val_ds, run_dir=run_dir)
         )
     return validations
 
 
-def validation_setup(_config, _run_dummy, _seed, run_dir, model, val_dataset):
-    # Validation loss is assumed to be the same as the training loss
-    loss = loss_setup(_config)
+def validation_setup(
+    val_dataset,
+    cfg: DictConfig,
+    model: torch.nn.Module,
+    run_dir: str,
+):
+    loss = loss_setup(cfg)
 
     pipeline_type = {
         "baseline_with_context": fos.pipeline.ValidationBaselineWithContext
-    }[_config["validation"]["pipeline"]]
+    }[cfg.validate.pipeline]
 
     validation = pipeline_type(
         data_config=val_dataset,
         run_dir=run_dir,
-        run_path_prefix=os.path.expanduser(_config["directories"]["runs"]),
-        data_path_prefix=os.path.expanduser(_config["directories"]["data"]),
+        run_path_prefix=os.path.expanduser(cfg.directories.runs),
+        data_path_prefix=os.path.expanduser(cfg.directories.data),
         model=model,
         loss=loss,
-        num_classes=int(_config["data"]["num_classes"]),
-        voxel_size=_config["data"]["voxel_size"],
-        input_size_voxels=_config["validation"]["input_size_voxels"],
-        output_size_voxels=_config["validation"]["output_size_voxels"],
-        run_every=_config["validation"]["validate_every"],
-        random_seed=_seed,
+        num_classes=int(cfg.data.num_classes),
+        voxel_size=cfg.data.voxel_size,
+        input_size_voxels=cfg.validate.input_size_voxels,
+        output_size_voxels=cfg.validate.output_size_voxels,
+        run_every=int(cfg.validate.validate_every),
+        random_seed=cfg.seed,
     )
-    device = _config["torch"]["device"]
-    if _config["torch"].get("multi_gpu", False):
-        validation.predict.gpus = list(range(torch.cuda.device_count()))
-    else:
-        validation.predict.gpus = [] if device == "cpu" else [int(device)]
-
-    validation.predict.gpus = [] if device == "cpu" else [int(device)]
-
-    # Downsample
-    validation.downsample.factor = int(_config["data"]["downsample_factor"])
-
-    # Balance Labels
+    device = cfg.device
+    validation.predict.gpus = [] if device == "cpu" else [0]
+    validation.downsample.factor = int(cfg.data.downsample_factor)
     try:
         validation.balance_labels.clipmin = float(
-            _config["loss"]["balance_labels"]["clipmin"]
+            cfg.model.unet.loss.balance_labels.clipmin
         )
         validation.balance_labels.clipmax = float(
-            _config["loss"]["balance_labels"]["clipmax"]
+            cfg.model.unet.loss.balance_labels.clipmax
         )
     except AttributeError as e:
         logger.warning(
             "Trying to set BalanceLabels attributes, but it is not used. %s" % e
         )
-        _config["loss"]["balance_labels"]["clipmin"] = None
-        _config["loss"]["balance_labels"]["clipmax"] = None
+        cfg.model.unet.loss.balance_labels.clipmin = None
+        cfg.model.unet.loss.balance_labels.clipmax = None
 
-    validation.snapshot.every = int(_config["validation"]["snapshot"]["every"])
+    validation.snapshot.every = int(cfg.validate.snapshot.every)
 
     return validation
 
 
-def log_result(
-    _run_dummy,
-    _config,
-    metric_name="loss",
-    metric_val=float("inf"),
-) -> str:
-    experiment_name = f"Run {_run_dummy._id}: "
-    return f"\n{experiment_name}" f"\nval {metric_name}: {metric_val:.6f}"
-
-
-def directory_structure_setup(_config, _run_dummy):
-    try:
-        dir_run_id = _config["training"]["continue_id"]
-        logger.info(f"Continue training run {dir_run_id}")
-    except KeyError:
-        try:
-            load_run_id, load_run_checkpoint = _config["training"]["start_from"]
-            model_to_load = os.path.expanduser(load_run_checkpoint)
-            new_model = os.path.join(
-                os.path.expanduser(_config["directories"]["runs"]),
-                "models",
-                str(_run_dummy._id),
-                "model_checkpoint_0",
-            )
-            os.makedirs(os.path.dirname(new_model), exist_ok=True)
-            copyfile(model_to_load, new_model)
-            dir_run_id = _run_dummy._id
-
-            logger.info(
-                f"Starting new training run {dir_run_id}, \
-                from previous run {load_run_id}, \
-                checkpoint {load_run_checkpoint}"
-            )
-        except KeyError:
-            dir_run_id = _run_dummy._id
-            logger.info(f"Starting new training run {dir_run_id}")
-
-    dir_run_id = f"{dir_run_id:04d}"
-    return dir_run_id
-
-
-def log_metrics(_run, target, prediction_probas, mask, metric_mask, iteration, mode):
+def log_metrics(
+    run: wandb.run,
+    target: np.ndarray,
+    prediction_probas: np.ndarray,
+    mask: np.ndarray,
+    metric_mask: np.ndarray,
+    iteration: int,
+    mode: str,
+) -> None:
     mask = np.logical_and(mask.astype(bool), metric_mask.astype(bool))
 
     dice_scores = []
@@ -398,65 +365,81 @@ def log_metrics(_run, target, prediction_probas, mask, metric_mask, iteration, m
         )
         dice_scores.append(dic_score)
     for label, score in enumerate(dice_scores):
-        _run_dummy.log_scalar(f"dice_class_{label}_{mode}", score, iteration)
+        run.log(
+            {
+                "dice_class": f"dice_class_{label}_{mode}",
+                "score": score,
+                "iteration": iteration,
+            }
+        )
         logger.info(f"{mode} | Dice score class {label}: {score}")
 
 
-def log_labels_balance(_run, labels, num_classes, iteration):
+def log_labels_balance(
+    run: wandb.run,
+    labels: np.ndarray,
+    num_classes: int,
+    iteration: int,
+) -> None:
     try:
         for c in range(num_classes):
             pct = np.sum(labels == c) / np.prod(labels.shape)
-            _run_dummy.log_scalar(f"pct_class_{c}", pct, iteration)
-    except KeyError as e:
-        logger.error(e)
+            run.log(
+                {
+                    f"pct_class_{c}": pct,
+                    "iteration": iteration,
+                }
+            )
+    except Exception as e:
+        logger.error("Error in log_labels_balance: %s" % e)
 
 
-def log_tb_batch_position(summary_writer, i, raw_pos):
-    logger.debug(f"{i=}, {raw_pos=}")
-    summary_writer.add_scalar("offset_z", int(raw_pos[0][0]), i)
-    summary_writer.add_scalar("offset_y", int(raw_pos[0][1]), i)
-    summary_writer.add_scalar("offset_x", int(raw_pos[0][2]), i)
-    summary_writer.add_scalar("shape_z", int(raw_pos[1][0]), i)
-    summary_writer.add_scalar("shape_y", int(raw_pos[1][1]), i)
-    summary_writer.add_scalar("shape_x", int(raw_pos[1][2]), i)
+def log_tb_batch_position(
+    run: wandb.run,
+    i: int,
+    raw_pos: np.ndarray,
+):
+    try:
+        logger.debug(f"{i=}, {raw_pos=}")
+        run.log(
+            {
+                "offset_z": int(raw_pos[0][0]),
+                "offset_y": int(raw_pos[0][1]),
+                "offset_x": int(raw_pos[0][2]),
+                "shape_z": int(raw_pos[1][0]),
+                "shape_y": int(raw_pos[1][1]),
+                "shape_x": int(raw_pos[1][2]),
+                "iteration": i,
+            }
+        )
+    except Exception as e:
+        logger.error("Error in log_tb_batch_position: %s" % e)
 
 
-def log_tb_batch_labels_balance(summary_writer, i, labels, num_classes):
-    for c in range(num_classes):
-        pct = np.sum(labels == c) / np.prod(labels.shape)
-        summary_writer.add_scalar(f"pct_class_{c}", pct, i)
-
-
-def train(_config, _run, _seed):
+def train(
+    cfg: DictConfig,
+) -> None:
     """train.
 
     Args:
         data_config:
         val_data_config:
     """
-
-    torch_setup(_config)
-    # log_data_config(_config, _run)
-    run_dir = directory_structure_setup(_config, _run)
-
-    model = model_setup(_config, _run)
-    training = training_setup(_config, _run, _seed, run_dir=run_dir, model=model)
-
+    model = model_setup(cfg=cfg)
+    run_dir = "2100"
+    training = training_setup(cfg=cfg, model=model, run_dir=run_dir)
     validations = multiple_validation_setup(
-        _config, _run, _seed, run_dir=run_dir, model=model
+        cfg=cfg,
+        model=model,
+        run_dir=run_dir,
     )
     validation_loss = float("inf")
 
-    debug_logdir = os.path.join(
-        os.path.expanduser(_config["directories"]["runs"]),
-        "tensorboard",
-        run_dir,
-        "debug",
-    )
-    logger.info(f"{debug_logdir=}")
-    debug_writer = tensorboardX.SummaryWriter(debug_logdir)
-
+    runs_path = Path(cfg.directories.runs)
+    debug_path = runs_path.joinpath(f"{cfg.training_runs.run_id}/debug")
+    run_wandb = setup_wandb(cfg=cfg, hyperparameters={})
     # ### START ITERATING ### #
+
     with gp.build(training.pipeline) as p:
         # Hack for validation in continued training
         logger.info(
@@ -466,7 +449,9 @@ def train(_config, _run, _seed):
             )
         )
         start_iteration = training.train_node.iteration
-
+        logger.info(
+            f"**************************\nStarting iteration: {start_iteration}"
+        )
         # build validation pipelines
         for idx_pipeline, validation in enumerate(validations):
             try:
@@ -480,35 +465,39 @@ def train(_config, _run, _seed):
                 raise
 
             validations[idx_pipeline].validation_loss.iteration = start_iteration
-
         # from 0 to iterations+1, for logging once more in the end.
-        for i in range(start_iteration, _config["training"]["iterations"] + 1):
+        for i in range(start_iteration, cfg.train.iterations + 1):
             batch = p.request_batch(training.request)
             # logger.debug(f'batch {i}:\n{batch}')
-
-            log_tb_batch_position(debug_writer, i, batch[gp.ArrayKey("RAW_POS")].data)
-            log_tb_batch_labels_balance(
-                debug_writer,
-                i,
-                batch[gp.ArrayKey("LABELS")].data,
-                _config["data"]["num_classes"],
+            log_tb_batch_position(
+                run=run_wandb,
+                i=i,
+                raw_pos=batch[gp.ArrayKey("RAW_POS")].data,
+            )
+            log_labels_balance(
+                run=run_wandb,
+                labels=batch[gp.ArrayKey("LABELS")].data,
+                iteration=i,
+                num_classes=cfg.data.num_classes,
             )
 
-            if i % _config["sacred"]["log_every"] == 0:
-                # Convention for loss: pos 0 is the final loss used for
-                # backprop, other positions are intermediate/partial losses
+            if i % cfg.log_every == 0:
                 for l_i, l in enumerate(np.atleast_1d(batch.loss)):
-                    _run_dummy.log_scalar(f"loss_train_{l_i}", l, i)
+                    _log(
+                        run=run_wandb,
+                        metrics={f"loss_train_type_{l_i}": l},
+                        iteration=i,
+                    )
 
                 log_labels_balance(
-                    _run,
+                    run=run_wandb,
                     labels=batch[gp.ArrayKey("LABELS")].data,
-                    num_classes=_config["data"]["num_classes"],
+                    num_classes=cfg.data.num_classes,
                     iteration=i,
                 )
                 # Log metrics training
                 log_metrics(
-                    _run,
+                    run=run_wandb,
                     target=batch[gp.ArrayKey("LABELS")].data,
                     prediction_probas=batch[gp.ArrayKey("PREDICTIONS")].data,
                     mask=batch[gp.ArrayKey("MASK")].data,
@@ -517,9 +506,8 @@ def train(_config, _run, _seed):
                     mode="train",
                 )
 
-            if i % _config["validation"]["validate_every"] == 0:
+            if i % cfg.validate.validate_every == 0:
                 model.eval()
-
                 # loop over validation objects; each one has a pipeline
                 for val_idx, validation in enumerate(validations):
                     # current validation pipeline
@@ -537,15 +525,15 @@ def train(_config, _run, _seed):
 
                     val_losses = np.atleast_1d(val_batch.loss)
                     for l_i, l in enumerate(val_losses):
-                        _run_dummy.log_scalar(f"loss_val_ds_{val_idx}_type_{l_i}", l, i)
+                        _log(
+                            run=run_wandb,
+                            metrics={f"loss_val_type_{l_i}": l},
+                            iteration=i,
+                        )
 
-                    # TODO there is no single validation loss to save any more.
-                    # Extend to multiclass.
-                    # validation_loss = val_losses[0]
-
-                    if i % _config["sacred"]["log_every"] == 0:
+                    if i % cfg.log_every == 0:
                         log_metrics(
-                            _run,
+                            run=run_wandb,
                             target=val_batch[gp.ArrayKey("LABELS")].data,
                             prediction_probas=val_batch[
                                 gp.ArrayKey("PREDICTIONS")
@@ -556,148 +544,27 @@ def train(_config, _run, _seed):
                             mode=f"validation_ds_{val_idx}",
                         )
                 model.train()
-
         # release (teardown) validation pipelines
         logger.debug("tearing down val pipelines")
         for idx_pipeline, validation in enumerate(validations):
             validations[idx_pipeline].pipeline.internal_teardown()
         logger.debug("tear down completed")
-
-    return log_result(_run_dummy=_run, _config=_config, metric_val=validation_loss)
-
-
-# def get_config_from_db(url, db_name, run_id):
-#     with MongoClient(host=url, port=27017) as client:
-#         db = client[db_name]
-#         run_document = db['runs'].find_one({'_id': run_id})
-#
-#     return run_document['config']
+    logger.info(f"Validation loss: {validation_loss}")
+    # except Exception as e:
+    #     logger.error(f"Error in training: {e}")
+    #     raise e
 
 
-def load_run(run_id):
-    # Check if the previous run ID is in training_runs or mock_db
-    with open("../../mock_db/ledger.json") as f:
-        ledger = json.load(f)
-    assert str(run_id) in ledger.keys(), "Run ID not found in ~/incasem/mock_db"
-
-    with open(f"../../mock_db/{ledger[str(run_id)]}") as f:
-        config = json.load(f)
-
-    return config
+config_path = Path(__file__).resolve().parents[2].joinpath("configs")
 
 
-def parse_argmuents():
-    parser = argparse.ArgumentParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter
-    )
-    parser.add_argument("--repeat_run", type=int, help="Run ID of training to repeat.")
-    parser.add_argument(
-        "--continue_run", type=int, help="Run ID of training to continue"
-    )
-    parser.add_argument(
-        "--start_from",
-        nargs=2,
-        metavar=("RUN ID", "checkpoint"),
-        help="Start training from a previous trained model, \
-             given its run ID and checkpoint",
-    )
-
-    args, remaining_argv = parser.parse_known_args()
-    sys.argv = [sys.argv[0], *remaining_argv]
-
-    if args.repeat_run is not None:
-        config = load_run(args.repeat_run)
-
-    elif args.continue_run is not None:
-        config = load_run(args.continue_run)
-
-        config["training"]["continue_id"] = args.continue_run
-
-    elif args.start_from is not None:
-        prev_model_id, _ = args.start_from
-        config = load_run(int(prev_model_id))
-        config["training"]["start_from"] = args.start_from
-
-    else:
-        config = None
-
-    return config, args, remaining_argv
+@hydra.main(version_base=None, config_path=str(config_path), config_name="config.yaml")
+def main(cfg: DictConfig):
+    setup_torch(cfg)
+    train(cfg)
+    sync()
+    cleanup()
 
 
 if __name__ == "__main__":
-    config, args, remaining_argv = parse_argmuents()
-
-    if config is not None:
-        logger.debug(config)
-    else:
-        config = {}
-        with open("config_training.yaml", "r") as file:
-            yaml_data = yaml.safe_load(file)
-
-    val_arg_dict = {}
-    train_arg_dict = {}
-    torch_arg_dict = {}
-
-    if "--name" in remaining_argv:
-        name_idx = remaining_argv.index("--name") + 1
-        name = remaining_argv[name_idx]
-        config["name"] = name
-
-    for item in remaining_argv:
-        if "training." in item and "=" in item:
-            pattern = r"\btraining\.(\S+)\s*=\s*(\S+)\b"
-            # Find all matches in the text
-            matches = re.findall(pattern, item)
-            if len(matches) > 0:
-                k, v = item.split("training.")[-1].split("=")
-                train_arg_dict[k] = v
-
-        if "validation." in item and "=" in item:
-            pattern = r"\bvalidation\.(\S+)\s*=\s*(\S+)\b"
-            # Find all matches in the text
-            matches = re.findall(pattern, item)
-            if len(matches) > 0:
-                k, v = item.split("validation.")[-1].split("=")
-                val_arg_dict[k] = v
-
-        if "torch." in item and "=" in item:
-            pattern = r"\btorch\.(\S+)\s*=\s*(\S+)\b"
-            # Find all matches in the text
-            matches = re.findall(pattern, item)
-            if len(matches) > 0:
-                k, v = item.split("torch.")[-1].split("=")
-                torch_arg_dict[k] = v
-
-    config = {**config, **yaml_data}
-    config["training"] = {**config["training"], **train_arg_dict}
-    config["validation"] = {**config["validation"], **val_arg_dict}
-    config["torch"] = {**config["torch"], **torch_arg_dict}
-
-    _run_dummy = TrainingRunDummy()
-
-    try:
-        name = config["name"]
-    except KeyError:
-        name = "training"
-
-    name = name + f"_{_run_dummy._id}"
-
-    # Update ledger
-    with open("../../mock_db/ledger.json") as fp:
-        ledger = json.load(fp)
-
-    ledger[str(_run_dummy._id)] = name + ".json"
-
-    with open("../../mock_db/ledger.json", mode="w") as f:
-        json.dump(ledger, f)
-
-    # Write config
-    with open(f"../../mock_db/{name}.json", mode="w") as f:
-        json.dump(config, f)
-
-    # if not os.path.exists(config['directories']['runs']):
-    #     os.mkdir(config['directories']['runs'])
-
-    seed_dummy = 42
-
-    train(config, _run_dummy, seed_dummy)
+    main()
