@@ -21,7 +21,7 @@ setup(
         'protobuf',
         'daisy',
         'neuroglancer',
-        'funlib.learn.torch @ git+https://github.com/kirchhausenlab/funlib.learn.torch@master',
+        'funlib.learn.torch @ git+https://github.com/kirchhausenlab/funlib.learn.torch@5590fb51aef8381eeae99bbe75800ecb186684a1',
         'funlib.persistence @ git+https://github.com/funkelab/funlib.persistence@7a21df58e9b503881faf33a3c3110c375363fba4',
         'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
     ],
