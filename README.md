@@ -81,4 +81,4 @@ streamlit run main.py
 
 Follow the instructions on the UI to start using incasem.
 
-3. **Command Line Interface**: Detailed instructions on how to use the command line interface are provided below.
+3. **Command Line Interface**: Detailed instructions on how to use the command line interface are provided in the `wiki/installation.md` file
