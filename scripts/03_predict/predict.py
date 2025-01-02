@@ -49,7 +49,7 @@ def model_setup(_run_dummy, _config):
         model = fos.torch.models.Unet(
             in_channels=1,
             num_fmaps=int(_config['model']['num_fmaps']),
-            # fmap_inc_factor=int(_config['model']['fmap_inc_factor']),
+            fmap_inc_factor=int(_config['model']['fmap_inc_factor']),
             downsample_factors=tuple(
                 tuple(i) for i in _config['model']['downsample_factors']
             ),
