@@ -22,7 +22,7 @@ setup(
         'daisy',
         'sacred @ git+https://github.com/kirchhausenlab/sacred@master',
         'funlib.learn.torch @ git+https://github.com/funkelab/funlib.learn.torch@master',
-        'funlib.persistence @ git+https://github.com/funkelab/funlib.persistence@main',
+        'funlib.persistence @ git+https://github.com/funkelab/funlib.persistence@f7d37ed1f995a588172867209bc78f14b81ef5ae',
         'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
     ],
     python_requires='>=3.9, <3.10',
