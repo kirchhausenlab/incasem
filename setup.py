@@ -17,6 +17,7 @@ setup(
         "quilt3",
         "configargparse",
         "torch",
+        "ruff",
         "torchvision",
         "protobuf",
         "tqdm",

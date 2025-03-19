@@ -54,16 +54,30 @@ libncursesw5-dev xz-utils tk-dev libffi-dev liblzma-dev python-openssl \
 ninja-build cmake libegl1-mesa-dev python3-dev
 ```
 
-1. Create a conda environment.
+3. Create a conda environment.
 
 ```bash
 conda create -n incasem python=3.10 --no-default-packages
-mamba install pyqt qtpy
 python -m pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu124
+mamba install pyqt qtpy
 python -m pip install -e ".[dev]" \ --extra-index-url https://download.pytorch.org/whl/cu124
 ```
 
+In case of installation issues, please clear your cache as follows:
+
+```bash
+rm -rf ~/.cache/pip
+```
+
 4. Add required third-party libraries to the project.
+5. You can format your files using the following command:
+
+```bash
+ruff format
+ruff clean
+```
+
+The `ruff.toml` file contains the configuration for the formatter.
 
 ## Setup
 
