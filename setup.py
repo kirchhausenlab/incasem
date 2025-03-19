@@ -13,7 +13,7 @@ setup(
     package_dir={"": "incasem"},
     python_requires=">=3.9",  # compatibility with pinned libs
     install_requires=[
-        "numpy",
+        "numpy<2",
         "zarr",
         "wheel",  # adding as a safety
         "imagecodecs",  # prevent image compute errors
@@ -35,6 +35,7 @@ setup(
         "dask",
         "daisy",
         "matplotlib",
+        "timm>=0.9.10",
         "pillow",
         "numba",
         "tifffile",  # tiff file handling
