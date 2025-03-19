@@ -134,20 +134,15 @@ Follow the instructions on the UI to start using incasem.
 
 ### UI: Walk through
 
-1. Verify packages:
-https://github.com/user-attachments/assets/d970efcb-5937-49a6-8480-de8d6a108cce
+1. [Verify packages](https://github.com/user-attachments/assets/d970efcb-5937-49a6-8480-de8d6a108cce)
 
-2. Open Streamlit UI:
-https://github.com/user-attachments/assets/fb314787-dd37-41f8-b157-aef3153a4110
+2. [Open Streamlit UI:](https://github.com/user-attachments/assets/fb314787-dd37-41f8-b157-aef3153a4110)
 
-3. Download Data:
-https://github.com/user-attachments/assets/879b3b78-bffb-4226-ac5d-e041ec9fef46
+3. [Download Data:](https://github.com/user-attachments/assets/879b3b78-bffb-4226-ac5d-e041ec9fef46)
 
-4. View Data:
-https://github.com/user-attachments/assets/1fc15ab0-3154-4d1f-8925-59a31d10ac5c
+4. [View Data:](https://github.com/user-attachments/assets/1fc15ab0-3154-4d1f-8925-59a31d10ac5c)
 
-5. Setup training:
-https://github.com/user-attachments/assets/9a07945b-412c-4c2a-9acc-cab1e7bad7b8
+5. [Setup training:](https://github.com/user-attachments/assets/9a07945b-412c-4c2a-9acc-cab1e7bad7b8)
 
 
 
