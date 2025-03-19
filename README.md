@@ -75,13 +75,14 @@ rm -rf ~/.cache/pip
 5. You can format your files using the following command:
 
 ```bash
-ruff format
-ruff clean
+ruff format && ruff clean
 ```
 
-The `ruff.toml` file contains the configuration for the formatter.
+The `ruff.toml` file contains the configuration for the formatter. **Ruff's formatter will catch miscellaneous semantic and syntax errors in your code and fix them.**
 
 6. Modify your bashrc to include the following:
+
+**These commands let you completely leverage infiniband networks `(if available)` and optimally use NCCL library for GPU communication.**
 
 ```bash
 export NCCL_SOCKET_IFNAME=ib # use all infiniband interfaces
@@ -121,9 +122,6 @@ export HUGGINGFACE_HUB_CACHE="${XDG_CACHE_HOME}/huggingface/hub"
    Please run the following:
 
 ```bash
-python -m pip install -e ".[dev,xformers]" \
---extra-index-url https://download.pytorch.org/whl/cu124 \
-pip3 install -e .
 cd incasem/automate
 streamlit run main.py
 ```
