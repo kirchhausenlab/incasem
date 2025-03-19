@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Dict
 import streamlit as st
 from utils import create_config_file
-from incasem.automate.fine_tuning import IncasemFineTuning
+from automate.fine_tuning import IncasemFineTuning
 
 path_to_scripts_config: Path = Path(__name__).resolve().parents[2]
 DATA_CONFIG_PATH: Path = path_to_scripts_config / "scripts/02_train/data_configs"

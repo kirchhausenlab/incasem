@@ -6,7 +6,7 @@ from typing import List
 from functools import lru_cache
 import streamlit as st
 import zarr
-from incasem.automate.utils import handle_exceptions
+from automate.utils import handle_exceptions
 
 
 @dataclass

@@ -1,9 +1,9 @@
-from incasem.automate.utils import handle_exceptions
+from automate.utils import handle_exceptions
 import json
 import yaml
 import subprocess
-from incasem.logger.config import logger
-from incasem.automate.directory_navigator import get_dir
+from logger.config import logger
+from automate.directory_navigator import get_dir
 from dataclasses import dataclass, field
 from typing import Dict, List
 import streamlit as st

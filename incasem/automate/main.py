@@ -4,7 +4,7 @@ from typing import Callable
 from data_download import DataDownloader
 from fine_tuning import fine_tuning_workflow
 from incasem_setup import CondaEnvironmentManager
-from incasem.automate.utils import handle_exceptions
+from automate.utils import handle_exceptions
 from prediction import take_input_and_run_predictions
 from training_run import main as take_input_and_create_configs
 from view import view_cells_and_flatten_them

@@ -1,9 +1,9 @@
 import subprocess
 import os
 import streamlit as st
-from incasem.automate.utils import handle_exceptions
+from automate.utils import handle_exceptions
 import quilt3
-from incasem.logger.config import logger
+from logger.config import logger
 from pathlib import Path
 
 

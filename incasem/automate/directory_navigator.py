@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 import streamlit as st
-from incasem.logger.config import logger
+from logger.config import logger
 from functools import lru_cache
 
 

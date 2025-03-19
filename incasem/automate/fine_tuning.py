@@ -1,9 +1,9 @@
 import subprocess
-from incasem.automate.directory_navigator import get_dir
+from automate.directory_navigator import get_dir
 import glob
 import streamlit as st
-from incasem.logger.config import logger
-from incasem.automate.utils import handle_exceptions
+from logger.config import logger
+from automate.utils import handle_exceptions
 from utils import (
     convert_tiff_to_zarr,
     create_config_file,

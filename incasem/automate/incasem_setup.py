@@ -1,6 +1,6 @@
 import subprocess
 from pathlib import Path
-from incasem.automate.utils import handle_exceptions
+from automate.utils import handle_exceptions
 import streamlit as st
 
 

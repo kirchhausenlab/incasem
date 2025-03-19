@@ -4,7 +4,7 @@ import re
 import subprocess
 import streamlit as st
 from functools import wraps
-from incasem.logger.config import logger
+from logger.config import logger
 import inspect
 from typing import Callable
 from pathlib import Path
