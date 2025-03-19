@@ -60,7 +60,7 @@ ninja-build cmake libegl1-mesa-dev python3-dev
 conda create -n incasem python=3.10 --no-default-packages
 python -m pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu124
 mamba install pyqt qtpy
-python -m pip install -e ".[dev]" \ --extra-index-url https://download.pytorch.org/whl/cu124
+python -m pip install -e ".[dev]" --extra-index-url https://download.pytorch.org/whl/cu124
 ```
 
 In case of installation issues, please clear your cache as follows:
@@ -68,6 +68,8 @@ In case of installation issues, please clear your cache as follows:
 ```bash
 rm -rf ~/.cache/pip
 ```
+
+**Note that if you're installing this project using PyPI, the .python-version file will automatically install the required Python version.**
 
 4. Add required third-party libraries to the project.
 5. You can format your files using the following command:
@@ -78,6 +80,36 @@ ruff clean
 ```
 
 The `ruff.toml` file contains the configuration for the formatter.
+
+6. Modify your bashrc to include the following:
+
+```bash
+export NCCL_SOCKET_IFNAME=ib # use all infiniband interfaces
+export MASTER_ADDR="localhost"
+export MASTER_PORT="8081"
+export RDZV_ID="2001" # job id
+export RDZV_BACKEND="c10d"
+export RDZV_ENDPOINT="$MASTER_ADDR:$MASTER_PORT"
+export NUM_ALLOWED_FAILURES=3
+export OMP_NUM_THREADS=16
+export NODE_RANK="" # rank of the node
+export NCCL_SOCKET_NTHREADS=4
+export NCCL_IB_DISABLE=0
+export CUDA_HOME="/usr/local/cuda-12.2"
+```
+
+**Export XDG Cache Home**:
+
+```bash
+export XDG_CACHE_HOME=your_cache_home # e.g. /home/user/.cache
+```
+
+**PLEASE VERIFY THE CUDA_HOME PATH** 7. For installing models effectively from Hugging face, please run the following:
+
+```bash
+export HF_HUB_ENABLE_HF_TRANSFER=1
+export HUGGINGFACE_HUB_CACHE="${XDG_CACHE_HOME}/huggingface/hub"
+```
 
 ## Setup
 

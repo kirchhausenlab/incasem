@@ -1,6 +1,11 @@
 from pathlib import Path
+from setuptools import find_packages, setup
+
+with open("README.md", "r", encoding="utf-8") as fh:
+    long_description = fh.read()
 
 THIRD_PARTY_DIR: Path = Path(__file__).parent.joinpath("src", "third_party")
+
 setup(
     name="incasem_vanilla",
     version="0.1",
