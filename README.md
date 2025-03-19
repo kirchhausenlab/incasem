@@ -131,3 +131,9 @@ streamlit run main.py
 Follow the instructions on the UI to start using incasem.
 
 3. **Command Line Interface**: Detailed instructions on how to use the command line interface are provided in the `wiki/installation.md` file
+
+### UI: Walk through
+
+1. Verify packages:
+
+[![Verify Packages](/nfs/scratch/ajain/incasem/media/download_data.mp4)](/nfs/scratch/ajain/incasem/media/download_data.mp4)

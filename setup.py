@@ -15,6 +15,8 @@ setup(
     install_requires=[
         "numpy<2",
         "zarr",
+        "timm",
+        "dask",
         "wheel",  # adding as a safety
         "imagecodecs",  # prevent image compute errors
         "scikit-learn",

@@ -1,6 +1,6 @@
 import argparse
 
-from incasem.utils import scale_pyramid
+from utils import scale_pyramid
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

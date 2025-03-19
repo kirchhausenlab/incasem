@@ -9,7 +9,7 @@ from funlib.persistence import Array, open_ds, prepare_ds
 from funlib.geometry import Roi, Coordinate
 import daisy
 
-from incasem.utils import equalize_adapthist
+from utils import equalize_adapthist
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
