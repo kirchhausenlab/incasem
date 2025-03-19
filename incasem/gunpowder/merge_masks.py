@@ -32,9 +32,9 @@ class MergeMasks(gp.BatchFilter):
         output = gp.Batch()
         spec = batch[self.arrays[0]].spec.copy()
 
-        mask = np.logical_and.reduce(
-            [batch[key].data.astype(bool) for key in self.arrays]
-        )
+        mask = np.logical_and.reduce([
+            batch[key].data.astype(bool) for key in self.arrays
+        ])
 
         mask = mask.astype(np.uint8)
 

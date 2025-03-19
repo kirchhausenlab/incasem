@@ -103,13 +103,11 @@ class PredictionBaseline:
             # Create channel dimension, but only for the raw input
             + fos.gunpowder.Unsqueeze([keys["RAW"]])
             # Create batch dimension
-            + fos.gunpowder.Unsqueeze(
-                [
-                    keys["RAW"],
-                    keys["LABELS"],
-                    keys["MASK"],
-                ]
-            )
+            + fos.gunpowder.Unsqueeze([
+                keys["RAW"],
+                keys["LABELS"],
+                keys["MASK"],
+            ])
         )
 
         predictions_roi = sources.rois[0].copy()
@@ -142,14 +140,12 @@ class PredictionBaseline:
 
         self.pipeline = (
             self.pipeline
-            + fos.gunpowder.Squeeze(
-                [
-                    keys["RAW"],
-                    keys["LABELS"],
-                    keys["MASK"],
-                    keys["PREDICTIONS"],
-                ]
-            )
+            + fos.gunpowder.Squeeze([
+                keys["RAW"],
+                keys["LABELS"],
+                keys["MASK"],
+                keys["PREDICTIONS"],
+            ])
             + fos.gunpowder.Squeeze([keys["RAW"]])
         )
 

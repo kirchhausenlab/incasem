@@ -409,39 +409,35 @@ def take_input_and_run_predictions():
 
 @st.cache_data
 def show_sample_prediction_config() -> None:
-    st.json(
-        {
-            "directories": {"data": "../../incasem/data"},
-            "prediction": {
-                "pipeline": "baseline",
-                "data": None,
-                "run_id_training": None,
-                "checkpoint": None,
-                "directories": {"prefix": "../../incasem/data"},
-                "input_size_voxels": [204, 204, 204],
-                "output_size_voxels": [110, 110, 110],
-                "num_workers": 8,
-                "log_metrics": False,
-                "torch": {"device": 0},
-            },
-        }
-    )
+    st.json({
+        "directories": {"data": "../../incasem/data"},
+        "prediction": {
+            "pipeline": "baseline",
+            "data": None,
+            "run_id_training": None,
+            "checkpoint": None,
+            "directories": {"prefix": "../../incasem/data"},
+            "input_size_voxels": [204, 204, 204],
+            "output_size_voxels": [110, 110, 110],
+            "num_workers": 8,
+            "log_metrics": False,
+            "torch": {"device": 0},
+        },
+    })
 
 
 @st.cache_data
 def show_sample_config() -> None:
     st.write("This is what a sample configuration file looks like:")
-    st.json(
-        {
-            "Cell_6_example_roi_nickname": {
-                "file": "cell_6/cell_6.zarr",
-                "offset": [400, 926, 2512],
-                "shape": [241, 476, 528],
-                "voxel_size": [5, 5, 5],
-                "raw": "volumes/raw_equalized_0.02",
-            }
+    st.json({
+        "Cell_6_example_roi_nickname": {
+            "file": "cell_6/cell_6.zarr",
+            "offset": [400, 926, 2512],
+            "shape": [241, 476, 528],
+            "voxel_size": [5, 5, 5],
+            "raw": "volumes/raw_equalized_0.02",
         }
-    )
+    })
 
 
 def main():

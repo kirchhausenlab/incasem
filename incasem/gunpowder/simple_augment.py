@@ -131,14 +131,12 @@ class SimpleAugment(BatchFilter):
 
                 # mirror
                 location_in_total_offset = np.asarray(node.location) - total_roi_offset
-                node.location[:] = np.asarray(
-                    [
-                        total_roi_end[dim] - location_in_total_offset[dim]
-                        if m
-                        else node.location[dim]
-                        for dim, m in enumerate(self.mirror)
-                    ]
-                )
+                node.location[:] = np.asarray([
+                    total_roi_end[dim] - location_in_total_offset[dim]
+                    if m
+                    else node.location[dim]
+                    for dim, m in enumerate(self.mirror)
+                ])
 
                 logger.debug("after mirror: %s, %s", node.id, node.location)
 

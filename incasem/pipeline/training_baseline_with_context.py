@@ -198,14 +198,12 @@ class TrainingBaselineWithContext:
             # Create channel dimension, but only for the raw input
             + fos.gunpowder.Unsqueeze([keys["RAW"]])
             # Create batch dimension
-            + fos.gunpowder.Unsqueeze(
-                [
-                    keys["RAW"],
-                    keys["LABELS"],
-                    keys["MASK"],
-                    keys["LOSS_SCALINGS"],
-                ]
-            )
+            + fos.gunpowder.Unsqueeze([
+                keys["RAW"],
+                keys["LABELS"],
+                keys["MASK"],
+                keys["LOSS_SCALINGS"],
+            ])
         )
 
         self.precache = gp.PreCache(cache_size=10, num_workers=5)
@@ -248,15 +246,13 @@ class TrainingBaselineWithContext:
 
         self.pipeline = (
             self.pipeline
-            + fos.gunpowder.Squeeze(
-                [
-                    keys["RAW"],
-                    keys["LABELS"],
-                    keys["MASK"],
-                    keys["LOSS_SCALINGS"],
-                    keys["PREDICTIONS"],
-                ]
-            )
+            + fos.gunpowder.Squeeze([
+                keys["RAW"],
+                keys["LABELS"],
+                keys["MASK"],
+                keys["LOSS_SCALINGS"],
+                keys["PREDICTIONS"],
+            ])
             + fos.gunpowder.Squeeze([keys["RAW"]])
         )
 

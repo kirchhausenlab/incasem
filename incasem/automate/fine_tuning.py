@@ -279,18 +279,16 @@ def fine_tuning_workflow() -> None:
         with st.expander("3. Show Configuration Entries", expanded=False, icon="📝"):
             """Print a sample JSON file."""
             st.write("This is a sample JSON file for fine-tuning.")
-            st.json(
-                {
-                    "cell_3_finetune_mito": {
-                        "file": "cell_3/cell_3.zarr",
-                        "offset": [700, 2000, 6200],
-                        "shape": [250, 250, 250],
-                        "voxel_size": [5, 5, 5],
-                        "raw": "volumes/raw_equalized_0.02",
-                        "labels": {"volumes/labels/mito": 1},
-                    }
+            st.json({
+                "cell_3_finetune_mito": {
+                    "file": "cell_3/cell_3.zarr",
+                    "offset": [700, 2000, 6200],
+                    "shape": [250, 250, 250],
+                    "voxel_size": [5, 5, 5],
+                    "raw": "volumes/raw_equalized_0.02",
+                    "labels": {"volumes/labels/mito": 1},
                 }
-            )
+            })
 
         # Step 3: Fine-Tuning Configuration Entries
         with st.expander(

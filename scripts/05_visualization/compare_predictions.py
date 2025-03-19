@@ -90,29 +90,21 @@ def compare_predictions(
 
     with viewer.txn() as s:
         # Grid Layout
-        s.layout = neuroglancer.column_layout(
-            [
-                neuroglancer.row_layout(
-                    [
-                        neuroglancer.LayerGroupViewer(
-                            layout=layout, layers=input_datasets
-                        )
-                        for i in iterations[0]
-                    ]
-                ),
-                *[
-                    neuroglancer.row_layout(
-                        [
-                            neuroglancer.LayerGroupViewer(
-                                layout=layout, layers=[input_datasets[0], iteration]
-                            )
-                            for iteration in series
-                        ]
+        s.layout = neuroglancer.column_layout([
+            neuroglancer.row_layout([
+                neuroglancer.LayerGroupViewer(layout=layout, layers=input_datasets)
+                for i in iterations[0]
+            ]),
+            *[
+                neuroglancer.row_layout([
+                    neuroglancer.LayerGroupViewer(
+                        layout=layout, layers=[input_datasets[0], iteration]
                     )
-                    for series in datasets
-                ],
-            ]
-        )
+                    for iteration in series
+                ])
+                for series in datasets
+            ],
+        ])
 
     url = str(viewer)
     logger.info(f"\n\t\t{url}\n")

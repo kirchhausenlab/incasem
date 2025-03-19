@@ -111,9 +111,9 @@ class RandomLocation(BatchFilter):
             nonempty_request = BatchRequest({self.ensure_nonempty: graph_spec})
             nonempty_batch = upstream.request_batch(nonempty_request)
 
-            self.points = KDTree(
-                [v.location for v in nonempty_batch[self.ensure_nonempty].nodes]
-            )
+            self.points = KDTree([
+                v.location for v in nonempty_batch[self.ensure_nonempty].nodes
+            ])
 
             logger.info("retrieved %d points", len(self.points.data))
 

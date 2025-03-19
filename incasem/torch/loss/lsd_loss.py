@@ -93,10 +93,8 @@ class LsdLoss(torch.nn.Module):
         # self.components = (loss_reduced, lsd_loss_reduced)
         logger.debug(f"LSD loss in {time.time() - start:.6f} s")
 
-        return torch.cat(
-            [
-                loss_total.reshape(1),
-                loss_reduced.reshape(1),
-                lsd_loss_reduced.reshape(1),
-            ]
-        )
+        return torch.cat([
+            loss_total.reshape(1),
+            loss_reduced.reshape(1),
+            lsd_loss_reduced.reshape(1),
+        ])

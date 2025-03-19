@@ -32,12 +32,12 @@ class ScalePyramid(neuroglancer.LocalVolume):
 
         logger.debug("Creating scale pyramid...")
 
-        self.min_voxel_size = min(
-            [tuple(layer.dimensions.scales) for layer in volume_layers]
-        )
-        self.max_voxel_size = max(
-            [tuple(layer.dimensions.scales) for layer in volume_layers]
-        )
+        self.min_voxel_size = min([
+            tuple(layer.dimensions.scales) for layer in volume_layers
+        ])
+        self.max_voxel_size = max([
+            tuple(layer.dimensions.scales) for layer in volume_layers
+        ])
 
         self.dims = len(volume_layers[0].dimensions.scales)
         self.volume_layers = {
@@ -310,17 +310,15 @@ void main () {
         else:
             tt = "segmentation"
 
-        layer = ScalePyramid(
-            [
-                neuroglancer.LocalVolume(
-                    data=a.data,
-                    voxel_offset=voxel_offset,
-                    dimensions=array_dims,
-                    volume_type=tt,
-                )
-                for a, array_dims in zip(array, dimensions)
-            ]
-        )
+        layer = ScalePyramid([
+            neuroglancer.LocalVolume(
+                data=a.data,
+                voxel_offset=voxel_offset,
+                dimensions=array_dims,
+                volume_type=tt,
+            )
+            for a, array_dims in zip(array, dimensions)
+        ])
 
     else:
         if layer_type == "im":

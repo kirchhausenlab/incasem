@@ -94,9 +94,10 @@ class Snapshot(BatchFilter):
         self.n = 0
         self.compression_type = compression_type
         self.compression_level = compression_level
-        self.compressor = numcodecs.get_codec(
-            {"id": self.compression_type, "level": self.compression_level}
-        )
+        self.compressor = numcodecs.get_codec({
+            "id": self.compression_type,
+            "level": self.compression_level,
+        })
 
         self.store_value_range = store_value_range
         self.chunk_shape = chunk_shape

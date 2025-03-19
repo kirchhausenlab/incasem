@@ -60,9 +60,11 @@ class PadDownstreamOfRandomLocation(BatchFilter):
     def prepare(self, request):
         # go upstream to a provider that does not provide a infinite array
         rec_upstream_provider = self.get_upstream_provider()
-        while rec_upstream_provider.spec[self.key].roi.get_shape() == Coordinate(
-            (None, None, None)
-        ):
+        while rec_upstream_provider.spec[self.key].roi.get_shape() == Coordinate((
+            None,
+            None,
+            None,
+        )):
             rec_upstream_provider = rec_upstream_provider.get_upstream_provider()
 
         upstream_spec = rec_upstream_provider.spec
@@ -74,15 +76,13 @@ class PadDownstreamOfRandomLocation(BatchFilter):
         logger.debug("request: %s" % request)
         logger.debug("upstream spec: %s" % upstream_spec)
 
-        new_shape = Coordinate(
-            [
-                u if u < r else r
-                for (u, r) in zip(
-                    upstream_spec[self.key].roi.get_shape(),
-                    request[self.key].roi.get_shape(),
-                )
-            ]
-        )
+        new_shape = Coordinate([
+            u if u < r else r
+            for (u, r) in zip(
+                upstream_spec[self.key].roi.get_shape(),
+                request[self.key].roi.get_shape(),
+            )
+        ])
 
         voxel_size = upstream_spec[self.key].voxel_size
         shrink_coordinate = (

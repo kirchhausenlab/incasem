@@ -118,14 +118,12 @@ class ValidationBaselineWithContext:
             # Create channel dimension, but only for the raw input
             + fos.gunpowder.Unsqueeze([keys["RAW"]])
             # Create batch dimension
-            + fos.gunpowder.Unsqueeze(
-                [
-                    keys["RAW"],
-                    keys["LABELS"],
-                    keys["MASK"],
-                    keys["LOSS_SCALINGS"],
-                ]
-            )
+            + fos.gunpowder.Unsqueeze([
+                keys["RAW"],
+                keys["LABELS"],
+                keys["MASK"],
+                keys["LOSS_SCALINGS"],
+            ])
         )
 
         # The predict node needs to be told which ROI of predictions it
@@ -178,15 +176,13 @@ class ValidationBaselineWithContext:
 
         self.pipeline = (
             self.pipeline
-            + fos.gunpowder.Squeeze(
-                [
-                    keys["RAW"],
-                    keys["LABELS"],
-                    keys["MASK"],
-                    keys["LOSS_SCALINGS"],
-                    keys["PREDICTIONS"],
-                ]
-            )
+            + fos.gunpowder.Squeeze([
+                keys["RAW"],
+                keys["LABELS"],
+                keys["MASK"],
+                keys["LOSS_SCALINGS"],
+                keys["PREDICTIONS"],
+            ])
             + fos.gunpowder.Squeeze([keys["RAW"]])
         )
 

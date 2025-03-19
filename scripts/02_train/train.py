@@ -365,13 +365,11 @@ def log_metrics(
         )
         dice_scores.append(dic_score)
     for label, score in enumerate(dice_scores):
-        run.log(
-            {
-                "dice_class": f"dice_class_{label}_{mode}",
-                "score": score,
-                "iteration": iteration,
-            }
-        )
+        run.log({
+            "dice_class": f"dice_class_{label}_{mode}",
+            "score": score,
+            "iteration": iteration,
+        })
         logger.info(f"{mode} | Dice score class {label}: {score}")
 
 
@@ -384,12 +382,10 @@ def log_labels_balance(
     try:
         for c in range(num_classes):
             pct = np.sum(labels == c) / np.prod(labels.shape)
-            run.log(
-                {
-                    f"pct_class_{c}": pct,
-                    "iteration": iteration,
-                }
-            )
+            run.log({
+                f"pct_class_{c}": pct,
+                "iteration": iteration,
+            })
     except Exception as e:
         logger.error("Error in log_labels_balance: %s" % e)
 
@@ -401,17 +397,15 @@ def log_tb_batch_position(
 ):
     try:
         logger.debug(f"{i=}, {raw_pos=}")
-        run.log(
-            {
-                "offset_z": int(raw_pos[0][0]),
-                "offset_y": int(raw_pos[0][1]),
-                "offset_x": int(raw_pos[0][2]),
-                "shape_z": int(raw_pos[1][0]),
-                "shape_y": int(raw_pos[1][1]),
-                "shape_x": int(raw_pos[1][2]),
-                "iteration": i,
-            }
-        )
+        run.log({
+            "offset_z": int(raw_pos[0][0]),
+            "offset_y": int(raw_pos[0][1]),
+            "offset_x": int(raw_pos[0][2]),
+            "shape_z": int(raw_pos[1][0]),
+            "shape_y": int(raw_pos[1][1]),
+            "shape_x": int(raw_pos[1][2]),
+            "iteration": i,
+        })
     except Exception as e:
         logger.error("Error in log_tb_batch_position: %s" % e)
 

@@ -51,7 +51,7 @@ class ZarrFileNavigator:
                         components.append(f"volumes/{key}")
         return components
 
-@lru_cache
+    @lru_cache()
     @st.cache_data
     def find_segmentation_folders(
         self, selected_components: List[str], selected_file: Path

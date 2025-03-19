@@ -122,9 +122,9 @@ class Train(GenericTrain):
 
         # not yet implemented
         gradients = gradients
-        inputs.update(
-            {k: v for k, v in loss_inputs.items() if v not in outputs.values()}
-        )
+        inputs.update({
+            k: v for k, v in loss_inputs.items() if v not in outputs.values()
+        })
 
         super(Train, self).__init__(
             inputs, outputs, gradients, array_specs, spawn_subprocess=spawn_subprocess

@@ -62,12 +62,10 @@ class MergeLabels(gp.BatchFilter):
 
         if self.ambiguous_labels == "max":
             labels = np.max(
-                np.array(
-                    [
-                        batch[array].data * class_id
-                        for array, class_id in self.classes.items()
-                    ]
-                ),
+                np.array([
+                    batch[array].data * class_id
+                    for array, class_id in self.classes.items()
+                ]),
                 axis=0,
             ).astype(self.dtype)
 
@@ -79,12 +77,10 @@ class MergeLabels(gp.BatchFilter):
             ambiguous = sum_of_binaries > 1
 
             labels = np.sum(
-                np.array(
-                    [
-                        batch[array].data * class_id
-                        for array, class_id in self.classes.items()
-                    ]
-                ),
+                np.array([
+                    batch[array].data * class_id
+                    for array, class_id in self.classes.items()
+                ]),
                 axis=0,
             ).astype(self.dtype)
 

@@ -155,9 +155,10 @@ def _clahe(image, kernel_size, clip_limit, nbins):
     # rearrange image into flattened contextual regions
     ns_hist = [int(s / k) - 1 for s, k in zip(image.shape, kernel_size)]
     hist_blocks_shape = np.array([ns_hist, kernel_size]).T.flatten()
-    hist_blocks_axis_order = np.array(
-        [np.arange(0, ndim * 2, 2), np.arange(1, ndim * 2, 2)]
-    ).flatten()
+    hist_blocks_axis_order = np.array([
+        np.arange(0, ndim * 2, 2),
+        np.arange(1, ndim * 2, 2),
+    ]).flatten()
     hist_slices = [slice(k // 2, k // 2 + n * k) for k, n in zip(kernel_size, ns_hist)]
     hist_blocks = image[tuple(hist_slices)].reshape(hist_blocks_shape)
     hist_blocks = np.transpose(hist_blocks, axes=hist_blocks_axis_order)
@@ -187,9 +188,10 @@ def _clahe(image, kernel_size, clip_limit, nbins):
     # rearrange image into blocks for vectorized processing
     ns_proc = [int(s / k) for s, k in zip(image.shape, kernel_size)]
     blocks_shape = np.array([ns_proc, kernel_size]).T.flatten()
-    blocks_axis_order = np.array(
-        [np.arange(0, ndim * 2, 2), np.arange(1, ndim * 2, 2)]
-    ).flatten()
+    blocks_axis_order = np.array([
+        np.arange(0, ndim * 2, 2),
+        np.arange(1, ndim * 2, 2),
+    ]).flatten()
     blocks = image.reshape(blocks_shape)
     blocks = np.transpose(blocks, axes=blocks_axis_order)
     blocks_flattened_shape = blocks.shape
@@ -223,19 +225,18 @@ def _clahe(image, kernel_size, clip_limit, nbins):
 
     # rebuild result image from blocks
     result = result.reshape(blocks_flattened_shape)
-    blocks_axis_rebuild_order = np.array(
-        [np.arange(0, ndim), np.arange(ndim, ndim * 2)]
-    ).T.flatten()
+    blocks_axis_rebuild_order = np.array([
+        np.arange(0, ndim),
+        np.arange(ndim, ndim * 2),
+    ]).T.flatten()
     result = np.transpose(result, axes=blocks_axis_rebuild_order)
     result = result.reshape(image.shape)
 
     # undo padding
-    unpad_slices = tuple(
-        [
-            slice(p_i, s - p_f)
-            for p_i, p_f, s in zip(pad_start_per_dim, pad_end_per_dim, image.shape)
-        ]
-    )
+    unpad_slices = tuple([
+        slice(p_i, s - p_f)
+        for p_i, p_f, s in zip(pad_start_per_dim, pad_end_per_dim, image.shape)
+    ])
     result = result[unpad_slices]
 
     return result
