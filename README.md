@@ -56,6 +56,8 @@ ninja-build cmake libegl1-mesa-dev python3-dev
 
 3. Create a conda environment.
 
+**Whenever you make a new environment please delete the `*.egg-info` and `*.egg` files in the `incasem` directory.**
+
 ```bash
 conda create -n incasem python=3.10 --no-default-packages
 python -m pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu124
