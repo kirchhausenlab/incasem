@@ -134,22 +134,22 @@ Follow the instructions on the UI to start using incasem.
 
 ### UI: Walk through
 
-**Step 1**: Verify packages
+#### 1. Verify packages
 
-1. [Verify packages](https://github.com/user-attachments/assets/d970efcb-5937-49a6-8480-de8d6a108cce)
+[Watch video](https://github.com/user-attachments/assets/d970efcb-5937-49a6-8480-de8d6a108cce)
 
-**Step 2**: Open Streamlit UI
+#### 2. Open Streamlit UI
 
-2. [Open Streamlit UI:](https://github.com/user-attachments/assets/fb314787-dd37-41f8-b157-aef3153a4110)
+[Watch video](https://github.com/user-attachments/assets/fb314787-dd37-41f8-b157-aef3153a4110)
 
-**Step 3**: View/Download Data
+#### 3. Download Data
 
-3. [Download Data:](https://github.com/user-attachments/assets/879b3b78-bffb-4226-ac5d-e041ec9fef46)
+[Watch video](https://github.com/user-attachments/assets/879b3b78-bffb-4226-ac5d-e041ec9fef46)
 
-**Step 4**: Prepare Data
+#### 4. View Data
 
-4. [View Data:](https://github.com/user-attachments/assets/1fc15ab0-3154-4d1f-8925-59a31d10ac5c)
+[Watch video](https://github.com/user-attachments/assets/1fc15ab0-3154-4d1f-8925-59a31d10ac5c)
 
-**Step 5**: Train Model
+#### 5. Setup training
 
-5. [Setup training:](https://github.com/user-attachments/assets/9a07945b-412c-4c2a-9acc-cab1e7bad7b8)
+[Watch video](https://github.com/user-attachments/assets/9a07945b-412c-4c2a-9acc-cab1e7bad7b8)
