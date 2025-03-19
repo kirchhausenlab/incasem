@@ -111,7 +111,7 @@ class IncasemApp:
         st.title("Data Download")
         curr_name = st.text_input(
             label="Enter dataset name",
-            value="cell_6_example",
+            value="100",
             key="dataset_name",
             placeholder="Enter dataset name",
             help="You can find the dataset names in the AWS bucket.",
