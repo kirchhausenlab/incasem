@@ -39,22 +39,21 @@ def confusion_matrix(target, prediction_probas, mask=None):
     # reshape predictions to original number of channels
     prediction_probas = prediction_probas.reshape(num_classes, -1)
 
-    assert target.shape[0] == prediction_probas.shape[1], \
-        (f"Target shape {target.shape} and prediction shape "
-         f"{prediction_probas.shape} do not match.")
+    assert target.shape[0] == prediction_probas.shape[1], (
+        f"Target shape {target.shape} and prediction shape "
+        f"{prediction_probas.shape} do not match."
+    )
 
     prediction = np.argmax(prediction_probas, axis=0)
 
     if num_classes == 2:
         scores = np.bincount(
-            target.astype(bool) * 2 + prediction.astype(bool),
-            minlength=4
+            target.astype(bool) * 2 + prediction.astype(bool), minlength=4
         ).reshape(2, 2)
         scores = scores / scores.sum()
     else:
-        logger.warning(
-            f"Confusion matrix for multiclass scenario is incredibly slow.")
-        scores = metrics.confusion_matrix(target, prediction, normalize='all')
+        logger.warning(f"Confusion matrix for multiclass scenario is incredibly slow.")
+        scores = metrics.confusion_matrix(target, prediction, normalize="all")
 
     duration = time.time() - start
     logger.info(f"Computed confusion matrix in {duration:.3f} s.")

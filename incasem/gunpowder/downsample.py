@@ -29,7 +29,6 @@ class Downsample(BatchFilter):
     """
 
     def __init__(self, source, factor, target):
-
         if isinstance(source, ArrayKey):
             self.source = [source]
         else:
@@ -37,8 +36,9 @@ class Downsample(BatchFilter):
         for s in self.source:
             assert isinstance(s, ArrayKey)
 
-        assert isinstance(factor, (numbers.Number, tuple)), \
+        assert isinstance(factor, (numbers.Number, tuple)), (
             "Scaling factor should be a number or a tuple of numbers."
+        )
         self.factor = factor
 
         if isinstance(target, ArrayKey):
@@ -49,11 +49,9 @@ class Downsample(BatchFilter):
             assert isinstance(t, ArrayKey)
 
         if len(self.source) != len(self.target):
-            raise ValueError(
-                "Number of sources and target arrays does not match.")
+            raise ValueError("Number of sources and target arrays does not match.")
 
     def setup(self):
-
         self.enable_autoskip()
 
         for source, target in zip(self.source, self.target):
@@ -66,7 +64,6 @@ class Downsample(BatchFilter):
                 self.provides(target, spec)
 
     def prepare(self, request):
-
         deps = BatchRequest()
 
         for source, target in zip(self.source, self.target):
@@ -75,19 +72,17 @@ class Downsample(BatchFilter):
         return deps
 
     def process(self, batch, request):
-
         outputs = Batch()
 
         for source, target in zip(self.source, self.target):
             # downsample
             if isinstance(self.factor, tuple):
-                slices = tuple(
-                    slice(None, None, k)
-                    for k in self.factor)
+                slices = tuple(slice(None, None, k) for k in self.factor)
             else:
                 slices = tuple(
                     slice(None, None, self.factor)
-                    for i in range(batch[source].spec.roi.dims()))
+                    for i in range(batch[source].spec.roi.dims())
+                )
 
             logger.debug(f"downsampling {source} with {slices}")
 

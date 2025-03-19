@@ -37,22 +37,17 @@ logger.setLevel(logging.INFO)
 
 
 def check_image_paths(raw_dir, regex):
-    file_names = [
-        f for f in os.listdir(raw_dir) if osp.isfile(
-            osp.join(raw_dir, f))
-    ]
+    file_names = [f for f in os.listdir(raw_dir) if osp.isfile(osp.join(raw_dir, f))]
 
-    image_paths = sorted([re.search(regex, f).group(0)
-                          for f in file_names])
-    logger.debug(f'first 20 image paths {image_paths[:20]}')
+    image_paths = sorted([re.search(regex, f).group(0) for f in file_names])
+    logger.debug(f"first 20 image paths {image_paths[:20]}")
 
     # check for missing images
-    section_numbers = sorted([int(re.search(regex, f).group(1))
-                              for f in file_names])
+    section_numbers = sorted([int(re.search(regex, f).group(1)) for f in file_names])
 
-    assert section_numbers == list(range(
-        section_numbers[0], section_numbers[-1] + 1)), \
-        'There is a problem with section numbering'
+    assert section_numbers == list(
+        range(section_numbers[0], section_numbers[-1] + 1)
+    ), "There is a problem with section numbering"
 
     image_paths = [osp.join(raw_dir, f) for f in image_paths]
     return image_paths
@@ -68,13 +63,13 @@ def verify_images(globstring):
 
 
 def image_sequence_to_zarr(
-        raw_dir,
-        output_file,
-        output_dataset,
-        image_regex=r'.*_(\d+).*\.tif$',
-        dtype=np.uint8,
-        resolution=(1, 1, 1),
-        chunks=(128, 128, 128),
+    raw_dir,
+    output_file,
+    output_dataset,
+    image_regex=r".*_(\d+).*\.tif$",
+    dtype=np.uint8,
+    resolution=(1, 1, 1),
+    chunks=(128, 128, 128),
 ):
     """Store a sequence of 2D .tif images in 3D blockwise zarr format.
 
@@ -117,7 +112,8 @@ def image_sequence_to_zarr(
     output_dt = np.dtype(dtype)
     if input_dt is not output_dt:
         logger.warning(
-            f'output dtype {output_dt} does not match input dtype {input_dt}')
+            f"output dtype {output_dt} does not match input dtype {input_dt}"
+        )
 
     blocks = stack.rechunk((chunks[0],) + stack.shape[1:])
 
@@ -154,73 +150,62 @@ def parse_args():
         - configargparse
         - scikit-image
         - tqdm
-        """
+        """,
+    )
+    p.add("-c", "--config", is_config_file=True, help="config file path")
+    p.add(
+        "-i",
+        "--input_dir",
+        nargs="+",
+        required=True,
+        help="Directions with section images.",
+    )
+    p.add("-f", "--output_file", required=True, help="Zarr file to be created.")
+    p.add(
+        "-d",
+        "--output_dataset",
+        required=True,
+        nargs="+",
+        help="Datasets inside zarr file.",
     )
     p.add(
-        '-c',
-        '--config',
-        is_config_file=True,
-        help='config file path')
+        "-r",
+        "--image_regex",
+        default=r".*_(\d+).*\.tif$",
+        help="Regex to select sections and extract their numbers.",
+    )
+    p.add("--dtype", nargs="+", default=["uint8"], help="Any numpy datatype.")
     p.add(
-        '-i',
-        '--input_dir',
-        nargs='+',
-        required=True,
-        help='Directions with section images.')
+        "--offset", default=[0, 0, 0], type=int, nargs=3, help="z,y,x offset in voxels."
+    )
     p.add(
-        '-f',
-        '--output_file',
-        required=True,
-        help='Zarr file to be created.')
-    p.add(
-        '-d',
-        '--output_dataset',
-        required=True,
-        nargs='+',
-        help='Datasets inside zarr file.')
-    p.add(
-        '-r',
-        '--image_regex',
-        default=r'.*_(\d+).*\.tif$',
-        help='Regex to select sections and extract their numbers.')
-    p.add(
-        '--dtype',
-        nargs='+',
-        default=['uint8'],
-        help='Any numpy datatype.')
-    p.add(
-        '--offset',
-        default=[0, 0, 0],
-        type=int,
-        nargs=3,
-        help='z,y,x offset in voxels.')
-    p.add(
-        '--resolution',
+        "--resolution",
         required=True,
         type=int,
         nargs=3,
-        help='z,y,x resolution in nanometers.')
+        help="z,y,x resolution in nanometers.",
+    )
     p.add(
-        '--chunks',
+        "--chunks",
         default=[128, 128, 128],
         type=int,
         nargs=3,
-        help='z,y,x chunk size in voxels.')
+        help="z,y,x chunk size in voxels.",
+    )
 
     args = p.parse_args()
-    logger.info(f'\n{p.format_values()}')
+    logger.info(f"\n{p.format_values()}")
 
     return args
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_args()
 
     for i in range(len(args.input_dir)):
-        logger.info((
-            f'Converting from {args.input_dir[i]} '
-            f'to {args.output_dataset[i]}...'
-        ))
+        logger.info(
+            (f"Converting from {args.input_dir[i]} to {args.output_dataset[i]}...")
+        )
         image_sequence_to_zarr(
             args.input_dir[i],
             args.output_file,

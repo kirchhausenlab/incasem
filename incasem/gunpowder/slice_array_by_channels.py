@@ -4,11 +4,11 @@ import gunpowder as gp
 
 class SliceArrayByChannels(gp.BatchFilter):
     def __init__(
-            self,
-            array: gp.ArrayKey,
-            output_arrays: List[gp.ArrayKey],
-            slices: List[Tuple[int]]):
-
+        self,
+        array: gp.ArrayKey,
+        output_arrays: List[gp.ArrayKey],
+        slices: List[Tuple[int]],
+    ):
         self.array = array
         self.output_arrays = output_arrays
         self.slices = slices
@@ -36,7 +36,7 @@ class SliceArrayByChannels(gp.BatchFilter):
 
         for arr, slc in zip(self.output_arrays, self.slices):
             spec = batch[self.array].spec.copy()
-            data = batch[self.array].data[slc[0]:slc[1]]
+            data = batch[self.array].data[slc[0] : slc[1]]
 
             output[arr] = gp.Array(data=data, spec=spec)
 

@@ -9,17 +9,16 @@ logger.setLevel(logging.INFO)
 
 
 class DeepCopyArrays(gp.BatchFilter):
-    """ Deep-copy arrays
+    """Deep-copy arrays
 
     Args:
         arrays (List[gp.ArrayKey]): ArrayKeys to be copied
         output_arrays (List[gp.ArrayKey]): optional, ArrayKeys for outputs
     """
 
-    def __init__(self,
-                 arrays: List[gp.ArrayKey],
-                 output_arrays: List[gp.ArrayKey] = None):
-
+    def __init__(
+        self, arrays: List[gp.ArrayKey], output_arrays: List[gp.ArrayKey] = None
+    ):
         self.arrays = arrays
 
         if output_arrays:
@@ -27,14 +26,14 @@ class DeepCopyArrays(gp.BatchFilter):
         self.output_arrays = output_arrays
 
     def setup(self):
-
         self.enable_autoskip()
 
         if self.output_arrays:
             for in_array, out_array in zip(self.arrays, self.output_arrays):
                 if not out_array:
                     raise NotImplementedError(
-                        'Provide no output_arrays or one for each input_array')
+                        "Provide no output_arrays or one for each input_array"
+                    )
                 else:
                     self.provides(out_array, self.spec[in_array].copy())
         else:
@@ -42,7 +41,6 @@ class DeepCopyArrays(gp.BatchFilter):
                 self.updates(array, self.spec[array].copy())
 
     def prepare(self, request):
-
         deps = gp.BatchRequest()
 
         if self.output_arrays:
@@ -56,7 +54,6 @@ class DeepCopyArrays(gp.BatchFilter):
         return deps
 
     def process(self, batch, request):
-
         outputs = gp.Batch()
 
         if self.output_arrays:

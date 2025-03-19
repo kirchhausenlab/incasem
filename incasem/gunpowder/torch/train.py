@@ -299,9 +299,9 @@ class Train(GenericTrain):
         for k, v in list(device_loss_inputs.items()):
             if isinstance(k, str):
                 device_loss_kwargs[k] = device_loss_inputs.pop(k)
-        assert (
-            len(device_loss_inputs) == 0
-        ), f"Not all loss inputs could be interpreted. Failed keys: {device_loss_inputs.keys()}"
+        assert len(device_loss_inputs) == 0, (
+            f"Not all loss inputs could be interpreted. Failed keys: {device_loss_inputs.keys()}"
+        )
 
         self.retain_gradients(request, outputs)
 
@@ -419,7 +419,7 @@ class Train(GenericTrain):
                 arrays[array_name] = getattr(batch, array_key)
             else:
                 raise Exception(
-                    "Unknown network array key {}, can't be given to " "network".format(
+                    "Unknown network array key {}, can't be given to network".format(
                         array_key
                     )
                 )

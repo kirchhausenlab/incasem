@@ -6,12 +6,12 @@ import gunpowder as gp
 
 class AddBoundaryLabels(gp.BatchFilter):
     def __init__(
-            self,
-            array: gp.ArrayKey,
-            output_array: gp.ArrayKey,
-            dtype: Optional[str] = 'uint8',
-            thickness: Optional[int] = 4):
-
+        self,
+        array: gp.ArrayKey,
+        output_array: gp.ArrayKey,
+        dtype: Optional[str] = "uint8",
+        thickness: Optional[int] = 4,
+    ):
         self.array = array
         self.output_array = output_array
         self.dtype = dtype
@@ -38,8 +38,7 @@ class AddBoundaryLabels(gp.BatchFilter):
 
         # dilate
         dilated = morphology.binary_dilation(
-            image=batch[self.array].data,
-            selem=morphology.ball(self.thickness)
+            image=batch[self.array].data, selem=morphology.ball(self.thickness)
         ).astype(self.dtype)
 
         # # erode

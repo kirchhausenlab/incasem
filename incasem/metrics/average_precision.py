@@ -29,8 +29,7 @@ def average_precision(target, prediction_probas):
     target = target.flatten()
     target = np.eye(prediction_probas.shape[0])[target]
 
-    prediction = prediction_probas.reshape(
-        (prediction_probas.shape[0], -1)).transpose()
+    prediction = prediction_probas.reshape((prediction_probas.shape[0], -1)).transpose()
 
     with warnings.catch_warnings():
         # Catch UndefinedMetricWarning, which informs about AP being

@@ -38,11 +38,14 @@ def setup_mongodb():
         with st.echo():
             subprocess.run("brew services start mongodb-community", shell=True)
 
-    with st.expander("Download models", expanded=False, icon="📦"):            
+    with st.expander("Download models", expanded=False, icon="📦"):
         if st.button("Download models"):
             download_models()
 
-def download_models(bucket: quilt3.Bucket=quilt3.Bucket("s3://asem-project")) -> None:
+
+def download_models(bucket: quilt3.Bucket = quilt3.Bucket("s3://asem-project")) -> None:
     st.write("Downloading models from the AWS bucket...")
     bucket.fetch("models/", "./models/")
-    os.popen('mongorestore --archive="models/fiborganelle_trainings" --nsFrom="public_fiborganelle.*" --nsTo="incasem_trainings.*"').read()
+    os.popen(
+        'mongorestore --archive="models/fiborganelle_trainings" --nsFrom="public_fiborganelle.*" --nsTo="incasem_trainings.*"'
+    ).read()

@@ -6,18 +6,14 @@ import gunpowder as gp
 class DilateLabels(gp.BatchFilter):
     """DilateLabels.
 
-        Args:
-            array (gp.ArrayKey):
-                An array containing binary labels
-            thickness (Optional[int]):
-                Radius of the sphere that is used for dilation
+    Args:
+        array (gp.ArrayKey):
+            An array containing binary labels
+        thickness (Optional[int]):
+            Radius of the sphere that is used for dilation
     """
 
-    def __init__(
-            self,
-            array: gp.ArrayKey,
-            thickness: Optional[int] = 3):
-
+    def __init__(self, array: gp.ArrayKey, thickness: Optional[int] = 3):
         self.array = array
         self.thickness = thickness
 
@@ -39,8 +35,7 @@ class DilateLabels(gp.BatchFilter):
 
         # dilate
         dilated = morphology.binary_dilation(
-            image=batch[self.array].data,
-            selem=morphology.ball(self.thickness)
+            image=batch[self.array].data, selem=morphology.ball(self.thickness)
         ).astype(spec.dtype)
 
         output[self.array] = gp.Array(data=dilated, spec=spec)

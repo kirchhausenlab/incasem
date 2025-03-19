@@ -17,7 +17,7 @@ class Softmax(gp.BatchFilter):
         arrays (gp.ArrayKey):
     """
 
-    def __init__(self, array: gp.ArrayKey, output_array: gp. ArrayKey = None):
+    def __init__(self, array: gp.ArrayKey, output_array: gp.ArrayKey = None):
         self.array = array
         self.output_array = output_array
 
@@ -39,9 +39,10 @@ class Softmax(gp.BatchFilter):
         return deps
 
     def process(self, batch, request):
-        assert batch[self.array].data.ndim == 4, \
-            (f'Softmax only implemented for 4-dimensional input. '
-             f'{self.array} is {batch[self.array].data.ndim} dimensional')
+        assert batch[self.array].data.ndim == 4, (
+            f"Softmax only implemented for 4-dimensional input. "
+            f"{self.array} is {batch[self.array].data.ndim} dimensional"
+        )
 
         outputs = gp.Batch()
 
@@ -51,7 +52,6 @@ class Softmax(gp.BatchFilter):
             out_array = self.array
 
         outputs[out_array] = copy.deepcopy(batch[self.array])
-        outputs[out_array].data = \
-            scipy.special.softmax(batch[self.array].data, axis=0)
+        outputs[out_array].data = scipy.special.softmax(batch[self.array].data, axis=0)
 
         return outputs

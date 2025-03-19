@@ -1,9 +1,10 @@
-'''Base class for conversions of 2D slice images using Pillow and Numpy'''
+"""Base class for conversions of 2D slice images using Pillow and Numpy"""
+
 from abc import ABC, abstractmethod
 
 
 class ImageConversion(ABC):
-    ''' TODO '''
+    """TODO"""
 
     def __init__(self, dtype, **kwargs):
         """__init__.

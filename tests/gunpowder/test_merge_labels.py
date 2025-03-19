@@ -16,21 +16,17 @@ class Source(gp.BatchProvider):
         self.b = gp.ArrayKey(key_b)
 
         self.array_spec_raw = gp.ArraySpec(
-            roi=self.roi,
-            voxel_size=self.voxel_size,
-            dtype='uint8',
-            interpolatable=True
+            roi=self.roi, voxel_size=self.voxel_size, dtype="uint8", interpolatable=True
         )
 
         self.array_spec_labels = gp.ArraySpec(
             roi=self.roi,
             voxel_size=self.voxel_size,
-            dtype='uint8',
-            interpolatable=False
+            dtype="uint8",
+            interpolatable=False,
         )
 
     def setup(self):
-
         self.provides(self.raw, self.array_spec_raw)
         self.provides(self.a, self.array_spec_labels)
         self.provides(self.b, self.array_spec_labels)
@@ -47,17 +43,16 @@ class Source(gp.BatchProvider):
                 0,
                 256,
                 request[self.raw].roi.get_shape() / self.voxel_size,
-                dtype=raw_spec.dtype
+                dtype=raw_spec.dtype,
             ),
-            raw_spec
+            raw_spec,
         )
 
         # A
         a_spec = copy.deepcopy(self.array_spec_labels)
         a_spec.roi = request[self.a].roi
         a = np.zeros(
-            request[self.a].roi.get_shape() / self.voxel_size,
-            dtype=a_spec.dtype
+            request[self.a].roi.get_shape() / self.voxel_size, dtype=a_spec.dtype
         )
         a[0, :, :] = 1
         a[1, 0, 0] = 1
@@ -67,8 +62,7 @@ class Source(gp.BatchProvider):
         b_spec = copy.deepcopy(self.array_spec_labels)
         b_spec.roi = request[self.b].roi
         b = np.zeros(
-            request[self.b].roi.get_shape() / self.voxel_size,
-            dtype=b_spec.dtype
+            request[self.b].roi.get_shape() / self.voxel_size, dtype=b_spec.dtype
         )
         b[1, :, :] = 1
         outputs[self.b] = gp.Array(b, b_spec)
@@ -77,7 +71,7 @@ class Source(gp.BatchProvider):
 
 
 @pytest.mark.parametrize("voxel_size", [(1, 1, 1), (5, 5, 5)])
-@pytest.mark.parametrize("ambiguous_labels", ['max', 'background'])
+@pytest.mark.parametrize("ambiguous_labels", ["max", "background"])
 def test_merge_labels(voxel_size, ambiguous_labels):
     raw = gp.ArrayKey("RAW")
     a = gp.ArrayKey("A")
@@ -95,9 +89,7 @@ def test_merge_labels(voxel_size, ambiguous_labels):
     pipeline = (
         Source(voxel_size)
         + fos.gunpowder.MergeLabels(
-            classes={a: 1, b: 2},
-            output_array=labels,
-            ambiguous_labels=ambiguous_labels
+            classes={a: 1, b: 2}, output_array=labels, ambiguous_labels=ambiguous_labels
         )
         + gp.Normalize(raw)
     )
@@ -106,9 +98,9 @@ def test_merge_labels(voxel_size, ambiguous_labels):
     expected_output[0, :, :] = 1
     expected_output[1, :, :] = 2
 
-    if ambiguous_labels == 'max':
+    if ambiguous_labels == "max":
         expected_output[1, 0, 0] = 2
-    elif ambiguous_labels == 'background':
+    elif ambiguous_labels == "background":
         expected_output[1, 0, 0] = 0
     else:
         raise ValueError()
@@ -137,10 +129,7 @@ def test_merge_labels_and_augment(voxel_size):
 
     pipeline = (
         Source(voxel_size)
-        + fos.gunpowder.MergeLabels(
-            classes={a: 1, b: 2},
-            output_array=labels
-        )
+        + fos.gunpowder.MergeLabels(classes={a: 1, b: 2}, output_array=labels)
         + gp.Normalize(raw)
         + gp.RandomLocation()
         # Padding to avoid requests bigger than the total roi
@@ -149,7 +138,7 @@ def test_merge_labels_and_augment(voxel_size):
         + gp.ElasticAugment(
             control_point_spacing=(5, 5, 5),
             jitter_sigma=(2, 2, 2),
-            rotation_interval=(0, np.pi / 2)
+            rotation_interval=(0, np.pi / 2),
         )
     )
 
@@ -187,10 +176,7 @@ def test_merge_labels_and_random_provider(voxel_size):
         pipeline = (
             Source(voxel_size, key_a=a_string, key_b=b_string)
             + fos.gunpowder.BinarizeLabels([a, b])
-            + fos.gunpowder.MergeLabels(
-                classes={a: 1, b: 2},
-                output_array=labels
-            )
+            + fos.gunpowder.MergeLabels(classes={a: 1, b: 2}, output_array=labels)
             + gp.Normalize(raw)
             + gp.RandomLocation()
             # Padding to avoid requests bigger than the total roi
@@ -204,10 +190,7 @@ def test_merge_labels_and_random_provider(voxel_size):
         )
         pipelines.append(pipeline)
 
-    pipeline = (
-        tuple(pipelines)
-        + gp.RandomProvider()
-    )
+    pipeline = tuple(pipelines) + gp.RandomProvider()
 
     with gp.build(pipeline) as p:
         batch = p.request_batch(request)
@@ -217,5 +200,5 @@ def test_merge_labels_and_random_provider(voxel_size):
         # assert (batch[labels].data == expected_output).all()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_merge_labels_and_random_provider((5, 5, 5))

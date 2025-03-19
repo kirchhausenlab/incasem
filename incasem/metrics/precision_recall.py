@@ -49,9 +49,10 @@ def precision_recall(target, prediction_probas, mask=None, threshold=None):
     # reshape predictions to original number of channels
     prediction_probas = prediction_probas.reshape(num_classes, -1)
 
-    assert target.shape[0] == prediction_probas.shape[1], \
-        (f"Target shape {target.shape} and prediction shape "
-         f"{prediction_probas.shape} do not match.")
+    assert target.shape[0] == prediction_probas.shape[1], (
+        f"Target shape {target.shape} and prediction shape "
+        f"{prediction_probas.shape} do not match."
+    )
 
     if threshold is None:
         prediction = np.argmax(prediction_probas, axis=0)
@@ -66,10 +67,7 @@ def precision_recall(target, prediction_probas, mask=None, threshold=None):
         else:
             prediction_bool = prediction_probas[i] >= threshold
 
-        _, fp, fn, tp = np.bincount(
-            target_bool * 2 + prediction_bool,
-            minlength=4
-        )
+        _, fp, fn, tp = np.bincount(target_bool * 2 + prediction_bool, minlength=4)
         if tp == 0 and fp == 0:
             precision = 0
         else:
@@ -82,7 +80,6 @@ def precision_recall(target, prediction_probas, mask=None, threshold=None):
         scores.append((precision, recall))
 
     duration = time.time() - start
-    logger.info(
-        f"Computed precision and recall in {duration:.3f} s.")
+    logger.info(f"Computed precision and recall in {duration:.3f} s.")
 
     return scores

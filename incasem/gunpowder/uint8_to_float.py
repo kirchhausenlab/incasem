@@ -14,17 +14,14 @@ class Uint8ToFloat(gp.BatchFilter):
     """
 
     def __init__(self, array: gp.ArrayKey):
-
         self.array = array
 
     def update(self):
-
         spec = self.spec[self.array].copy()
         spec.dtype = np.float32
         self.updates(self.array, spec)
 
     def process(self, batch, request):
-
         data = batch[self.array].data
         batch[self.array].data = data.astype(np.float32) / 255.0
         batch[self.array].spec.dtype = np.float32

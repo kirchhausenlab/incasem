@@ -34,19 +34,19 @@ def precision_recall_curve(target, prediction_probas):
         with warnings.catch_warnings():
             # Catch UndefinedMetricWarning, due to division by 0
             precision, recall, thresholds = metrics.precision_recall_curve(
-                target, prediction, pos_label=i)
+                target, prediction, pos_label=i
+            )
 
             thresholds = np.insert(thresholds, 0, 0.0)
             assert len(recall) == len(thresholds)
 
             curves[i] = {
-                'precision': precision,
-                'recall': recall,
-                'thresholds': thresholds
+                "precision": precision,
+                "recall": recall,
+                "thresholds": thresholds,
             }
 
     duration = time.time() - start
-    logger.info(
-        f"Computed precision recall curves in {duration:.3f} s.")
+    logger.info(f"Computed precision recall curves in {duration:.3f} s.")
 
     return curves

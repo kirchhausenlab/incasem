@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class ToDtype(gp.BatchFilter):
-    """ Cast arrays to another numerical datatype
+    """Cast arrays to another numerical datatype
 
     Args:
         arrays (List[gp.ArrayKey]): ArrayKeys for typecasting
@@ -17,19 +17,17 @@ class ToDtype(gp.BatchFilter):
         output_arrays (List[gp.ArrayKey]): optional, ArrayKeys for outputs
     """
 
-    def __init__(self,
-                 arrays: List[gp.ArrayKey],
-                 dtype,
-                 output_arrays: List[gp.ArrayKey] = None):
+    def __init__(
+        self, arrays: List[gp.ArrayKey], dtype, output_arrays: List[gp.ArrayKey] = None
+    ):
         self.arrays = arrays
         self.dtype = np.dtype(dtype)
 
         if output_arrays:
             if len(arrays) != len(output_arrays):
-                raise NotImplementedError((
-                    'Provide no output_arrays at all, '
-                    'or one for each input_array.'
-                ))
+                raise NotImplementedError(
+                    ("Provide no output_arrays at all, or one for each input_array.")
+                )
         self.output_arrays = output_arrays
 
     def setup(self):
@@ -69,10 +67,12 @@ class ToDtype(gp.BatchFilter):
 
         for in_array, out_array in zip(self.arrays, output_arrays):
             outputs[out_array] = copy.deepcopy(batch[in_array])
-            logger.debug((
-                f'{type(self).__name__} upstream provider spec dtype: '
-                f'{outputs[in_array].spec.dtype}'
-            ))
+            logger.debug(
+                (
+                    f"{type(self).__name__} upstream provider spec dtype: "
+                    f"{outputs[in_array].spec.dtype}"
+                )
+            )
             outputs[out_array].spec.dtype = self.dtype
             outputs[out_array].data = batch[in_array].data.astype(self.dtype)
 

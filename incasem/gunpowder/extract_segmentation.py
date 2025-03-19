@@ -4,10 +4,12 @@ import gunpowder as gp
 
 class ExtractSegmentation(gp.BatchFilter):
     def __init__(
-            self, array: gp.ArrayKey,
-            output_array: gp.ArrayKey,
-            mask: gp.ArrayKey = None,
-            dtype=np.uint32):
+        self,
+        array: gp.ArrayKey,
+        output_array: gp.ArrayKey,
+        mask: gp.ArrayKey = None,
+        dtype=np.uint32,
+    ):
         """Extract segmentation from multi-channel predictions with argmax
 
         Args:
@@ -56,15 +58,12 @@ class ExtractSegmentation(gp.BatchFilter):
 
         spec = batch[self.array].spec.copy()
         spec.dtype = self.dtype
-        segmentation = np.argmax(
-            batch[self.array].data, axis=0).astype(self.dtype)
+        segmentation = np.argmax(batch[self.array].data, axis=0).astype(self.dtype)
 
         if self.mask:
             mask = batch[self.mask].data
             segmentation = (segmentation * mask).astype(self.dtype)
 
-        output[out_array] = gp.Array(
-            data=segmentation, spec=spec
-        )
+        output[out_array] = gp.Array(data=segmentation, spec=spec)
 
         return output

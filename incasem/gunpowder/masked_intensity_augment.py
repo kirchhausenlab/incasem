@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 
 class MaskedIntensityAugment(BatchFilter):
-    '''Randomly scale and shift the values of a masked intensity array.
+    """Randomly scale and shift the values of a masked intensity array.
 
     Args:
 
@@ -31,16 +31,9 @@ class MaskedIntensityAugment(BatchFilter):
 
             Perform the augmentation only on the voxels with non-zero value of
             a mask.
-    '''
+    """
 
-    def __init__(
-            self,
-            array,
-            scale_min,
-            scale_max,
-            shift_min,
-            shift_max,
-            mask):
+    def __init__(self, array, scale_min, scale_max, shift_min, shift_max, mask):
         self.array = array
         self.scale_min = scale_min
         self.scale_max = scale_max
@@ -60,26 +53,27 @@ class MaskedIntensityAugment(BatchFilter):
         return deps
 
     def process(self, batch, request):
-
         raw = batch.arrays[self.array]
 
-        assert raw.data.dtype == np.float32 or raw.data.dtype == np.float64, \
-            "Intensity augmentation requires float types for the raw array" \
+        assert raw.data.dtype == np.float32 or raw.data.dtype == np.float64, (
+            "Intensity augmentation requires float types for the raw array"
             " (not " + str(raw.data.dtype) + "). Consider using Normalize before."
-        assert raw.data.min() >= 0 and raw.data.max() <= 1, \
-            "Intensity augmentation expects raw values in [0,1]. "\
+        )
+        assert raw.data.min() >= 0 and raw.data.max() <= 1, (
+            "Intensity augmentation expects raw values in [0,1]. "
             "Consider using Normalize before."
+        )
 
-        assert raw.data.shape == batch[self.mask].data.shape, \
-            "Intensity augmentation expects the mask to be of the same " \
+        assert raw.data.shape == batch[self.mask].data.shape, (
+            "Intensity augmentation expects the mask to be of the same "
             "shape as the raw data."
+        )
 
         scale = np.random.uniform(low=self.scale_min, high=self.scale_max)
         shift = np.random.uniform(low=self.shift_min, high=self.shift_max)
 
         binary_mask = batch[self.mask].data.astype(bool)
-        scale = binary_mask * scale + \
-            np.logical_not(binary_mask).astype(raw.data.dtype)
+        scale = binary_mask * scale + np.logical_not(binary_mask).astype(raw.data.dtype)
         shift = binary_mask * shift
 
         raw.data = self.__augment(raw.data, scale, shift)

@@ -83,10 +83,7 @@ class DataSourcesBase(ABC):
             logger.debug(f"{roi=}")
         except KeyError:
             logger.warning(
-                (
-                    f"Offset/shape for {name} not specified, "
-                    "therefore not setting a ROI"
-                )
+                (f"Offset/shape for {name} not specified, therefore not setting a ROI")
             )
             roi = None
 
@@ -99,7 +96,7 @@ class DataSourcesBase(ABC):
         else:
             if self._voxel_size != voxel_size:
                 raise ValueError(
-                    ("The datasets have different voxel sizes, " "unable to proceed.")
+                    ("The datasets have different voxel sizes, unable to proceed.")
                 )
 
     # PROPERTIES

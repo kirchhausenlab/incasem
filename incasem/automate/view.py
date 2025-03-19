@@ -3,7 +3,7 @@ import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import List
-
+from functools import lru_cache
 import streamlit as st
 import zarr
 from incasem.automate.utils import handle_exceptions
@@ -13,6 +13,7 @@ from incasem.automate.utils import handle_exceptions
 class ZarrFileNavigator:
     data_dir: Path
 
+    @lru_cache()
     @st.cache_data
     def find_subdirectories(self) -> List[Path]:
         """
@@ -20,6 +21,7 @@ class ZarrFileNavigator:
         """
         return [d for d in self.data_dir.iterdir() if d.is_dir()]
 
+    @lru_cache()
     @st.cache_data
     def find_zarr_files(self, sub_dir: Path) -> List[Path]:
         """
@@ -28,6 +30,7 @@ class ZarrFileNavigator:
         sub_dir_end_path = str(sub_dir).split("/")[-1]
         return sub_dir.joinpath(f"{sub_dir_end_path}.zarr")
 
+    @lru_cache(maxsize=128)
     @st.cache_data
     def list_zarr_components(self, zarr_file_path: Path) -> List[str]:
         """
@@ -48,6 +51,7 @@ class ZarrFileNavigator:
                         components.append(f"volumes/{key}")
         return components
 
+@lru_cache
     @st.cache_data
     def find_segmentation_folders(
         self, selected_components: List[str], selected_file: Path

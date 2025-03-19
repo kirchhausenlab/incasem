@@ -9,7 +9,7 @@ class SnapshotLossIncrease(Snapshot):
     def __init__(self, factor, **kwargs):
         super().__init__(**kwargs)
         self.factor = factor
-        self.running_loss = float('inf')
+        self.running_loss = float("inf")
 
     def write_if(self, batch):
         loss = np.atleast_1d(batch.loss)[0]

@@ -90,10 +90,10 @@ class PredictionBaseline:
         #     + fos.gunpowder.PadTo(keys['LABELS'], self._output_size)
         #     + fos.gunpowder.PadTo(keys['MASK'], self._output_size)
         # )
-        
+
         # || NOTE: setup datatype of array. Output_arrays is none (gunpowder to_dtpe class)
         # https://github.com/funkelab/gunpowder/blob/main/gunpowder/nodes/intensity_scale_shift.py#L4
-        # Unsqueeze is taking in a batch filter 
+        # Unsqueeze is taking in a batch filter
 
         # Prepare data format for model
         self.pipeline = (

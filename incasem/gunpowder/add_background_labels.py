@@ -5,12 +5,12 @@ import gunpowder as gp
 
 class AddBackgroundLabels(gp.BatchFilter):
     def __init__(
-            self,
-            raw_array: gp.ArrayKey,
-            output_array: gp.ArrayKey,
-            value: Optional[int] = 0,
-            dtype: Optional[str] = 'uint32'):
-
+        self,
+        raw_array: gp.ArrayKey,
+        output_array: gp.ArrayKey,
+        value: Optional[int] = 0,
+        dtype: Optional[str] = "uint32",
+    ):
         self.raw_array = raw_array
         self.output_array = output_array
         self.value = value
@@ -36,9 +36,7 @@ class AddBackgroundLabels(gp.BatchFilter):
         spec.roi = batch[self.raw_array].spec.roi
 
         labels = np.full_like(
-            batch[self.raw_array].data,
-            fill_value=self.value,
-            dtype=self.dtype
+            batch[self.raw_array].data, fill_value=self.value, dtype=self.dtype
         )
 
         output[self.output_array] = gp.Array(data=labels, spec=spec)

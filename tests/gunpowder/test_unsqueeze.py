@@ -14,21 +14,17 @@ class SqueezeSource(gp.BatchProvider):
         self.labels = gp.ArrayKey("LABELS")
 
         self.array_spec_raw = gp.ArraySpec(
-            roi=self.roi,
-            voxel_size=self.voxel_size,
-            dtype='uint8',
-            interpolatable=True
+            roi=self.roi, voxel_size=self.voxel_size, dtype="uint8", interpolatable=True
         )
 
         self.array_spec_labels = gp.ArraySpec(
             roi=self.roi,
             voxel_size=self.voxel_size,
-            dtype='uint64',
-            interpolatable=False
+            dtype="uint64",
+            interpolatable=False,
         )
 
     def setup(self):
-
         self.provides(self.raw, self.array_spec_raw)
         self.provides(self.labels, self.array_spec_labels)
 
@@ -42,13 +38,7 @@ class SqueezeSource(gp.BatchProvider):
         raw_shape = request[self.raw].roi.get_shape() / self.voxel_size
 
         outputs[self.raw] = gp.Array(
-            np.random.randint(
-                0,
-                256,
-                raw_shape,
-                dtype=raw_spec.dtype
-            ),
-            raw_spec
+            np.random.randint(0, 256, raw_shape, dtype=raw_spec.dtype), raw_spec
         )
 
         # LABELS
@@ -57,10 +47,7 @@ class SqueezeSource(gp.BatchProvider):
 
         labels_shape = request[self.labels].roi.get_shape() / self.voxel_size
 
-        labels = np.ones(
-            labels_shape,
-            dtype=labels_spec.dtype
-        )
+        labels = np.ones(labels_shape, dtype=labels_spec.dtype)
         outputs[self.labels] = gp.Array(labels, labels_spec)
 
         return outputs
@@ -90,5 +77,5 @@ def test_unsqueeze():
         assert batch[labels].data.shape == (1,) + input_voxels
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_unsqueeze()

@@ -20,10 +20,8 @@ class CountIteration(gp.BatchFilter):
 
     def process(self, batch, request):
         # TODO copy the batch?
-        logger.debug(f'Incoming iteration: {batch.iteration}')
+        logger.debug(f"Incoming iteration: {batch.iteration}")
 
         batch.iteration = self.iteration
-        logger.info((
-            f'Iteration={self.iteration}'
-        ))
+        logger.info((f"Iteration={self.iteration}"))
         self.iteration += 1

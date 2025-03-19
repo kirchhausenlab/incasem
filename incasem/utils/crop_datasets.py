@@ -7,38 +7,29 @@ import daisy
 logger = logging.getLogger(__name__)
 
 
-def crop_dataset_worker(
-        block,
-        in_ds,
-        out_ds,
-        read_shift
-
-):
+def crop_dataset_worker(block, in_ds, out_ds, read_shift):
     data = in_ds.to_ndarray(roi=block.read_roi + read_shift, fill_value=0)
     array = Array(data, roi=block.read_roi, voxel_size=in_ds.voxel_size)
     out_ds[block.write_roi] = array[block.write_roi]
 
 
 def crop_daisy_dataset(
-        filename,
-        ds_name,
-        out_filename,
-        out_ds_name,
-        crop_offset_voxels,
-        crop_shape_voxels,
-        chunk_shape,
-        dtype,
-        num_workers):
+    filename,
+    ds_name,
+    out_filename,
+    out_ds_name,
+    crop_offset_voxels,
+    crop_shape_voxels,
+    chunk_shape,
+    dtype,
+    num_workers,
+):
     """Crop a daisy dataset.
 
     Refer to documentation for `crop_datasets`.
     """
 
-    full_ds = open_ds(
-        filename,
-        ds_name,
-        mode='r'
-    )
+    full_ds = open_ds(filename, ds_name, mode="r")
 
     voxel_size = full_ds.voxel_size
 
@@ -60,9 +51,7 @@ def crop_daisy_dataset(
     logger.debug(f"{roi_to_copy=}")
 
     # Shift both Rois to zero origin to avoid copying artifacts.
-    shift_to_origin = Coordinate(
-        [min(x, 0) for x in crop_offset]
-    )
+    shift_to_origin = Coordinate([min(x, 0) for x in crop_offset])
 
     # Simple shifting is enough for new dataset.
     # The shift for the existing dataset is carried out in the worker function
@@ -79,13 +68,10 @@ def crop_daisy_dataset(
         voxel_size=voxel_size,
         dtype=dtype if dtype else full_ds.dtype,
         write_size=voxel_size * Coordinate(chunk_shape),
-        compressor={'id': 'zlib', 'level': 3}
+        compressor={"id": "zlib", "level": 3},
     )
 
-    block_roi = Roi(
-        (0,) * voxel_size.dims(),
-        Coordinate(chunk_shape) * voxel_size
-    )
+    block_roi = Roi((0,) * voxel_size.dims(), Coordinate(chunk_shape) * voxel_size)
     start = now()
     task = daisy.Task(
         total_roi=out_ds.roi,
@@ -98,9 +84,9 @@ def crop_daisy_dataset(
             read_shift=shift_to_origin,
         ),
         read_write_conflict=False,
-        fit='shrink',
+        fit="shrink",
         num_workers=num_workers,
-        task_id = 'crop_datasets'
+        task_id="crop_datasets",
     )
     daisy.run_blockwise([task])
 
@@ -108,15 +94,15 @@ def crop_daisy_dataset(
 
 
 def crop_datasets(
-        filename,
-        out_filename,
-        datasets,
-        out_datasets,
-        offset_voxels,
-        shape_voxels,
-        chunk_shape,
-        dtypes,
-        num_workers
+    filename,
+    out_filename,
+    datasets,
+    out_datasets,
+    offset_voxels,
+    shape_voxels,
+    chunk_shape,
+    dtypes,
+    num_workers,
 ):
     """Crop or pad multiple datasets in a zarr file.
 
@@ -179,5 +165,5 @@ def crop_datasets(
             crop_shape_voxels=shape_voxels,
             chunk_shape=chunk_shape,
             dtype=dt,
-            num_workers=num_workers
+            num_workers=num_workers,
         )

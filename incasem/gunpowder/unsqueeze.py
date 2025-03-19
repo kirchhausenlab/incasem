@@ -23,8 +23,7 @@ class Unsqueeze(gp.BatchFilter):
         self.axis = axis
 
         if self.axis != 0:
-            raise NotImplementedError(
-                'Unsqueeze only supported for leading dimension')
+            raise NotImplementedError("Unsqueeze only supported for leading dimension")
 
     def setup(self):
         self.enable_autoskip()

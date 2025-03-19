@@ -7,12 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 def pairwise_distance_metric_thresholded(
-        target,
-        prediction_probas,
-        metric,
-        threshold,
-        foreground_class,
-        mask=None,
+    target,
+    prediction_probas,
+    metric,
+    threshold,
+    foreground_class,
+    mask=None,
 ):
     """Binary metric for `foreground_class` based on distances
     in `scipy.special.distance`.
@@ -70,9 +70,10 @@ def pairwise_distance_metric_thresholded(
     target = target == foreground_class
     prediction_probas = prediction_probas[foreground_class]
 
-    assert target.shape[0] == prediction_probas.shape[0], \
-        (f"Target shape {target.shape} and prediction shape "
-         f"{prediction_probas.shape} do not match.")
+    assert target.shape[0] == prediction_probas.shape[0], (
+        f"Target shape {target.shape} and prediction shape "
+        f"{prediction_probas.shape} do not match."
+    )
 
     prediction = prediction_probas >= threshold
 

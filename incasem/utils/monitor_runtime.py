@@ -6,12 +6,7 @@ from tqdm import tqdm
 logger = logging.getLogger(__name__)
 
 
-def monitor_runtime(
-        func,
-        description=None,
-        update_every=1,
-        max_seconds=24 * 3600
-):
+def monitor_runtime(func, description=None, update_every=1, max_seconds=24 * 3600):
     """Continuously update the time elapsed for a function call.
 
     Call with `monitor_runtime(func)(func_param_1, func_param_2, ...)`.
@@ -48,7 +43,8 @@ def monitor_runtime(
         iterator = tqdm(
             range(max_seconds),
             leave=False,
-            bar_format=f"{func_name} for {{elapsed}} mins ...")
+            bar_format=f"{func_name} for {{elapsed}} mins ...",
+        )
         for i in iterator:
             try:
                 if async_result.successful():
@@ -63,9 +59,7 @@ def monitor_runtime(
         pool.join()
         out = async_result.get()
         total = int(time.time() - start)
-        logger.info(
-            f"Completed {func_name} in {total//60:02d}:{total%60:02d} mins"
-        )
+        logger.info(f"Completed {func_name} in {total // 60:02d}:{total % 60:02d} mins")
 
         return out
 

@@ -46,8 +46,10 @@ class DataDownloader:
             st.write(
                 "The datasets in the publication are available in an AWS bucket(https://open.quiltdata.com/b/asem-project/tree/datasets/) and can be downloaded with the quilt3 API.(https://docs.quiltdata.com/api-reference/api)"
             )
-            st.write(f"Downloading example dataset from AWS bucket: {self.dataset_name}. In the \
-                background, we shall navigate a level outside of the current folder and run a Python script to download the data from the s3 bucket.")
+            st.write(
+                f"Downloading example dataset from AWS bucket: {self.dataset_name}. In the \
+                background, we shall navigate a level outside of the current folder and run a Python script to download the data from the s3 bucket."
+            )
 
             path_to_data = Path(__file__).parent.parent / "data"
             path_to_data.mkdir(parents=True, exist_ok=True)

@@ -9,21 +9,13 @@ logger.setLevel(logging.DEBUG)
 
 
 def parse_args():
-    p = argparse.ArgParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add(
-        '-z',
-        '--zarr',
-        required=True,
-        type=str,
-        help='zarr data and label for configs')
-    p.add(
-        '-o',
-        '--organelles',
-        default=['mito', 'golgi', 'er'],
-        nargs='+')
+        "-z", "--zarr", required=True, type=str, help="zarr data and label for configs"
+    )
+    p.add("-o", "--organelles", default=["mito", "golgi", "er"], nargs="+")
     args = p.parse_args()
-    logger.info(f'\n{p.format_values()}')
+    logger.info(f"\n{p.format_values()}")
     return args
 
 
@@ -33,10 +25,10 @@ def main():
     fos.utils.make_metric_masks_janelia_crops(
         zarr_ds=args.zarr,
         organelles=args.organelles,
-        )
+    )
 
-    logger.info(f'All metric masks have been created.')
+    logger.info(f"All metric masks have been created.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

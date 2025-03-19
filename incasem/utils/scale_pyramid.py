@@ -19,7 +19,6 @@ os.makedirs = makedirs
 
 
 def downscale_block(in_array, out_array, factor, block):
-
     dims = len(factor)
     in_data = in_array.to_ndarray(block.read_roi, fill_value=0)
 
@@ -47,7 +46,6 @@ def downscale_block(in_array, out_array, factor, block):
 
 
 def downscale(in_array, out_array, factor, write_size, num_workers):
-
     print("Downsampling by factor %s" % (factor,))
 
     dims = in_array.roi.dims()
@@ -59,21 +57,17 @@ def downscale(in_array, out_array, factor, write_size, num_workers):
         out_array.roi,
         block_roi,
         block_roi,
-        process_function=lambda b: downscale_block(
-            in_array,
-            out_array,
-            factor,
-            b),
+        process_function=lambda b: downscale_block(in_array, out_array, factor, b),
         read_write_conflict=False,
         num_workers=num_workers,
         max_retries=0,
-        fit='shrink',
-        task_id="scale_pyramid")
+        fit="shrink",
+        task_id="scale_pyramid",
+    )
     daisy.run_blockwise([task])
 
 
 def scale_pyramid(in_file, in_ds_name, scales, chunk_shape, num_workers=32):
-
     ds = zarr.open(in_file)
 
     # make sure in_ds_name points to a dataset
@@ -82,16 +76,14 @@ def scale_pyramid(in_file, in_ds_name, scales, chunk_shape, num_workers=32):
     except Exception:
         raise RuntimeError("%s does not seem to be a dataset" % in_ds_name)
 
-    if not in_ds_name.endswith('/s0'):
-
-        ds_name = in_ds_name + '/s0'
+    if not in_ds_name.endswith("/s0"):
+        ds_name = in_ds_name + "/s0"
 
         print("Moving %s to %s" % (in_ds_name, ds_name))
-        ds.store.rename(in_ds_name, in_ds_name + '__tmp')
-        ds.store.rename(in_ds_name + '__tmp', ds_name)
+        ds.store.rename(in_ds_name, in_ds_name + "__tmp")
+        ds.store.rename(in_ds_name + "__tmp", ds_name)
 
     else:
-
         ds_name = in_ds_name
         in_ds_name = in_ds_name[:-3]
 
@@ -110,27 +102,23 @@ def scale_pyramid(in_file, in_ds_name, scales, chunk_shape, num_workers=32):
     elif prev_array.n_channel_dims == 1:
         num_channels = prev_array.shape[0]
     else:
-        raise RuntimeError(
-            "more than one channel not yet implemented, sorry...")
+        raise RuntimeError("more than one channel not yet implemented, sorry...")
 
     for scale_num, scale in enumerate(scales):
-
         try:
             scale = Coordinate(scale)
         except Exception:
             scale = Coordinate((scale,) * chunk_shape.dims())
 
         next_voxel_size = prev_array.voxel_size * scale
-        next_total_roi = prev_array.roi.snap_to_grid(
-            next_voxel_size,
-            mode='grow')
+        next_total_roi = prev_array.roi.snap_to_grid(next_voxel_size, mode="grow")
         next_write_size = chunk_shape * next_voxel_size
 
         print("Next voxel size: %s" % (next_voxel_size,))
         print("Next total ROI: %s" % next_total_roi)
         print("Next chunk size: %s" % (next_write_size,))
 
-        next_ds_name = in_ds_name + '/s' + str(scale_num + 1)
+        next_ds_name = in_ds_name + "/s" + str(scale_num + 1)
         print("Preparing %s" % (next_ds_name,))
 
         next_array = prepare_ds(
@@ -140,8 +128,11 @@ def scale_pyramid(in_file, in_ds_name, scales, chunk_shape, num_workers=32):
             voxel_size=next_voxel_size,
             write_size=next_write_size,
             dtype=prev_array.dtype,
-            num_channels=num_channels)
+            num_channels=num_channels,
+        )
 
-        downscale(prev_array, next_array, scale, next_write_size, num_workers=num_workers)
+        downscale(
+            prev_array, next_array, scale, next_write_size, num_workers=num_workers
+        )
 
         prev_array = next_array

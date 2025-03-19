@@ -55,10 +55,12 @@ class Section(ABC):
                 inserted = True
 
         if inserted is False:
-            raise ValueError((
-                f"Cannot insert {name}, predecessor {predecessor} "
-                f"does not exist in {self.__class__.__name__}."
-            ))
+            raise ValueError(
+                (
+                    f"Cannot insert {name}, predecessor {predecessor} "
+                    f"does not exist in {self.__class__.__name__}."
+                )
+            )
 
         self._nodes = nodes_updated
 
@@ -90,10 +92,12 @@ class Section(ABC):
             nodes_updated[key] = value
 
         if inserted is False:
-            raise ValueError((
-                f"Cannot insert {name}, succcesor {successor} "
-                f"does not exist in {self.__class__.__name__}."
-            ))
+            raise ValueError(
+                (
+                    f"Cannot insert {name}, succcesor {successor} "
+                    f"does not exist in {self.__class__.__name__}."
+                )
+            )
 
         self._nodes = nodes_updated
 
@@ -103,10 +107,12 @@ class Section(ABC):
         return pipeline
 
     def get_pipeline(self):
-        raise NotImplementedError((
-            f"Class {type(self).__name__} "
-            "does not implement 'get_pipeline'. Use 'add_to_pipeline' instead."
-        ))
+        raise NotImplementedError(
+            (
+                f"Class {type(self).__name__} "
+                "does not implement 'get_pipeline'. Use 'add_to_pipeline' instead."
+            )
+        )
 
     # PROTECTED METHODS
     ###################

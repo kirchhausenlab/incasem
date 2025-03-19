@@ -45,13 +45,11 @@ def jaccard(target, prediction_probas, mask=None):
 
     # Add background channel if not given
     if target.shape == prediction_probas.shape:
-        prediction_probas = np.array(
-            [1.0 - prediction_probas, prediction_probas])
+        prediction_probas = np.array([1.0 - prediction_probas, prediction_probas])
 
     if (1,) + target.shape == prediction_probas.shape:
         prediction_probas = prediction_probas[0]
-        prediction_probas = np.array(
-            [1.0 - prediction_probas, prediction_probas])
+        prediction_probas = np.array([1.0 - prediction_probas, prediction_probas])
 
     num_classes = prediction_probas.shape[0]
 
@@ -71,9 +69,10 @@ def jaccard(target, prediction_probas, mask=None):
     # reshape predictions to original number of channels
     prediction_probas = prediction_probas.reshape(num_classes, -1)
 
-    assert target.shape[0] == prediction_probas.shape[1], \
-        (f"Target shape {target.shape} and prediction shape "
-         f"{prediction_probas.shape} do not match.")
+    assert target.shape[0] == prediction_probas.shape[1], (
+        f"Target shape {target.shape} and prediction shape "
+        f"{prediction_probas.shape} do not match."
+    )
 
     prediction = np.argmax(prediction_probas, axis=0)
 
@@ -81,8 +80,7 @@ def jaccard(target, prediction_probas, mask=None):
     for i in range(num_classes):
         target_bool = target == i
         prediction_bool = prediction == i
-        s = 1.0 - \
-            distance.pdist(np.array([target_bool, prediction_bool]), 'jaccard')
+        s = 1.0 - distance.pdist(np.array([target_bool, prediction_bool]), "jaccard")
         scores.append(float(s))
 
     duration = time.time() - start

@@ -132,9 +132,7 @@ class TrainingBaselineWithContext:
             name: float(prob) / np.sum(probabilities)
             for name, prob in zip(sources.names, probabilities)
         }
-        logger.info(
-            f"Sampling probabilities for the provided datasets:\n" f"{probs_dict}"
-        )
+        logger.info(f"Sampling probabilities for the provided datasets:\n{probs_dict}")
 
         self.pipeline = tuple(pipelines_with_random_locations) + gp.RandomProvider(
             probabilities

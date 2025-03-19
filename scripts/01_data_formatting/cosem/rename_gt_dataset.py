@@ -1,8 +1,9 @@
 import configargparse as argparse
 import os
 
+
 def to_lowercase(base_dir):
-    base_dir = os.path.join(base_dir, '0003')
+    base_dir = os.path.join(base_dir, "0003")
     os.chdir(base_dir)
     for file_or_folder in os.listdir():
         print(file_or_folder)
@@ -10,12 +11,12 @@ def to_lowercase(base_dir):
 
 
 def parse_args():
-    p = argparse.ArgParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add(
-        '-d',
-        '--dir',
-        help='We transform to lowercase all files and folders in this folder')
+        "-d",
+        "--dir",
+        help="We transform to lowercase all files and folders in this folder",
+    )
     args = p.parse_args()
     return args
 
@@ -25,5 +26,5 @@ def main():
     to_lowercase(args.dir)
 
 
-if __name__ == '__main__':
-        main()
+if __name__ == "__main__":
+    main()

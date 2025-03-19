@@ -20,12 +20,10 @@ class BinarizeLabels(gp.BatchFilter):
     """
 
     def __init__(self, arrays: List[gp.ArrayKey]):
-
         self.arrays = arrays
         self.in_dtypes = {}
 
     def setup(self):
-
         self.enable_autoskip()
 
         for array in self.arrays:
@@ -38,7 +36,6 @@ class BinarizeLabels(gp.BatchFilter):
         logger.debug(f"{self.in_dtypes=}")
 
     def prepare(self, request):
-
         deps = gp.BatchRequest()
         for array in self.arrays:
             if array in request:
@@ -50,7 +47,6 @@ class BinarizeLabels(gp.BatchFilter):
         return deps
 
     def process(self, batch, request):
-
         outputs = gp.Batch()
 
         for array in self.arrays:

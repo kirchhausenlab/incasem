@@ -4,10 +4,7 @@ import gunpowder as gp
 
 
 class MergeMasks(gp.BatchFilter):
-    def __init__(
-            self,
-            arrays: List[gp.ArrayKey],
-            output_array: gp.ArrayKey):
+    def __init__(self, arrays: List[gp.ArrayKey], output_array: gp.ArrayKey):
         """Merge multiple binary masks with a logical and
 
         Args:

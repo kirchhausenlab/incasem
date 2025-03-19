@@ -9,21 +9,15 @@ logger.setLevel(logging.DEBUG)
 
 
 def parse_args():
-    p = argparse.ArgParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add(
-        '-z',
-        '--zarr',
-        required=True,
-        type=str,
-        help='zarr data and label for configs')
+        "-z", "--zarr", required=True, type=str, help="zarr data and label for configs"
+    )
     p.add(
-        '-o',
-        '--organelles',
-        default=['mito', 'golgi', 'er', 'background'],
-        nargs='+')
+        "-o", "--organelles", default=["mito", "golgi", "er", "background"], nargs="+"
+    )
     args = p.parse_args()
-    logger.info(f'\n{p.format_values()}')
+    logger.info(f"\n{p.format_values()}")
     return args
 
 
@@ -33,10 +27,10 @@ def main():
     fos.utils.make_config_janelia_crops(
         zarr_ds=args.zarr,
         organelles=args.organelles,
-        )
+    )
 
-    logger.info(f'All configs have been created.')
+    logger.info(f"All configs have been created.")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

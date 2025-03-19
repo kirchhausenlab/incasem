@@ -42,8 +42,9 @@ class IntensityEqualization(gp.BatchFilter):
             self.kernel_size = (self.kernel_size,) * spec.voxel_size.dims()
 
         # Context is half of the kernel_sized, rounded up
-        self.context = (gp.Coordinate(self.kernel_size) +
-                        (1,) * spec.voxel_size.dims()) / 2
+        self.context = (
+            gp.Coordinate(self.kernel_size) + (1,) * spec.voxel_size.dims()
+        ) / 2
         self.context *= spec.voxel_size
 
         if spec.roi is not None:
@@ -68,9 +69,7 @@ class IntensityEqualization(gp.BatchFilter):
 
         data = batch[self.array].data
         equalized = equalize_adapthist(
-            image=data,
-            kernel_size=self.kernel_size,
-            clip_limit=self.clip_limit
+            image=data, kernel_size=self.kernel_size, clip_limit=self.clip_limit
         )
         equalized = gp.Array(data=equalized, spec=spec)
 

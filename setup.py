@@ -1,4 +1,3 @@
-
 from pathlib import Path
 
 THIRD_PARTY_DIR: Path = Path(__file__).parent.joinpath("src", "third_party")

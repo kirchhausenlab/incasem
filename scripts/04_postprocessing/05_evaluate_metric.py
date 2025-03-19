@@ -19,78 +19,64 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-logging.getLogger(
-    'incasem.metrics.precision_recall'
-).setLevel(logging.WARNING)
+logging.getLogger("incasem.metrics.precision_recall").setLevel(logging.WARNING)
 
 
 def split_zarr_path(path):
     if path is None:
         return None
-    filename, extension, ds_name = path.rpartition('.zarr/')
-    filename = (filename + extension).rstrip('/')
-    ds_name = ds_name.rstrip('/')
+    filename, extension, ds_name = path.rpartition(".zarr/")
+    filename = (filename + extension).rstrip("/")
+    ds_name = ds_name.rstrip("/")
     return filename, ds_name
 
 
 def evaluate_metric(
-        metric,
-        labels_path,
-        prediction_probas_path,
-        mask_path,
-        metric_mask_path,
-        roi_padding,
-        thresholds,
-        # num_workers
+    metric,
+    labels_path,
+    prediction_probas_path,
+    mask_path,
+    metric_mask_path,
+    roi_padding,
+    thresholds,
+    # num_workers
 ):
-    labels = open_ds(
-        *split_zarr_path(labels_path),
-        mode='r'
-    )
+    labels = open_ds(*split_zarr_path(labels_path), mode="r")
 
-    probas = open_ds(
-        *split_zarr_path(prediction_probas_path),
-        mode='r'
-    )
+    probas = open_ds(*split_zarr_path(prediction_probas_path), mode="r")
 
     if not labels.roi.contains(probas.roi):
-        raise ValueError((
-            f"The labels {labels.roi} do not suffice to evaluate "
-            "predictions in {probas.roi}."
-        ))
+        raise ValueError(
+            (
+                f"The labels {labels.roi} do not suffice to evaluate "
+                "predictions in {probas.roi}."
+            )
+        )
 
     try:
-        mask = open_ds(
-            *split_zarr_path(mask_path),
-            mode='r'
-        )
+        mask = open_ds(*split_zarr_path(mask_path), mode="r")
         if not mask.roi.contains(probas.roi):
-            raise ValueError((
-                f"The provided mask {mask.roi} does not cover the predictions "
-                " {probas.roi}."
-            ))
+            raise ValueError(
+                (
+                    f"The provided mask {mask.roi} does not cover the predictions "
+                    " {probas.roi}."
+                )
+            )
     except TypeError:
-        logger.warning((
-            "Did not find a mask dataset "
-            f"at {mask_path}."
-        ))
+        logger.warning((f"Did not find a mask dataset at {mask_path}."))
         mask = None
 
     try:
-        metric_mask = open_ds(
-            *split_zarr_path(metric_mask_path),
-            mode='r'
-        )
+        metric_mask = open_ds(*split_zarr_path(metric_mask_path), mode="r")
         if not metric_mask.roi.contains(probas.roi):
-            raise ValueError((
-                f"The provided metric mask {metric_mask.roi} does not cover"
-                " the predictions {probas.roi}."
-            ))
+            raise ValueError(
+                (
+                    f"The provided metric mask {metric_mask.roi} does not cover"
+                    " the predictions {probas.roi}."
+                )
+            )
     except TypeError:
-        logger.warning((
-            "Did not find a metric mask dataset "
-            f"at {metric_mask_path}."
-        ))
+        logger.warning((f"Did not find a metric mask dataset at {metric_mask_path}."))
         metric_mask = None
 
     # Remove the zero padding from the predictions
@@ -121,33 +107,27 @@ def evaluate_metric(
         mask = mask[roi].to_ndarray()
         probas = probas * (mask != 0).astype(probas.dtype)
 
-        metric_mask = np.logical_and(
-            mask.astype(bool),
-            metric_mask.astype(bool)
-        )
+        metric_mask = np.logical_and(mask.astype(bool), metric_mask.astype(bool))
 
     # TODO parallelize, log results to DB
 
     scores_and_thresholds = []
     for thres in thresholds:
         start_threshold = now()
-        if metric in ['dice', 'jaccard']:
-            score = \
-                fos.metrics.pairwise_distance_metric_thresholded(
-                    target=labels,
-                    prediction_probas=np.array(
-                        [np.zeros_like(probas), probas]),
-                    metric=metric,
-                    threshold=thres,
-                    foreground_class=1,
-                    mask=metric_mask,
-                )
+        if metric in ["dice", "jaccard"]:
+            score = fos.metrics.pairwise_distance_metric_thresholded(
+                target=labels,
+                prediction_probas=np.array([np.zeros_like(probas), probas]),
+                metric=metric,
+                threshold=thres,
+                foreground_class=1,
+                mask=metric_mask,
+            )
             score_aggregated = score
-        elif metric == 'precision_recall':
+        elif metric == "precision_recall":
             _, score = fos.metrics.precision_recall(
                 target=labels,
-                prediction_probas=np.array(
-                    [1 - probas, probas]),
+                prediction_probas=np.array([1 - probas, probas]),
                 mask=metric_mask,
                 threshold=thres,
             )
@@ -156,11 +136,13 @@ def evaluate_metric(
             raise NotImplementedError(f"Metric {metric} not implemented.")
 
         scores_and_thresholds.append((score_aggregated, score, thres))
-        logger.info((
-            f"{metric} at threshold {thres}: "
-            f"{score:{'.3f' if isinstance(score, float) else ''}} "
-            f"(in {now() - start_threshold:.1f} s)"
-        ))
+        logger.info(
+            (
+                f"{metric} at threshold {thres}: "
+                f"{score:{'.3f' if isinstance(score, float) else ''}} "
+                f"(in {now() - start_threshold:.1f} s)"
+            )
+        )
 
     _, max_score, max_thres = max(scores_and_thresholds)
     logger.info(f"\n\nMax {metric} at threshold {max_thres}: {max_score}")
@@ -168,67 +150,63 @@ def evaluate_metric(
 
 
 def parse_args():
-    p = argparse.ArgParser(
-        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add('--config', is_config_file=True, help='config file path')
+    p = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add("--config", is_config_file=True, help="config file path")
     p.add(
-        '--metric',
-        default='jaccard',
+        "--metric",
+        default="jaccard",
         # TODO add more options
-        choices=['jaccard', 'dice', 'precision_recall'],
+        choices=["jaccard", "dice", "precision_recall"],
         help=(
-            'A distance function between two boolean vectors as defined in '
-            'scipy.special.distance.'
-        )
+            "A distance function between two boolean vectors as defined in "
+            "scipy.special.distance."
+        ),
     )
     p.add(
-        '--labels',
-        '-l',
+        "--labels",
+        "-l",
         required=True,
     )
     p.add(
-        '--prediction_probas',
-        '-p',
+        "--prediction_probas",
+        "-p",
         required=True,
-        help='Name of the dataset with prediction probabilities.'
+        help="Name of the dataset with prediction probabilities.",
+    )
+    p.add("--mask", help="Binary mask to predict background for all non-cell voxels.")
+    p.add(
+        "--metric_mask",
+        help="Binary mask to ignore predictions at the boundary of objects",
     )
     p.add(
-        '--mask',
-        help='Binary mask to predict background for all non-cell voxels.'
-    )
-    p.add(
-        '--metric_mask',
-        help='Binary mask to ignore predictions at the boundary of objects'
-    )
-    p.add(
-        '--roi_padding',
+        "--roi_padding",
         type=int,
-        nargs='+',
+        nargs="+",
         default=[46, 46, 46],
         help=(
-            'The prediction ROI is not filled at the boundaries. '
-            'This empty padding should not affect the metric calculation. '
-            'Can be either a single integer or one integer per dimension, '
-            'in voxels, zyx.'
-        )
+            "The prediction ROI is not filled at the boundaries. "
+            "This empty padding should not affect the metric calculation. "
+            "Can be either a single integer or one integer per dimension, "
+            "in voxels, zyx."
+        ),
     )
     p.add(
-        '--threshold_start',
+        "--threshold_start",
         type=float,
         default=0.5,
-        help='Lowest threshold for extracting predictions.'
+        help="Lowest threshold for extracting predictions.",
     )
     p.add(
-        '--threshold_stop',
+        "--threshold_stop",
         type=float,
         default=0.5,
-        help='Highest threshold for extracting predictions.'
+        help="Highest threshold for extracting predictions.",
     )
     p.add(
-        '--threshold_step',
+        "--threshold_step",
         type=float,
         default=0.1,
-        help='Interval between thresholds for extracting predictions.'
+        help="Interval between thresholds for extracting predictions.",
     )
     # p.add(
     # '--num_workers',
@@ -245,12 +223,11 @@ def parse_args():
         raise ValueError(f"Threshold set must be bigger than {epsilon}.")
 
     args.thresholds = np.arange(
-        args.threshold_start,
-        args.threshold_stop + epsilon,
-        args.threshold_step)
+        args.threshold_start, args.threshold_stop + epsilon, args.threshold_step
+    )
 
     # logger.info(f'\n{p.format_values()}')
-    logger.info('\n')
+    logger.info("\n")
     logger.info(f"Evaluate {args.metric} for thresholds {args.thresholds}")
 
     return args
@@ -270,5 +247,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

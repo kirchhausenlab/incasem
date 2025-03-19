@@ -75,9 +75,9 @@ class DataSourcesSemantic(DataSourcesBase):
                 array_keys_labels.append(class_key)
                 classes[class_key] = class_id
 
-            assert np.all(
-                sorted(classes.values()) == np.arange(len(classes)) + 1
-            ), f"Class labels {list(classes.values())} should be contiguous and start at 1."
+            assert np.all(sorted(classes.values()) == np.arange(len(classes)) + 1), (
+                f"Class labels {list(classes.values())} should be contiguous and start at 1."
+            )
 
             logger.debug(f"{classes=}")
         else:

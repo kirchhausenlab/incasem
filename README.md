@@ -57,7 +57,10 @@ ninja-build cmake libegl1-mesa-dev python3-dev
 1. Create a conda environment.
 
 ```bash
-conda create -n cell3d python=3.10
+conda create -n incasem python=3.10 --no-default-packages
+mamba install pyqt qtpy
+python -m pip install torch torchvision --extra-index-url https://download.pytorch.org/whl/cu124
+python -m pip install -e ".[dev]" \ --extra-index-url https://download.pytorch.org/whl/cu124
 ```
 
 4. Add required third-party libraries to the project.

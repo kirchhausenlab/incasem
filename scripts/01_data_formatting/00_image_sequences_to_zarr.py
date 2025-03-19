@@ -98,7 +98,7 @@ def main():
 
     for i in range(len(args.input_dir)):
         logger.info(
-            (f"Converting from {args.input_dir[i]} " f"to {args.output_dataset[i]}...")
+            (f"Converting from {args.input_dir[i]} to {args.output_dataset[i]}...")
         )
         fos.utils.image_sequence_to_zarr(
             args.input_dir[i],

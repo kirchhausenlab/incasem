@@ -11,17 +11,17 @@ logger = logging.getLogger(__name__)
 
 class ValidationLoss(gp.BatchFilter):
     def __init__(
-            self,
-            loss,
-            inputs: Dict[int, gp.ArrayKey],
-            log_dir: str = None,
-            log_every: int = 1):
-
+        self,
+        loss,
+        inputs: Dict[int, gp.ArrayKey],
+        log_dir: str = None,
+        log_every: int = 1,
+    ):
         self.inputs = inputs
 
         # TODO init cuda only in start() method, similar to gunpowder.torch.Predict
         # self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
-        self.device = 'cpu'
+        self.device = "cpu"
         self.loss = loss.to(self.device)
 
         self.log_dir = log_dir
@@ -33,8 +33,7 @@ class ValidationLoss(gp.BatchFilter):
         else:
             self.summary_writer = None
             if log_dir is not None:
-                logger.warning(
-                    "log_dir given, but tensorboardX is not installed")
+                logger.warning("log_dir given, but tensorboardX is not installed")
 
     def process(self, batch, request):
         device_loss_inputs = []
@@ -52,9 +51,8 @@ class ValidationLoss(gp.BatchFilter):
                 self.summary_writer.add_scalar(f"loss_{i}", l, self.iteration)
 
         batch.iteration = self.iteration
-        logger.info((
-            f'Validation process: iteration={batch.iteration}'
-            f' loss={batch.loss}'
-        ))
+        logger.info(
+            (f"Validation process: iteration={batch.iteration} loss={batch.loss}")
+        )
 
         self.iteration += self.log_every

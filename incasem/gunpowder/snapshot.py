@@ -69,7 +69,7 @@ class Snapshot(BatchFilter):
         chunk_shape (``tuple`` of ``int``):
 
             Chunk shape on disk in voxels.
-        """
+    """
 
     def __init__(
         self,
@@ -78,7 +78,7 @@ class Snapshot(BatchFilter):
         output_filename="{id}.zarr",
         every=1,
         additional_request=None,
-        compression_type='zlib',
+        compression_type="zlib",
         compression_level=1,
         dataset_dtypes=None,
         store_value_range=False,
@@ -95,7 +95,7 @@ class Snapshot(BatchFilter):
         self.compression_type = compression_type
         self.compression_level = compression_level
         self.compressor = numcodecs.get_codec(
-            {'id': self.compression_type, 'level': self.compression_level}
+            {"id": self.compression_type, "level": self.compression_level}
         )
 
         self.store_value_range = store_value_range
@@ -112,10 +112,10 @@ class Snapshot(BatchFilter):
         pass
 
     def setup(self):
-
         for key, _ in self.additional_request.items():
             assert key in self.dataset_names, (
-                "%s requested but not in dataset_names" % key)
+                "%s requested but not in dataset_names" % key
+            )
 
         for array_key in self.additional_request.array_specs.keys():
             spec = self.spec[array_key]
@@ -125,7 +125,6 @@ class Snapshot(BatchFilter):
             self.updates(graph_key, spec)
 
     def prepare(self, request):
-
         deps = BatchRequest()
         for key, spec in request.items():
             if key in self.dataset_names:
@@ -143,19 +142,18 @@ class Snapshot(BatchFilter):
                     deps[graph_key] = spec
 
             for key in self.dataset_names.keys():
-                assert key in deps, (
-                    "%s wanted for %s, but not in request." %
-                    (key, self.name()))
+                assert key in deps, "%s wanted for %s, but not in request." % (
+                    key,
+                    self.name(),
+                )
 
         return deps
 
     def process(self, batch, request):
-
         if self.write_if(batch):
             self.record_snapshot = True
 
         if self.record_snapshot:
-
             try:
                 os.makedirs(self.output_dir)
             except BaseException:
@@ -170,7 +168,8 @@ class Snapshot(BatchFilter):
             logger.info("saving to %s" % snapshot_name)
             if snapshot_name.endswith(".hdf"):
                 raise NotImplementedError(
-                    "Snapshots in HDF5 format are not supported anymore.")
+                    "Snapshots in HDF5 format are not supported anymore."
+                )
             elif snapshot_name.endswith(".zarr"):
                 open_func = ZarrFile
             else:
@@ -178,8 +177,7 @@ class Snapshot(BatchFilter):
                 open_func = ZarrFile
 
             with open_func(snapshot_name, self.mode) as f:
-                for (array_key, array) in batch.arrays.items():
-
+                for array_key, array in batch.arrays.items():
                     if array_key not in self.dataset_names:
                         continue
 
@@ -219,7 +217,7 @@ class Snapshot(BatchFilter):
                     for attribute_name, attribute in array.attrs.items():
                         dataset.attrs[attribute_name] = attribute
 
-                for (graph_key, graph) in batch.graphs.items():
+                for graph_key, graph in batch.graphs.items():
                     if graph_key not in self.dataset_names:
                         continue
 
@@ -254,7 +252,6 @@ class Snapshot(BatchFilter):
                     )
 
                 if batch.loss is not None:
-                    f["/"].attrs["loss"] = \
-                        [str(i) for i in np.atleast_1d(batch.loss)]
+                    f["/"].attrs["loss"] = [str(i) for i in np.atleast_1d(batch.loss)]
 
         self.n += 1

@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 class Augmentation(Section):
     """All data augmentations.
 
-        Args:
+    Args:
 
-            raw_key (gp.ArrayKey):
+        raw_key (gp.ArrayKey):
 
-                The array that contains the raw EM data.
+            The array that contains the raw EM data.
 
     """
 
@@ -27,11 +27,11 @@ class Augmentation(Section):
     ###################
 
     def _define_nodes(self):
-        """See base class.  """
+        """See base class."""
 
-        self._nodes['simple_0'] = gp.SimpleAugment()
+        self._nodes["simple_0"] = gp.SimpleAugment()
 
-        self._nodes['elastic'] = gp.ElasticAugment(
+        self._nodes["elastic"] = gp.ElasticAugment(
             control_point_spacing=(32, 32, 32),
             jitter_sigma=(2, 2, 2),
             # rotate around the leading axis
@@ -40,17 +40,17 @@ class Augmentation(Section):
             prob_shift=0.05,
             max_misalign=2,
             # higher subsample is faster, but deformation at worse resolution
-            subsample=4
+            subsample=4,
         )
 
-        self._nodes['simple_1'] = gp.SimpleAugment()
+        self._nodes["simple_1"] = gp.SimpleAugment()
 
-        self._nodes['intensity'] = gp.IntensityAugment(
+        self._nodes["intensity"] = gp.IntensityAugment(
             array=self._raw_key,
             scale_min=0.9,
             scale_max=1.1,
             shift_min=-0.1,
-            shift_max=0.1
+            shift_max=0.1,
         )
 
         # self._nodes['noise'] = gp.NoiseAugment(self._raw_key, var=0.0025)

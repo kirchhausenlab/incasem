@@ -16,10 +16,8 @@ class PickChannel(gp.BatchFilter):
     """
 
     def __init__(
-            self,
-            array: gp.ArrayKey,
-            channel: int,
-            output_array: gp.ArrayKey = None):
+        self, array: gp.ArrayKey, channel: int, output_array: gp.ArrayKey = None
+    ):
         self.array = array
         self.channel = channel
         self.output_array = output_array
@@ -40,9 +38,10 @@ class PickChannel(gp.BatchFilter):
         return deps
 
     def process(self, batch, request):
-        assert batch[self.array].data.ndim == 4, \
-            (f'PickChannel only implemented for 4-dimensional input. '
-             f'{self.array} is {batch[self.array].data.ndim} dimensional')
+        assert batch[self.array].data.ndim == 4, (
+            f"PickChannel only implemented for 4-dimensional input. "
+            f"{self.array} is {batch[self.array].data.ndim} dimensional"
+        )
 
         outputs = gp.Batch()
         if self.output_array:

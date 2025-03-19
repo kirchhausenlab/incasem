@@ -10,7 +10,7 @@ logger.setLevel(logging.INFO)
 
 
 class DeepCopy(gp.BatchFilter):
-    """ deep copy arrays to ensure that they are contiguous in memory
+    """deep copy arrays to ensure that they are contiguous in memory
 
     Args:
         arrays (List[gp.ArrayKey]): ArrayKeys for arrays to be copied

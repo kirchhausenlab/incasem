@@ -320,9 +320,9 @@ if __name__ == "__main__":
         ledger = json.load(fp)
     available_models = [int(e) for e in ledger.keys()]
 
-    assert (
-        args.run_id in available_models
-    ), "Desired run_id not found in mock_db, make sure it exists"
+    assert args.run_id in available_models, (
+        "Desired run_id not found in mock_db, make sure it exists"
+    )
 
     json_file = f"../../mock_db/{ledger[str(args.run_id)]}"
 

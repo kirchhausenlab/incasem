@@ -8,7 +8,7 @@ import gunpowder as gp
 import incasem as fos
 
 logging.basicConfig(level=logging.INFO)
-logging.getLogger('gunpowder').setLevel(logging.DEBUG)
+logging.getLogger("gunpowder").setLevel(logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
@@ -20,10 +20,7 @@ class Source(gp.BatchProvider):
 
         self.raw_key = raw_key
         self.array_spec_raw = gp.ArraySpec(
-            roi=self.roi,
-            voxel_size=self.voxel_size,
-            dtype='uint8',
-            interpolatable=True
+            roi=self.roi, voxel_size=self.voxel_size, dtype="uint8", interpolatable=True
         )
 
     def setup(self):
@@ -41,9 +38,9 @@ class Source(gp.BatchProvider):
                 0,
                 256,
                 request[self.raw_key].roi.get_shape() / self.voxel_size,
-                dtype=array_spec.dtype
+                dtype=array_spec.dtype,
             ),
-            array_spec
+            array_spec,
         )
 
         return outputs
@@ -62,13 +59,8 @@ def test_add_background_labels(value, voxel_size):
     request.add(raw, input_size)
     request.add(labels, input_size)
 
-    pipeline = (
-        Source(raw, voxel_size)
-        + fos.gunpowder.AddBackgroundLabels(
-            raw_array=raw,
-            output_array=labels,
-            value=value
-        )
+    pipeline = Source(raw, voxel_size) + fos.gunpowder.AddBackgroundLabels(
+        raw_array=raw, output_array=labels, value=value
     )
 
     expected_output = np.full((10, 10, 10), value, dtype=np.uint64)
@@ -97,9 +89,7 @@ def test_add_background_labels_and_augment(value, voxel_size):
     pipeline = (
         Source(raw, gp.Coordinate(voxel_size))
         + fos.gunpowder.AddBackgroundLabels(
-            raw_array=raw,
-            output_array=labels,
-            value=value
+            raw_array=raw, output_array=labels, value=value
         )
         + gp.Normalize(raw)
         + gp.RandomLocation()
@@ -109,7 +99,7 @@ def test_add_background_labels_and_augment(value, voxel_size):
         + gp.ElasticAugment(
             control_point_spacing=(5, 5, 5),
             jitter_sigma=(2, 2, 2),
-            rotation_interval=(0, np.pi / 2)
+            rotation_interval=(0, np.pi / 2),
         )
     )
 
@@ -123,5 +113,5 @@ def test_add_background_labels_and_augment(value, voxel_size):
         assert (batch[labels].data == expected_output).all()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     test_add_background_labels_and_augment(0, (5, 5, 5))

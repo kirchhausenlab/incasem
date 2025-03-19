@@ -5,10 +5,11 @@ import gunpowder as gp
 
 class MergeLocalShapeDescriptors(gp.BatchFilter):
     def __init__(
-            self,
-            arrays: List[gp.ArrayKey],
-            output_array: gp.ArrayKey,
-            ambiguous: Optional[str] = 'max'):
+        self,
+        arrays: List[gp.ArrayKey],
+        output_array: gp.ArrayKey,
+        ambiguous: Optional[str] = "max",
+    ):
         """Merge the local shape descriptors from all input arrays
 
         If there are multiple labels assigned for a voxel
@@ -25,7 +26,7 @@ class MergeLocalShapeDescriptors(gp.BatchFilter):
         self.output_array = output_array
         self.ambiguous = ambiguous
 
-        assert self.ambiguous in ('max', 'background', 'preference')
+        assert self.ambiguous in ("max", "background", "preference")
 
     def setup(self):
         self.enable_autoskip()
@@ -44,45 +45,42 @@ class MergeLocalShapeDescriptors(gp.BatchFilter):
         output = gp.Batch()
         spec = batch[self.arrays[0]].spec.copy()
 
-        if self.ambiguous == 'max':
+        if self.ambiguous == "max":
             lsds = np.max(
-                np.array(
-                    [batch[array].data for array in self.arrays]),
-                axis=0
+                np.array([batch[array].data for array in self.arrays]), axis=0
             )
 
-        elif self.ambiguous == 'background':
+        elif self.ambiguous == "background":
             sum_of_binaries = np.sum(
                 np.array(
-                    [np.any(batch[array].data.astype(bool), axis=0)
-                     for array in self.arrays]
+                    [
+                        np.any(batch[array].data.astype(bool), axis=0)
+                        for array in self.arrays
+                    ]
                 ),
-                axis=0
+                axis=0,
             )
             ambiguous = sum_of_binaries > 1
 
             lsds = np.sum(
-                np.array(
-                    [batch[array].data for array in self.arrays]
-                ),
-                axis=0
+                np.array([batch[array].data for array in self.arrays]), axis=0
             )
 
             mask = np.any(lsds.astype(bool), axis=0)
 
-            not_ambiguous = np.logical_and(
-                mask, np.logical_not(ambiguous))
+            not_ambiguous = np.logical_and(mask, np.logical_not(ambiguous))
 
             lsds *= not_ambiguous.astype(spec.dtype)
 
-        elif self.ambiguous == 'preference':
-            raise NotImplementedError((
-                'Resolving ambiguous labels with a custom preference'
-                ' not implemented yet.'
-            ))
+        elif self.ambiguous == "preference":
+            raise NotImplementedError(
+                (
+                    "Resolving ambiguous labels with a custom preference"
+                    " not implemented yet."
+                )
+            )
         else:
-            raise ValueError(
-                f"Invalid ambiguous labels strategy {self.ambiguous}")
+            raise ValueError(f"Invalid ambiguous labels strategy {self.ambiguous}")
 
         output[self.output_array] = gp.Array(data=lsds, spec=spec)
         return output

@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 
 class PadTo(BatchFilter):
-    '''Add a constant intensity padding around arrays of another batch
+    """Add a constant intensity padding around arrays of another batch
     provider. This is useful if your requested batches can be larger than what
     your source provides.
 
@@ -33,10 +33,9 @@ class PadTo(BatchFilter):
 
             The value to report inside the padding. If not given, 0 is used.
             Only used for :class:`Array<Arrays>`.
-    '''
+    """
 
     def __init__(self, key, target_size, value=None):
-
         self.key = key
         self.target_size = target_size
         self.value = value
@@ -45,35 +44,30 @@ class PadTo(BatchFilter):
         self.enable_autoskip()
 
         assert self.key in self.spec, (
-            "Asked to pad %s, but is not provided upstream." % self.key)
+            "Asked to pad %s, but is not provided upstream." % self.key
+        )
         assert self.spec[self.key].roi is not None, (
             "Asked to pad %s, but upstream provider doesn't have a ROI for "
-            "it." % self.key)
-
-        assert self.target_size is not None, (
-            f"No target_size provided."
+            "it." % self.key
         )
+
+        assert self.target_size is not None, f"No target_size provided."
 
         spec = self.spec[self.key].copy()
 
         grow_size_total = self.target_size - spec.roi.get_shape()
         # only grow if the spec roi is smaller than the target roi
-        grow_size_total = Coordinate(
-            (max(g, 0) for g in grow_size_total)
-        )
+        grow_size_total = Coordinate((max(g, 0) for g in grow_size_total))
 
         grow_size_neg = (grow_size_total // spec.voxel_size) // 2
-        grow_size_pos = ((grow_size_total + spec.voxel_size)
-                         // spec.voxel_size) // 2
+        grow_size_pos = ((grow_size_total + spec.voxel_size) // spec.voxel_size) // 2
         spec.roi = spec.roi.grow(
-            grow_size_neg * spec.voxel_size,
-            grow_size_pos * spec.voxel_size
+            grow_size_neg * spec.voxel_size, grow_size_pos * spec.voxel_size
         )
 
         self.updates(self.key, spec)
 
     def prepare(self, request):
-
         upstream_spec = self.get_upstream_provider().spec
 
         logger.debug("request: %s" % request)
@@ -89,15 +83,17 @@ class PadTo(BatchFilter):
         request[self.key].roi = roi.intersect(upstream_spec[self.key].roi)
 
         if request[self.key].roi.empty():
-
             logger.warning(
-                "Requested %s ROI %s lies entirely outside of upstream "
-                "ROI %s.", self.key, roi, upstream_spec[self.key].roi)
+                "Requested %s ROI %s lies entirely outside of upstream ROI %s.",
+                self.key,
+                roi,
+                upstream_spec[self.key].roi,
+            )
 
             # ensure a valid request by asking for empty ROI
             request[self.key].roi = Roi(
                 upstream_spec[self.key].roi.get_offset(),
-                (0,) * upstream_spec[self.key].roi.dims()
+                (0,) * upstream_spec[self.key].roi.dims(),
             )
 
         logger.debug("new request: %s" % request)
@@ -107,33 +103,30 @@ class PadTo(BatchFilter):
         return deps
 
     def process(self, batch, request):
-
         if self.key not in request:
             return
 
         # restore requested batch size and ROI
         if isinstance(self.key, ArrayKey):
-
             array = batch.arrays[self.key]
             array.data = self.__expand(
                 array.data,
                 array.spec.roi / array.spec.voxel_size,
                 request[self.key].roi / array.spec.voxel_size,
-                self.value if self.value else 0
+                self.value if self.value else 0,
             )
             array.spec.roi = request[self.key].roi
 
         else:
-
             points = batch.points[self.key]
             points.spec.roi = request[self.key].roi
 
     def __expand(self, a, from_roi, to_roi, value):
-        '''from_roi and to_roi should be in voxels.'''
+        """from_roi and to_roi should be in voxels."""
 
         logger.debug(
-            "expanding array of shape %s from %s to %s",
-            str(a.shape), from_roi, to_roi)
+            "expanding array of shape %s from %s to %s", str(a.shape), from_roi, to_roi
+        )
 
         num_channels = len(a.shape) - from_roi.dims()
         channel_shapes = a.shape[:num_channels]

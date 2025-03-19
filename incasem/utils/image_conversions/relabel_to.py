@@ -6,10 +6,7 @@ class RelabelTo(ImageConversion):
     """relabel all values not equal zero to a given value"""
 
     def __init__(self, dtype, value, **kwargs):
-        super().__init__(
-            dtype=dtype,
-            **kwargs
-        )
+        super().__init__(dtype=dtype, **kwargs)
 
         self.value = value
 

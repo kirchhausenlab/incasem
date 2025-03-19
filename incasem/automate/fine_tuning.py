@@ -305,21 +305,21 @@ def fine_tuning_workflow() -> None:
                 st.session_state["config_entries"].append(ConfigEntry("", "", ""))
             for i, entry in enumerate(st.session_state["config_entries"]):
                 with st.container():
-                    st.subheader(f"Configuration Entry {i+1}")
+                    st.subheader(f"Configuration Entry {i + 1}")
                     entry.name = st.text_input(
-                        f"Enter name for entry {i+1}",
-                        value=f"Cell_{i+1}",
+                        f"Enter name for entry {i + 1}",
+                        value=f"Cell_{i + 1}",
                         placeholder="Cell_6_example_roi_nickname",
                         help="Enter the name for the entry",
                     )
                     entry.path = st.text_input(
-                        f"Enter file path for entry {i+1}",
+                        f"Enter file path for entry {i + 1}",
                         value="cell_6/cell_6.zarr",
                         help="Enter the path to the file, eg = 'cell_6/cell_6.zarr'",
                     )
                     # Offset
                     offset = st.text_input(
-                        f"Enter offset for entry {i+1} (z, y, x)",
+                        f"Enter offset for entry {i + 1} (z, y, x)",
                         value="400, 926, 2512",
                         help="Enter the offset for the file, eg = '400, 926, 2512'",
                     )
@@ -328,7 +328,7 @@ def fine_tuning_workflow() -> None:
 
                     # Shape
                     shape = st.text_input(
-                        f"Enter shape for entry {i+1} (z, y, x)",
+                        f"Enter shape for entry {i + 1} (z, y, x)",
                         value="241, 476, 528",
                         help="Enter the shape for the file, eg = '241, 476, 528'",
                     )
@@ -337,21 +337,21 @@ def fine_tuning_workflow() -> None:
 
                     # Voxel Size
                     voxel_size = st.text_input(
-                        f"Enter voxel size for entry {i+1} (z, y, x)",
+                        f"Enter voxel size for entry {i + 1} (z, y, x)",
                         value="5, 5, 5",
                         help="Enter the voxel size for the file, eg = '5, 5, 5'",
                     )
                     if voxel_size:
                         entry.voxel_size = [int(x) for x in voxel_size.split(",")]
                     raw = st.text_input(
-                        f"Enter raw key for entry {i+1}",
+                        f"Enter raw key for entry {i + 1}",
                         value="volumes/raw",
                         help="Enter the raw key for the file eg = 'volumes/raw'",
                     )
                     entry.raw = raw
 
                     labels = st.text_input(
-                        f"Enter labels for entry {i+1}",
+                        f"Enter labels for entry {i + 1}",
                         value="volumes/labels",
                         help="Enter the labels for the file eg = 'volumes/labels'",
                     )
