@@ -18,21 +18,22 @@ logger.setLevel(logging.INFO)
 
 logging.getLogger('gunpowder').setLevel(logging.INFO)
 
+
 class PredictionRunDummy():
     def __init__(self):
-
         # Get the highest ID and add 1
         with open('../../mock_db/ledger.json') as f:
             ledger = json.load(f)
 
         ids = [int(e) for e in ledger.keys()]
 
-        self._id = max(-1, max(ids))+1
+        self._id = max(-1, max(ids)) + 1
 
         self.log = []
 
     def log_scalar(self, name, value, step):
         self.log.append({"name": name, "value": value, "step": step})
+
 
 def torch_setup(_config):
     torch.backends.cudnn.enabled = True
@@ -95,7 +96,6 @@ def model_setup(_run_dummy, _config):
 
 
 def directory_structure_setup(_run_dummy, _config):
-
     predictions_out_path = os.path.expanduser(
         _config['prediction']['directories']['prefix'])
     if not os.path.isdir(predictions_out_path):
@@ -107,6 +107,7 @@ def directory_structure_setup(_run_dummy, _config):
         f"{int(_config['prediction']['run_id_training']):04d}",
         _config["prediction"]["name"]
     )
+
     return run_path
 
 
@@ -167,10 +168,10 @@ def remove_context(batch, input_size_voxels, output_size_voxels):
     voxel_size = batch[gp.ArrayKey('RAW')].spec.voxel_size
     roi = batch[gp.ArrayKey('RAW')].spec.roi
     context = (
-        gp.Coordinate(input_size_voxels) -
-        gp.Coordinate(output_size_voxels)
+                      gp.Coordinate(input_size_voxels) -
+                      gp.Coordinate(output_size_voxels)
 
-    ) / 2
+              ) / 2
     context = context * voxel_size
     roi = roi.grow(-context, -context)
 
@@ -221,7 +222,6 @@ def log_metrics(
         _run_dummy.log_scalar(f"dice_class_{label}_{mode}", score, iteration)
         logger.info(f"{mode} | Dice score class {label}: {score}")
 
-
     precision_recall = fos.metrics.precision_recall(
         target,
         prediction_probas,
@@ -244,8 +244,8 @@ def predict(_run_dummy, _config, checkpoint=None, iteration=0, run_path=None):
     torch_setup(_config)
 
     if run_path is None:
-        run_path = directory_structure_setup(_run_dummy,_config)
-    model = model_setup(_run_dummy,_config)
+        run_path = directory_structure_setup(_run_dummy, _config)
+    model = model_setup(_run_dummy, _config)
 
     if checkpoint is None:
         checkpoint = get_checkpoint(_config['prediction']['checkpoint'])
@@ -295,6 +295,7 @@ def predict(_run_dummy, _config, checkpoint=None, iteration=0, run_path=None):
                     iteration=iteration,
                     mode=f'ds_{idx_pipeline}'
                 )
+    return run_path
 
 
 def parse_arguments():
@@ -314,14 +315,14 @@ def parse_arguments():
     remaining_argv_dict = {}
 
     # Extra parsing
-    if "--name"in remaining_argv:
+    if "--name" in remaining_argv:
         name_idx = remaining_argv.index("--name") + 1
         name = remaining_argv[name_idx]
         remaining_argv_dict['name'] = name
 
     if "with" in remaining_argv:
         with_idx = remaining_argv.index("with")
-        cfg_yaml_path = remaining_argv[with_idx+1]
+        cfg_yaml_path = remaining_argv[with_idx + 1]
         remaining_argv_dict["cfg_yaml"] = cfg_yaml_path
 
     for item in remaining_argv:
@@ -329,7 +330,7 @@ def parse_arguments():
             pattern = r'\bprediction\.(\S+)\s*=\s*(\S+)\b'
             # Find all matches in the text
             matches = re.findall(pattern, item)
-            if len(matches)>0:
+            if len(matches) > 0:
                 k, v = item.split("prediction.")[-1].split("=")
                 remaining_argv_dict[k] = v
 
@@ -342,7 +343,6 @@ if __name__ == '__main__':
     with open('../../mock_db/ledger.json') as fp:
         ledger = json.load(fp)
     available_models = [int(e) for e in ledger.keys()]
-
 
     assert args.run_id in available_models, "Desired run_id not found in mock_db, make sure it exists"
 
@@ -377,4 +377,15 @@ if __name__ == '__main__':
     with open("../../mock_db/ledger.json", mode="w") as f:
         json.dump(ledger, f)
 
-    predict(_run_dummy, config)
+    with open(config["prediction"]["data"]) as f:
+        prediction_data = json.load(f)
+
+    prediction_data_file = [e for e in prediction_data.keys()][0]
+    prediction_data_filename = prediction_data[prediction_data_file]["file"]
+    prediction_data_path = os.path.join(config["directories"]["data"], prediction_data_filename)
+
+    results_path = predict(_run_dummy, config)
+    data_path = config["directories"]["data"]
+
+    logger.info(
+        "Prediction named: {} was written to {}/predictions/{}".format(name, prediction_data_path, results_path))
