@@ -10,6 +10,9 @@ setup(
     license='MIT',
     py_modules=[],
     install_requires=[
+        'numpy',
+        'dask',
+        'dask[distributed]',
         'zarr',
         'scikit-learn',
         'pyyaml',
@@ -19,11 +22,9 @@ setup(
         'tensorboard',
         'configargparse',
         'protobuf',
-        'daisy',
         'neuroglancer',
         'funlib.learn.torch @ git+https://github.com/kirchhausenlab/funlib.learn.torch@5590fb51aef8381eeae99bbe75800ecb186684a1',
-        'funlib.persistence @ git+https://github.com/funkelab/funlib.persistence@7a21df58e9b503881faf33a3c3110c375363fba4',
         'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
     ],
-    python_requires='>=3.8,',
+    python_requires='>=3.9',
 )

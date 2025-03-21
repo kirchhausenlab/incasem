@@ -173,7 +173,7 @@ python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_data -f ~/incasem/
 
 > To obtain documentation on how to use a script, run `python <script_name>.py -h`.
 
-If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](scripts/01_data_formatting/01_image_sequence_to_zarr_with_dask.py).
+If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](scripts/01_data_formatting/01_image_sequence_to_zarr.py).
 
 ```bash
 python 01_image_sequences_to_zarr_with_dask.py -i ~/incasem/data/my_new_data -f ~/incasem/data/my_new_data.zarr -d volumes/raw --resolution 5 5 5
@@ -183,7 +183,7 @@ python 01_image_sequences_to_zarr_with_dask.py -i ~/incasem/data/my_new_data -f 
 #### 4. Equalize intensity histogram of the data
 Equalize the raw data with [CLAHE (Contrast limited adaptive histogram equalization)](https://en.wikipedia.org/wiki/Adaptive_histogram_equalization). The default clip limit is `0.02`.
 ```bash
-python 40_equalize_histogram.py -f ~/incasem/data/my_new_data.zarr -d volumes/raw -o volumes/raw_equalized_0.02
+python 04_equalize_histogram.py -f ~/incasem/data/my_new_data.zarr -d volumes/raw -o volumes/raw_equalized_0.02
 ```
 #### 5. Inspect the converted data with `neuroglancer`:
 ```bash
@@ -342,7 +342,7 @@ python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_er_annotations -f 
 ```
 We assume the `.tif` file names are in the format `name_number.tif`, as encapsulated by the default regular expression `.*_(\d+).*\.tif$`. If you want to change it, add `-r your_regular_expression` to the line above.
 
-If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](scripts/01_data_formatting/01_image_sequence_to_zarr_with_dask.py).
+If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](scripts/01_data_formatting/01_image_sequence_to_zarr.py).
 
 ```bash
 python 01_image_sequences_to_zarr_with_dask.py -i ~/incasem/data/my_new_er_annotations -f ~/incasem/data/my_new_data.zarr -d volumes/labels_er --resolution 5 5 5 --dtype uint32
@@ -375,7 +375,7 @@ We suggest the following exclusion zones in voxels:
 
 For our example with Endoplasmic Reticulum annotations, we run
 ```bash
-python 60_create_metric_mask.py -f ~/incasem/data/my_new_data.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
+python 06_create_metric_mask.py -f ~/incasem/data/my_new_data.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
 ```
 
 
@@ -467,11 +467,11 @@ This mask, which we refer to as _exclusion zone_, simply sets the pixels at the 
 
 For our example with Endoplasmic Reticulum annotations on `cell_1` and `cell_2`, we run (from the data formatting directory):
 ```bash
-python 60_create_metric_mask.py -f ~/incasem/data/cell_1/cell_1.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
+python 06_create_metric_mask.py -f ~/incasem/data/cell_1/cell_1.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
 ```
 and 
 ```bash
-python 60_create_metric_mask.py -f ~/incasem/data/cell_2/cell_2.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
+python 06_create_metric_mask.py -f ~/incasem/data/cell_2/cell_2.zarr -d volumes/labels/er --out_dataset volumes/metric_masks/er --exclude_voxels_inwards 2 --exclude_voxels_outwards 2
 ```
 
 #### 2. Create a training data configuration file

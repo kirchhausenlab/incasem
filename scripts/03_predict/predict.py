@@ -284,7 +284,6 @@ def predict(_run_dummy, _config, checkpoint=None, iteration=0, run_path=None):
             # _config['prediction']['output_size_voxels']
             # )
 
-            # TODO load files from disk as daisy datasets
             if _config['prediction']['log_metrics']:
                 log_metrics(
                     _run_dummy,
