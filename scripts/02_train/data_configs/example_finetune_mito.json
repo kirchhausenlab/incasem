@@ -1,6 +1,6 @@
 {
-    "cell_3_mito" : {
-        "file": "cell_3/cell_3.zarr",
+    "61_mito" : {
+        "file": "61/61.zarr",
         "offset": [700, 2000, 6200],
         "shape": [250, 250, 250],
         "voxel_size": [5, 5, 5],

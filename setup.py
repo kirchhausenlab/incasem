@@ -18,6 +18,7 @@ setup(
         'pyyaml',
         'quilt3',
         'mlpack',
+        'pydantic',
         'tensorboardX',
         'tensorboard',
         'configargparse',
