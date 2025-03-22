@@ -49,7 +49,7 @@ git clone https://github.com/kirchhausenlab/incasem.git ~/incasem
 #### 2. Create a new python environment with conda or mamba (recommended).
 If you don't have [conda](https://docs.conda.io/projects/conda/en/stable/user-guide/install/linux.html) or [mamba](https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html), install first.
 ```bash
-conda create -n incasem --no-default-packages python=3.8
+conda create -n incasem --no-default-packages python=3.10
 ```
 
 #### 3. Pip-install the incasem package contained in this repository into the environment.
