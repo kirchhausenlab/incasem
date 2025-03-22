@@ -51,6 +51,8 @@ recommend installing the `legacy` branch and configuring the experiment tracking
 **If you are interested in installing `legacy`, please stop following the installation instructions here, change branch, and instead follow the instructions
 in that `README`**
 
+### CLI Installation
+
 #### 1. Clone the main repository.
 ```bash
 git clone https://github.com/kirchhausenlab/incasem.git ~/incasem
@@ -74,13 +76,30 @@ pip install -e ./incasem
 
 #### 4. Install PyTorch as outlined [here](https://pytorch.org/get-started/locally/). 
 
+### UI Installation
+TODO
+
 ## Optional: Download our data
 The datasets in the publication are available in an [AWS bucket](https://open.quiltdata.com/b/asem-project/tree/datasets/) and can be downloaded with the [quilt3 API](https://docs.quiltdata.com/api-reference/api).
 The cells have been renamed and re-indexed since the publication of _Gallusser, 2022_, so pleae refer to the table here 
 if you are interested in a particular cell from that publication.
 
-TODO:
-TABLE
+| Cell ID | Gallusser, 2022 Name |
+|---------|----------------------|
+|   46    |       cell_1         |
+|   58    |       cell_2         |
+|   61    |       cell_3         |
+|   64    |       cell_6         |
+|   1A    |       cell_8         |
+|   2A    |       cell_9         |
+|   1E    |       cell_12        |
+|   2E    |       cell_13        |
+|   3A    |       cell_13a       |
+|   77    |       cell_14        |
+|   79    |       cell_15        |
+|   80    |       cell_16        |
+|   81    |       cell_17        |
+
 
 #### 1. Download an example dataset from the AWS bucket: 
 Navigate to `~/incasem/data`:
