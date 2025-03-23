@@ -146,7 +146,7 @@ conda activate incasem
 #### 3. Conversion from `TIFF` to `zarr` format
 Convert the sequence of `.tif` images (3D stack) to [`.zarr` format](https://zarr.readthedocs.io/en/stable/).
 ```bash
-python 01_image_sequences_to_zarr.py -i ~/incasem/data/my_new_data -f ~/incasem/data/my_new_data.zarr
+python 01_image_sequence_to_zarr.py -i ~/incasem/data/my_new_data -f ~/incasem/data/my_new_data.zarr
 ```
 
 > To obtain documentation on how to use a script, run `python <script_name>.py -h`.
@@ -283,15 +283,9 @@ conda activate incasem
 Convert the sequence of `.tif` annotations (3D stack) to [.`zarr` format](https://zarr.readthedocs.io/en/stable/).
 In this example, we use
 ```bash
-python 00_image_sequences_to_zarr.py -i ~/incasem/data/my_new_er_annotations -f ~/incasem/data/my_new_data.zarr -d volumes/labels/er --dtype uint32
+python 01_image_sequence_to_zarr.py -i ~/incasem/data/my_new_er_annotations -f ~/incasem/data/my_new_data.zarr -d volumes/labels/er --dtype uint32
 ```
 We assume the `.tif` file names are in the format `name_number.tif`, as encapsulated by the default regular expression `.*_(\d+).*\.tif$`. If you want to change it, add `-r your_regular_expression` to the line above.
-
-If your datasets is hundreds of GB in size, try using the conversion script `01_image_sequences_to_zarr_with_dask.py`. You will need to install a different conda environment to work with `dask`, details directly in the [script](scripts/01_data_formatting/01_image_sequence_to_zarr.py).
-
-```bash
-python 01_image_sequences_to_zarr_with_dask.py -i ~/incasem/data/my_new_er_annotations -f ~/incasem/data/my_new_data.zarr -d volumes/labels_er --resolution 5 5 5 --dtype uint32
-```
 
 If the position of the labels is wrong, you can correct the offset by directly editing the dataset attributes file on disk:
 ```
