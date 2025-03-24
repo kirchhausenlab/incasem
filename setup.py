@@ -21,6 +21,8 @@ setup(
         'tensorboardX',
         'tensorboard',
         'configargparse',
+        'neuroglancer',
+        'h5py',
         'protobuf',
         'funlib.learn.torch @ git+https://github.com/kirchhausenlab/funlib.learn.torch@5590fb51aef8381eeae99bbe75800ecb186684a1',
         'gunpowder @ git+https://github.com/bentaculum/gunpowder@total_roi_with_nonspatial_array',
