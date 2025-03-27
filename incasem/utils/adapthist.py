@@ -18,11 +18,11 @@ comes with no guarantee.
 """
 
 import numbers
+
 import numpy as np
-from skimage.util import img_as_uint
 from skimage.color.adapt_rgb import adapt_rgb, hsv_value
 from skimage.exposure import rescale_intensity
-
+from skimage.util import img_as_uint
 
 NR_OF_GRAY = 2**14  # number of grayscale levels to use in CLAHE algorithm
 

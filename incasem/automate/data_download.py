@@ -1,12 +1,11 @@
 import subprocess
-import os
+from pathlib import Path
+
+import boto3
+import quilt3
 import streamlit as st
 from automate.utils import handle_exceptions
-import quilt3
 from logger.config import logger
-from pathlib import Path
-import boto3
-from botocore.exceptions import ClientError
 
 
 class DataDownloader:

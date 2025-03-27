@@ -1,7 +1,8 @@
 import subprocess
 from pathlib import Path
-from automate.utils import handle_exceptions
+
 import streamlit as st
+from automate.utils import handle_exceptions
 
 
 class CondaEnvironmentManager:

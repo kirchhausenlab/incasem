@@ -1,21 +1,21 @@
-import subprocess
-from automate.directory_navigator import get_dir
 import glob
+import subprocess
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Dict, Final, List
+
 import streamlit as st
-from logger.config import logger
-from automate.utils import handle_exceptions
-from utils import (
+from automate.directory_navigator import get_dir
+from automate.utils import (
     convert_tiff_to_zarr,
     create_config_file,
+    handle_exceptions,
     run_command,
-    validate_tiff_filename,
     validate_path,
 )
-from dataclasses import dataclass, field
-from typing import Dict, List
-from pathlib import Path
+from logger.config import logger
 
-DEFAULT_MODEL_ID = "1841"
+DEFAULT_MODEL_ID: Final[str] = "1841"
 
 
 @dataclass

@@ -1,8 +1,7 @@
-import os
-import subprocess
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List
+
 import streamlit as st
 import zarr
 from automate.utils import handle_exceptions
@@ -20,7 +19,7 @@ class ZarrFileNavigator:
         return [d for d in self.data_dir.iterdir() if d.is_dir()]
 
     @st.cache_data
-    def find_zarr_files(self, sub_dir: Path) -> List[Path]:
+    def find_zarr_files(self, sub_dir: Path) -> Path:
         """
         Recursively find all Zarr files within the specified `sub_dir`.
         """
@@ -117,7 +116,7 @@ def view_cells_and_flatten_them():
                 zarr_files = navigator.find_zarr_files(sub_dir_path)
                 if zarr_files:
                     st.write("Found Zarr files:")
-                    selected_file = st.selectbox("Select a Zarr file:", zarr_files)
+                    selected_file = st.selectbox("Select a Zarr file:", str(zarr_files))
                     if selected_file:
                         components = navigator.list_zarr_components(Path(selected_file))
                         if components:

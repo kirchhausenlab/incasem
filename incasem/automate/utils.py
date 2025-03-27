@@ -1,13 +1,14 @@
+import inspect
 import json
 import os
 import re
 import subprocess
-import streamlit as st
 from functools import wraps
-from logger.config import logger
-import inspect
-from typing import Callable
 from pathlib import Path
+from typing import Callable
+
+import streamlit as st
+from logger.config import logger
 
 
 def handle_exceptions(input_func: Callable) -> Callable:

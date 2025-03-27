@@ -1,8 +1,9 @@
+from functools import lru_cache
 from pathlib import Path
 from typing import Optional
+
 import streamlit as st
 from logger.config import logger
-from functools import lru_cache
 
 
 class DirectoryNavigator:
