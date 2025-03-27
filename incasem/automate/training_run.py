@@ -238,36 +238,9 @@ def create_configs():
             help="Select 'Yes' to use existing configuration files, or 'No' to create new ones.",
             index=0,
         )
-
-        if use_existing == "Yes":
-            # Select existing training config
-            train_config_name = st.selectbox(
-                "Select the training config file",
-                options=existing_configs,
-                key="train_config_select",
-            )
-            st.session_state.train_config_path = str(
-                DATA_CONFIG_PATH.joinpath(train_config_name)  # type: ignore
-            )
-
-            # Select existing validation config
-            val_config_name = st.selectbox(
-                "Select the validation config file",
-                options=existing_configs,
-                key="val_config_select",
-            )
-            if val_config_name:
-                st.session_state.val_config_path = str(
-                    DATA_CONFIG_PATH.joinpath(val_config_name)
-                )
-            else:
-                st.session_state.val_config_path = ""
-
-            st.success("Existing configuration files selected!")
-            st.session_state.step = "run_training"
-            st.write("Set up your training and validation configurations.")
-
-        else:
+        st.session_state.train_config_path = ""
+        st.session_state.val_config_path = ""
+        if use_existing == "No":
             st.warning("Create new configuration files.")
             col1, col2 = st.columns(2)
             with col1:
@@ -330,6 +303,33 @@ def create_configs():
 
             st.write(f"Training config path: {st.session_state.train_config_path}")
             st.write(f"Validation config path: {st.session_state.val_config_path}")
+        elif use_existing == "Yes":
+            # Select existing training config
+            train_config_name = st.selectbox(
+                "Select the training config file",
+                options=existing_configs,
+                key="train_config_select",
+            )
+            st.session_state.train_config_path = str(
+                DATA_CONFIG_PATH.joinpath(train_config_name)  # type: ignore
+            )
+
+            # Select existing validation config
+            val_config_name = st.selectbox(
+                "Select the validation config file",
+                options=existing_configs,
+                key="val_config_select",
+            )
+            if val_config_name:
+                st.session_state.val_config_path = str(
+                    DATA_CONFIG_PATH.joinpath(val_config_name)
+                )
+            else:
+                st.session_state.val_config_path = ""
+
+            st.success("Existing configuration files selected!")
+            st.session_state.step = "run_training"
+            st.write("Set up your training and validation configurations.")
 
 
 def run_training():

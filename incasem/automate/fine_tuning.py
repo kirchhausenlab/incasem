@@ -253,7 +253,7 @@ def fine_tuning_workflow() -> None:
             file_type = st.radio("Select file type", ("TIFF", "ZARR"))
             input_path = st.text_input(
                 label="Enter the input path for annotations",
-                value=f"{path_to_data}/cell_1",
+                value=f"{path_to_data}",
                 help="Specify the input path for annotations (local or cloud).",
             )
             # if file_type == "TIFF" and not validate_tiff_filename(input_path):

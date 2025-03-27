@@ -48,9 +48,6 @@ class DataDownloader:
                 or dataset_path_zarr in self.available_datasets
             ):
                 print("Dataset exists")
-                # Use the path without the trailing slash for size calculation
-                path_for_size = dataset_path_no_slash
-
                 # Get size information
                 st.success(
                     f"✅ Dataset '{self.dataset_name}' exists! 🎉 in the AWS bucket, please proceed to download"
