@@ -1,16 +1,15 @@
+import json
 import logging
 import os
-import sys
-import json
-import yaml
+import re
 
 #
 import configargparse as argparse
-import torch
-import numpy as np
-import re
-
 import gunpowder as gp
+import numpy as np
+import torch
+import yaml
+
 import incasem as fos
 
 logging.basicConfig(level=logging.INFO)
@@ -118,7 +117,7 @@ def get_checkpoint(checkpoint_file):
     logger.debug(f"{checkpoint_file=}")
     logger.debug(f"{type(checkpoint_file)=}")
     if checkpoint_file is None:
-        raise ValueError(f"Specify a checkpoint for making predictions")
+        raise ValueError("Specify a checkpoint for making predictions")
 
     return checkpoint_file
 
@@ -139,6 +138,7 @@ def prediction_setup(_config, run_path, model_, checkpoint, pred_dataset):
     pipeline_type = {
         "baseline": fos.pipeline.PredictionBaseline,
     }[_config["prediction"]["pipeline"]]
+
     prediction = pipeline_type(
         data_config=pred_dataset,
         run_id=run_path,
