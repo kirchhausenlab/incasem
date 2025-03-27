@@ -19,16 +19,15 @@ Dependencies:
   - numcodecs
 """
 
-import os
-import numpy as np
-import configargparse as argparse
-import skimage.morphology  # not used here, but might be needed for consistency
-from dask.distributed import Client, as_completed
-import zarr
-from numcodecs import Blosc
 import itertools
+from time import sleep
+
+import configargparse as argparse
+import numpy as np
+import zarr
+from dask.distributed import Client, as_completed
+from numcodecs import Blosc
 from tqdm import tqdm
-from time import time as now, sleep
 
 
 # --- Helper: Partition ROI into blocks ---
@@ -131,8 +130,8 @@ def extract_segmentation_with_threshold(
     out_zarr = zarr.open(filename, mode="a")
     if out_ds_name in out_zarr:
         print(f"Deleting existing dataset '{out_ds_name}' in {filename}")
-        del out_zarr[out_ds_name]
-    out_array = out_zarr.create_dataset(
+        del out_zarr[out_ds_name]  # type: ignore
+    out_array = out_zarr.create_dataset(  # type: ignore
         name=out_ds_name,
         shape=total_shape,
         chunks=tuple(chunk_shape),
@@ -180,29 +179,31 @@ def extract_segmentation_with_threshold(
 
 # --- Command-line Interface ---
 def parse_args():
-    p = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add("--config", is_config_file=True, help="config file path")
-    p.add("--prediction_filename", required=True, help="Zarr file with the prediction.")
-    p.add(
+    p = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    p.add_argument("--config", is_config_file=True, help="config file path")
+    p.add_argument(
+        "--prediction_filename", required=True, help="Zarr file with the prediction."
+    )
+    p.add_argument(
         "--dataset",
         "-d",
         required=True,
         help="Name of the dataset with prediction probabilities.",
     )
-    p.add("--mask_filename", default="", help="Zarr file with the mask.")
-    p.add(
+    p.add_argument("--mask_filename", default="", help="Zarr file with the mask.")
+    p.add_argument(
         "--mask",
         "-m",
         default="volumes/mask",
         help="Binary mask to exclude non-cell voxels.",
     )
-    p.add(
+    p.add_argument(
         "--out_dataset",
         "-o",
         required=True,
         help="Name of the output segmentation in the prediction zarr file.",
     )
-    p.add(
+    p.add_argument(
         "--chunk_shape",
         "-c",
         nargs="+",
@@ -210,14 +211,16 @@ def parse_args():
         default=[128, 128, 128],
         help="Size of a chunk in voxels. Should be a multiple of the existing chunk size.",
     )
-    p.add(
+    p.add_argument(
         "--threshold",
         "-t",
         type=float,
         required=True,
         help="Threshold for positive prediction.",
     )
-    p.add("--num_workers", "-n", type=int, default=32, help="Number of dask workers.")
+    p.add_argument(
+        "--num_workers", "-n", type=int, default=32, help="Number of dask workers."
+    )
     args = p.parse_args()
     print("\nCommand Line Args:", p.format_values())
     return args

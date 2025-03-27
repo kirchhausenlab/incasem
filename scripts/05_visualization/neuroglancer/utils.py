@@ -1,9 +1,8 @@
-import neuroglancer
-import operator
 import logging
+import operator
 
+import neuroglancer
 import numpy as np
-
 
 logger = logging.getLogger(__name__)
 

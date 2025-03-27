@@ -23,14 +23,18 @@ No funlib or daisy is used.
 """
 
 import logging
+from pathlib import Path
 from time import time as now
-import numpy as np
+from typing import Tuple, Union
+
 import configargparse as argparse
+import numpy as np
 import zarr
+from dask.delayed import delayed
 from dask.distributed import Client, as_completed
-import dask
-import incasem as fos
 from tqdm import tqdm
+
+import incasem as fos
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -38,9 +42,11 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("incasem.metrics.precision_recall").setLevel(logging.WARNING)
 
 
-def split_zarr_path(path):
+def split_zarr_path(path: Union[str, Path]) -> Tuple[str, str]:
     if path is None:
         return None
+    if isinstance(path, Path):
+        path = str(path)
     filename, extension, ds_name = path.rpartition(".zarr/")
     filename = (filename + extension).rstrip("/")
     ds_name = ds_name.rstrip("/")
@@ -124,8 +130,8 @@ def evaluate_metric(
     thresholds,
 ):
     # Open labels and prediction datasets using zarr.
-    labels_file, labels_ds_name = split_zarr_path(labels_path)
-    probas_file, probas_ds_name = split_zarr_path(prediction_probas_path)
+    labels_file, labels_ds_name = split_zarr_path(labels_path)  # type: ignore
+    probas_file, probas_ds_name = split_zarr_path(prediction_probas_path)  # type: ignore
     labels_ds = zarr.open(labels_file, mode="r")[labels_ds_name]
     probas_ds = zarr.open(probas_file, mode="r")[probas_ds_name]
 
@@ -140,7 +146,7 @@ def evaluate_metric(
     # Try to open mask.
     mask = None
     try:
-        mask_file, mask_ds_name = split_zarr_path(mask_path)
+        mask_file, mask_ds_name = split_zarr_path(mask_path)  # type: ignore
         mask = zarr.open(mask_file, mode="r")[mask_ds_name]
         if get_roi(mask) != probas_roi:
             raise ValueError(
@@ -178,7 +184,7 @@ def evaluate_metric(
     start = now()
     logger.info("Loading data ...")
     labels_arr = labels_ds[slices]
-    labels_arr = (labels_arr != 0).astype(np.uint8)
+    labels_arr = (labels_arr != 0).astype(np.uint8)  # type: ignore
     probas_arr = probas_ds[slices]
     if metric_mask is not None:
         metric_mask_arr = metric_mask[slices]
@@ -187,9 +193,10 @@ def evaluate_metric(
     if mask is not None:
         logger.info("Masking probabilities ...")
         mask_arr = mask[slices]
-        probas_arr = probas_arr * (mask_arr != 0).astype(probas_arr.dtype)
+        probas_arr = probas_arr * (mask_arr != 0).astype(probas_arr.dtype)  # type: ignore
         metric_mask_arr = np.logical_and(
-            mask_arr.astype(bool), metric_mask_arr.astype(bool)
+            mask_arr.astype(bool),  # type: ignore
+            metric_mask_arr.astype(bool),  # type: ignore
         )
     logger.info("Data loaded.")
 
@@ -198,7 +205,7 @@ def evaluate_metric(
     tasks = []
     for th in thresholds:
         tasks.append(
-            dask.delayed(evaluate_threshold)(
+            delayed(evaluate_threshold)(
                 th, metric, labels_arr, probas_arr, metric_mask_arr
             )
         )
@@ -219,45 +226,47 @@ def evaluate_metric(
 
 def parse_args():
     p = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add("--config", is_config_file=True, help="config file path")
-    p.add(
+    p.add_argument("--config", is_config_file=True, help="config file path")
+    p.add_argument(
         "--metric",
         default="jaccard",
         choices=["jaccard", "dice", "precision_recall"],
         help="Metric to evaluate.",
     )
-    p.add("--labels", "-l", required=True)
-    p.add(
+    p.add_argument("--labels", "-l", required=True)
+    p.add_argument(
         "--prediction_probas",
         "-p",
         required=True,
         help="Name of the dataset with prediction probabilities.",
     )
-    p.add("--mask", help="Binary mask to predict background for all non-cell voxels.")
-    p.add(
+    p.add_argument(
+        "--mask", help="Binary mask to predict background for all non-cell voxels."
+    )
+    p.add_argument(
         "--metric_mask",
         help="Binary mask to ignore predictions at the boundary of objects",
     )
-    p.add(
+    p.add_argument(
         "--roi_padding",
         type=int,
         nargs="+",
         default=[46, 46, 46],
         help="Empty padding around the prediction ROI (in voxels, zyx).",
     )
-    p.add(
+    p.add_argument(
         "--threshold_start",
         type=float,
         default=0.5,
         help="Lowest threshold for extracting predictions.",
     )
-    p.add(
+    p.add_argument(
         "--threshold_stop",
         type=float,
         default=0.5,
         help="Highest threshold for extracting predictions.",
     )
-    p.add(
+    p.add_argument(
         "--threshold_step",
         type=float,
         default=0.1,
