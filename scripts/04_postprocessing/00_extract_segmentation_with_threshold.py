@@ -1,41 +1,108 @@
-"""Create a segmentation by thresholding a predicted probability map"""
+#!/usr/bin/env python
+"""Create a segmentation by thresholding a predicted probability map using Dask.
+
+This script replicates the original behavior:
+  - It reads a predicted probability map from a Zarr container,
+  - Optionally reads a mask from another Zarr container,
+  - For each block (defined by a user\u2011provided chunk shape), thresholds the probabilities
+    (and, if available, applies the mask),
+  - Converts the resulting binary segmentation to type np.uint32 and scales it (0/255),
+  - Writes each processed block into a new output dataset in the same container.
+
+Dependencies:
+  - python 3.8+
+  - dask[distributed]
+  - zarr
+  - configargparse
+  - numpy
+  - scikit-image
+  - numcodecs
+"""
 
 import os
-import logging
-from time import time as now
-
 import numpy as np
 import configargparse as argparse
-
-from funlib.persistence import Array, open_ds, prepare_ds
-from funlib.geometry import Roi, Coordinate
-import daisy
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# patch: suppress daisy warnings
-logging.getLogger("daisy.client").setLevel(logging.ERROR)
+import skimage.morphology  # not used here, but might be needed for consistency
+from dask.distributed import Client, as_completed
+import zarr
+from numcodecs import Blosc
+import itertools
+from tqdm import tqdm
+from time import time as now, sleep
 
 
-def extract_segmentation_with_threshold_worker(block, probas, mask, out, threshold):
-    # load the chunk
-    probas = probas[block.read_roi].to_ndarray()
-    if mask:
-        mask = mask[block.read_roi].to_ndarray()
-        segmentation = (probas >= threshold) & (mask != 0)
+# --- Helper: Partition ROI into blocks ---
+def partition_roi(total_shape, block_size):
+    """
+    Partition a volume with shape total_shape into blocks with the given block_size.
+    Returns:
+      - A list of slice tuples (one per block).
+      - The grid dimensions (tuple of ints).
+    """
+    dims = len(total_shape)
+    grid_dims = [
+        (total_shape[d] + block_size[d] - 1) // block_size[d] for d in range(dims)
+    ]
+    slices = []
+    for idx in itertools.product(*(range(n) for n in grid_dims)):
+        block_slice = tuple(
+            slice(
+                idx[d] * block_size[d],
+                min((idx[d] + 1) * block_size[d], total_shape[d]),
+            )
+            for d in range(dims)
+        )
+        slices.append(block_slice)
+    return slices, grid_dims
+
+
+# --- Worker Function ---
+def process_segmentation_block(
+    filename, ds_name, mask_filename, mask_ds_name, read_roi, threshold
+):
+    """
+    Process one block for segmentation.
+
+    Re-opens the prediction dataset from filename and ds_name,
+    and (if provided) the mask from mask_filename and mask_ds_name.
+
+    The segmentation is defined as:
+      - If a mask exists: (probas >= threshold) AND (mask != 0)
+      - Otherwise: (probas >= threshold)
+
+    The result is converted to np.uint32 and multiplied by 255.
+
+    Parameters:
+      filename      : Path to the Zarr container for predictions.
+      ds_name       : Name of the prediction dataset.
+      mask_filename : Path to the Zarr container for the mask (or empty string if not provided).
+      mask_ds_name  : Name of the mask dataset.
+      read_roi      : Tuple of slices defining the region to process.
+      threshold     : Threshold value (float).
+
+    Returns:
+      A numpy array with dtype np.uint32.
+    """
+    # Re-open prediction dataset
+    pred = zarr.open(filename, mode="r")[ds_name]
+    probas_block = np.array(pred[read_roi])
+
+    # If a mask filename is provided, try to open and read the mask block
+    if mask_filename:
+        try:
+            mask = zarr.open(mask_filename, mode="r")[mask_ds_name]
+            mask_block = np.array(mask[read_roi])
+            seg = (probas_block >= threshold) & (mask_block != 0)
+        except Exception:
+            seg = probas_block >= threshold
     else:
-        segmentation = probas >= threshold
+        seg = probas_block >= threshold
 
-    # store binary mask as {0,255}
-    segmentation = segmentation.astype(np.uint32) * 255
-
-    # save to output dataset
-    out[block.write_roi] = segmentation
+    segmentation = seg.astype(np.uint32) * 255
+    return segmentation
 
 
+# --- Main Processing Function ---
 def extract_segmentation_with_threshold(
     filename,
     ds_name,
@@ -46,52 +113,72 @@ def extract_segmentation_with_threshold(
     threshold,
     num_workers,
 ):
-    probas = open_ds(filename, ds_name, mode="r")
+    """
+    Create a segmentation by thresholding the predicted probability map.
 
-    try:
-        mask = open_ds(mask_filename, mask_ds_name, mode="r")
-    except (KeyError, RuntimeError):
-        logger.warning(
-            (
-                "Did not find a mask dataset "
-                f"at {os.path.join(mask_filename, str(mask_ds_name))}."
-            )
-        )
-        mask = None
+    - Opens the prediction dataset (and optionally a mask) from the given Zarr container.
+    - Creates an output dataset (with the same shape and chunking, using zlib compression).
+    - Partitions the prediction ROI into blocks using the given chunk_shape.
+    - Submits a task for each block via client.submit.
+    - As each task completes, writes the result into the corresponding region in the output dataset.
+    """
+    # Open input prediction dataset
+    pred_zarr = zarr.open(filename, mode="r")
+    pred = pred_zarr[ds_name]
+    total_shape = pred.shape
 
-    out = prepare_ds(
-        filename=filename,
-        ds_name=out_ds_name,
-        total_roi=probas.roi,
-        voxel_size=probas.voxel_size,
+    # Open (or create) the output dataset in the same container.
+    out_zarr = zarr.open(filename, mode="a")
+    if out_ds_name in out_zarr:
+        print(f"Deleting existing dataset '{out_ds_name}' in {filename}")
+        del out_zarr[out_ds_name]
+    out_array = out_zarr.create_dataset(
+        name=out_ds_name,
+        shape=total_shape,
+        chunks=tuple(chunk_shape),
         dtype=np.uint32,
-        write_size=probas.voxel_size * Coordinate(chunk_shape),
-        compressor={"id": "zlib", "level": 3},
+        compressor=Blosc(cname="zlib", clevel=3),
     )
 
-    # Spawn a worker per chunk
-    block_roi = Roi((0, 0, 0), probas.voxel_size * Coordinate(chunk_shape))
+    # Partition ROI
+    blocks, grid_dims = partition_roi(total_shape, tuple(chunk_shape))
+    total_blocks = len(blocks)
+    print(f"Processing volume of shape {total_shape} in {total_blocks} blocks")
 
-    start = now()
+    # Create a Dask client.
+    client = Client(n_workers=num_workers)
+    print(f"Dask client created with {num_workers} workers")
+    sleep(2)
 
-    task = daisy.Task(
-        total_roi=probas.roi,
-        read_roi=block_roi,
-        write_roi=block_roi,
-        process_function=lambda block: extract_segmentation_with_threshold_worker(
-            block, probas=probas, mask=mask, out=out, threshold=threshold
-        ),
-        read_write_conflict=False,
-        fit="shrink",
-        num_workers=num_workers,
-        task_id="extract_segmentation_with_threshold",
-    )
+    # Schedule each block for processing.
+    scheduled = []
+    for block in blocks:
+        future = client.submit(
+            process_segmentation_block,
+            filename,
+            ds_name,
+            mask_filename,
+            mask_ds_name,
+            block,
+            threshold,
+        )
+        scheduled.append((block, future))
 
-    daisy.run_blockwise([task])
+    # Iterate over futures as they complete.
+    progress_bar = tqdm(total=len(scheduled), desc="Processing Blocks")
+    mapping = {f: block for (block, f) in scheduled}
+    for future in as_completed([f for _, f in scheduled]):
+        block = mapping[future]
+        result = future.result()
+        out_array[block] = result
+        progress_bar.update(1)
+    progress_bar.close()
 
-    logger.info(f"Done in {now() - start} s")
+    client.close()
+    print("Done.")
 
 
+# --- Command-line Interface ---
 def parse_args():
     p = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     p.add("--config", is_config_file=True, help="config file path")
@@ -121,10 +208,7 @@ def parse_args():
         nargs="+",
         type=int,
         default=[128, 128, 128],
-        help=(
-            "Size of a chunk in voxels. Should be a multiple of the existing "
-            "chunk size."
-        ),
+        help="Size of a chunk in voxels. Should be a multiple of the existing chunk size.",
     )
     p.add(
         "--threshold",
@@ -133,13 +217,9 @@ def parse_args():
         required=True,
         help="Threshold for positive prediction.",
     )
-    p.add(
-        "--num_workers", "-n", type=int, default=32, help="Number of daisy processes."
-    )
-
+    p.add("--num_workers", "-n", type=int, default=32, help="Number of dask workers.")
     args = p.parse_args()
-    logger.info(f"\n{p.format_values()}")
-
+    print("\nCommand Line Args:", p.format_values())
     return args
 
 

@@ -1,15 +1,9 @@
+import neuroglancer
 import operator
 import logging
-import neuroglancer
-import numpy as np
-import zarr
-import sys
-import glob
-import os
 
-from funlib.persistence import Array, open_ds, prepare_ds
-from funlib.geometry import Roi, Coordinate
-import daisy
+import numpy as np
+
 
 logger = logging.getLogger(__name__)
 
@@ -115,7 +109,6 @@ def add_layer(
     scale_rgb=False,
     c=[0, 1, 2],
     h=[0.0, 0.0, 1.0],
-    layer_type="im",
 ):
     """Add a layer to a neuroglancer context.
 
@@ -167,7 +160,7 @@ def add_layer(
         channel_dim_names = ["b^", "c^"]
 
         dims = len(a.data.shape)
-        spatial_dims = a.roi.dims
+        spatial_dims = a.roi.dims()
         channel_dims = dims - spatial_dims
 
         attrs = {
@@ -190,7 +183,7 @@ def add_layer(
             channel_dim_names = ["b^", "c^"]
 
             dims = len(a.data.shape)
-            spatial_dims = a.roi.dims
+            spatial_dims = a.roi.dims()
             channel_dims = dims - spatial_dims
 
             attrs = {
@@ -215,7 +208,7 @@ def add_layer(
 
     if shader is None:
         a = array if not is_multiscale else array[0]
-        dims = a.roi.dims
+        dims = a.roi.dims()
         if dims < len(a.data.shape):
             channels = a.data.shape[0]
             if channels > 1:
@@ -305,184 +298,18 @@ void main () {
         kwargs["opacity"] = opacity
 
     if is_multiscale:
-        if layer_type == "im":
-            tt = "image"
-        else:
-            tt = "segmentation"
-
         layer = ScalePyramid([
             neuroglancer.LocalVolume(
-                data=a.data,
-                voxel_offset=voxel_offset,
-                dimensions=array_dims,
-                volume_type=tt,
+                data=a.data, voxel_offset=voxel_offset, dimensions=array_dims
             )
             for a, array_dims in zip(array, dimensions)
         ])
 
     else:
-        if layer_type == "im":
-            tt = "image"
-        else:
-            tt = "segmentation"
-
         layer = neuroglancer.LocalVolume(
             data=array.data,
             voxel_offset=voxel_offset,
             dimensions=dimensions,
-            volume_type=tt,
         )
 
     context.layers.append(name=name, layer=layer, visible=visible, **kwargs)
-
-
-def str_rstrip_slash(x):
-    return x.rstrip("/")
-
-
-def to_slice(slice_str):
-    values = [int(x) for x in slice_str.split(":")]
-    if len(values) == 1:
-        return values[0]
-
-    return slice(*values)
-
-
-def parse_ds_name(ds):
-    tokens = ds.split("[")
-
-    if len(tokens) == 1:
-        return ds, None
-
-    ds, slices = tokens
-    slices = list(map(to_slice, slices.rstrip("]").split(",")))
-
-    return ds, slices
-
-
-class Project:
-    def __init__(self, array, dim, value):
-        self.array = array
-        self.dim = dim
-        self.value = value
-        self.shape = array.shape[: self.dim] + array.shape[self.dim + 1 :]
-        self.dtype = array.dtype
-
-    def __getitem__(self, key):
-        slices = key[: self.dim] + (self.value,) + key[self.dim :]
-        ret = self.array[slices]
-        return ret
-
-
-def slice_dataset(a, slices):
-    dims = a.roi.dims
-
-    for d, s in list(enumerate(slices))[::-1]:
-        if isinstance(s, slice):
-            raise NotImplementedError("Slicing not yet implemented!")
-        else:
-            index = (s - a.roi.get_begin()[d]) // a.voxel_size[d]
-            a.data = Project(a.data, d, index)
-            a.roi = Roi(
-                a.roi.get_begin()[:d] + a.roi.get_begin()[d + 1 :],
-                a.roi.get_shape()[:d] + a.roi.get_shape()[d + 1 :],
-            )
-            a.voxel_size = a.voxel_size[:d] + a.voxel_size[d + 1 :]
-
-    return a
-
-
-def open_dataset(f, ds):
-    original_ds = ds
-    ds, slices = parse_ds_name(ds)
-    slices_str = original_ds[len(ds) :]
-
-    try:
-        dataset_as = []
-        if all(key.startswith("s") for key in zarr.open(f)[ds].keys()):
-            raise AttributeError("This group is a multiscale array!")
-        for key in zarr.open(f)[ds].keys():
-            dataset_as.extend(open_dataset(f, f"{ds}/{key}{slices_str}"))
-        return dataset_as
-    except AttributeError as e:
-        # dataset is an array, not a group
-        pass
-
-    print("ds    :", ds)
-    print("slices:", slices)
-    try:
-        zarr.open(f)[ds].keys()
-        is_multiscale = True
-    except BaseException:
-        is_multiscale = False
-
-    if not is_multiscale:
-        a = open_ds(f, ds)
-
-        if slices is not None:
-            a = slice_dataset(a, slices)
-
-        if a.roi.dims == 2:
-            print("ROI is 2D, recruiting next channel to z dimension")
-            a.roi = Roi((0,) + a.roi.get_begin(), (a.shape[-3],) + a.roi.get_shape())
-            a.voxel_size = Coordinate((1,) + a.voxel_size)
-
-        if a.roi.dims == 4:
-            print("ROI is 4D, stripping first dimension and treat as channels")
-            a.roi = Roi(a.roi.get_begin()[1:], a.roi.get_shape()[1:])
-            a.voxel_size = Coordinate(a.voxel_size[1:])
-
-        if a.data.dtype == np.int64 or a.data.dtype == np.int16:
-            print("Converting dtype in memory...")
-            a.data = a.data[:].astype(np.uint64)
-
-        return [(a, ds)]
-    else:
-        return [([open_ds(f, f"{ds}/{key}") for key in zarr.open(f)[ds].keys()], ds)]
-
-
-def add_data_to_viewer(viewer, file, dataset_list):
-    shader_list = [None] * len(file)
-
-    for f, datasets, shaders in zip(file, dataset_list, shader_list):
-        name_prefix = "/".join(f.strip("/").split("/")[-2:])
-        arrays = []
-        for ds in datasets:
-            try:
-                print("Adding %s, %s" % (f, ds))
-                dataset_as = open_dataset(f, ds)
-
-            except Exception as e:
-                print(type(e), e)
-                print("Didn't work, checking if this is multi-res...")
-
-                scales = glob.glob(os.path.join(f, ds, "s*"))
-                if len(scales) == 0:
-                    print(f"Couldn't read {ds}, skipping...")
-                    raise e
-                print("Found scales %s" % ([os.path.relpath(s, f) for s in scales],))
-                a = [
-                    open_dataset(f, os.path.relpath(scale_ds, f)) for scale_ds in scales
-                ]
-            for a in dataset_as:
-                arrays.append(a)
-
-        if shaders is None:
-            shaders = [None] * len(datasets)
-        else:
-            shaders = ["rgb"] * len(datasets)
-            assert len(shaders) == len(datasets)
-            shaders = [None if s == "default" else s for s in shaders]
-
-        with viewer.txn() as s:
-            for (array, dataset), shad in zip(arrays, shaders):
-                if "labels" in dataset or "predictions" in dataset:
-                    lt = "seg"
-                else:
-                    lt = "im"
-
-                if True:
-                    dataset = os.path.join(name_prefix, dataset)
-                add_layer(context=s, array=array, name=dataset, layer_type=lt)
-
-    return viewer

@@ -1,265 +1,190 @@
+#!/usr/bin/env python
 """
 Convert 3D zarr arrays to .tif image sequences
+
+This script converts a 3D zarr array (zyx order) into a sequence of TIFF images.
+It partitions the volume only along the z-axis so that each block produces a contiguous,
+non-overlapping range of sections. Each section is converted to uint8 (using the same rules)
+and saved as "section_{z:04d}.tif" in the output directory.
+
+Dependencies:
+  - python 3.8+
+  - dask[distributed]
+  - zarr
+  - configargparse
+  - numpy
+  - scikit-image
+  - numcodecs
+  - tqdm
 """
 
-import logging
 import os
-from time import time as now
+import numpy as np
+import configargparse as argparse
+import zarr
+import skimage.io
+import skimage
+from numcodecs import Blosc
+from time import time as now, sleep
+from dask.distributed import Client, as_completed
+from tqdm import tqdm
 import warnings
 
-import configargparse as argparse
-import numpy as np
-import zarr
-import skimage
-from skimage import io
 
-from funlib.persistence import Array, open_ds, prepare_ds
-from funlib.geometry import Roi, Coordinate
-import daisy
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-# patch: suppress daisy warnings
-logging.getLogger("daisy.client").setLevel(logging.ERROR)
+# --- Conversion Helpers ---
 
 
 def convert_to_uint8(array):
     dtype = array.dtype
-
-    # TODO: Remove hack to convert uint32 labels
     if np.dtype(dtype) == np.uint32:
-        # logger.warning(
-        # "Array contains uint32, all non-zero values will be set to 255.")
-        array = (array != 0).astype(np.uint8) * 255
-        return array
-
-    # typecast ints
+        # For uint32 labels, set non-zero values to 255.
+        return (array != 0).astype(np.uint8) * 255
     elif np.issubdtype(dtype, np.integer):
         if array.max() > 255:
             raise ValueError(
                 "Array contains integers >255, cannot safely convert to uint8."
             )
         return array.astype(np.uint8)
-
-    # floats should be in [0,1] and are scaled to [0,255]
-    elif np.issubdtype(dtype, np.float):
+    elif np.issubdtype(dtype, np.floating):
         if array.min() < 0.0 or array.max() > 1.0:
             raise ValueError(
                 "Array contains floats outside [0,1], cannot safely scale to uint8."
             )
         array = skimage.img_as_ubyte(array)
-        # array = array * 255.0
-
         return array.astype(np.uint8)
-
     else:
         raise TypeError(f"Conversion to uint8 not defined for dtype {dtype}.")
 
 
-def convert_worker(block, ds, out_path):
-    data = ds.to_ndarray(roi=block.read_roi)
+# --- Worker Function ---
+def convert_worker(zarr_filename, ds_name, block, out_path):
+    """
+    Worker function to convert a zarr block to TIFF images.
 
-    ds_offset_z = ds.roi.get_offset()[0] / ds.voxel_size[0]
-    start_z = int(block.write_roi.get_offset()[0] / ds.voxel_size[0] - ds_offset_z)
-    stop_z = int(
-        (block.write_roi.get_offset()[0] + block.write_roi.get_shape()[0])
-        / ds.voxel_size[0]
-        - ds_offset_z
-    )
+    Parameters:
+      - zarr_filename: path to the zarr container.
+      - ds_name: name of the dataset inside the container.
+      - block: a tuple (z_slice, full_y, full_x) defining the block ROI.
+      - out_path: directory to save TIFF images.
 
-    logger.debug(f"{ds_offset_z=}")
-    logger.debug(f"{start_z=}")
-    logger.debug(f"{stop_z=}")
+    Behavior:
+      - Re-opens the dataset, reads the block, computes the global z indices (using
+        ds.attrs "offset" and "voxel_size"), converts each section to uint8, and saves
+        each section as "section_{z:04d}.tif".
+    """
+    # Open the dataset
+    ds = zarr.open(os.path.join(zarr_filename, ds_name), mode="r")
+    data = np.array(ds[block])
+
+    # Get offset and voxel size; assume they are in attributes or default.
+    voxel_size = ds.attrs.get("voxel_size", (1, 1, 1))
+    offset = ds.attrs.get("offset", (0, 0, 0))
+    ds_offset_z = offset[0] / voxel_size[0]
+
+    # Compute the global starting z-index for this block.
+    # Here block[0] is a slice for z.
+    start_z = int(block[0].start / voxel_size[0] - ds_offset_z)
+    stop_z = int(block[0].stop / voxel_size[0] - ds_offset_z)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-
         for section, z in zip(data, range(start_z, stop_z)):
             section = convert_to_uint8(section)
-            io.imsave(
-                os.path.join(out_path, f"section_{z:04d}.tif"),
-                section,
-                # compress=9
-            )
+            filename_out = os.path.join(out_path, f"section_{z:04d}.tif")
+            skimage.io.imsave(filename_out, section)
+    return 0
 
 
+# --- Partitioning Function (Z-axis only) ---
+def partition_z_axis(total_shape, z_chunk):
+    """
+    Partition a 3D volume (zyx) along the z-axis only.
+
+    Returns a list of blocks where each block is a tuple:
+      (slice(z0, z1), slice(0, Y), slice(0, X))
+    """
+    z, y, x = total_shape
+    blocks = []
+    n_z = (z + z_chunk - 1) // z_chunk
+    for i in range(n_z):
+        z0 = i * z_chunk
+        z1 = min((i + 1) * z_chunk, z)
+        blocks.append((slice(z0, z1), slice(0, y), slice(0, x)))
+    return blocks
+
+
+# --- Main Conversion Function ---
 def convert(filename, ds_name, out_path, num_workers):
+    """
+    Convert a 3D zarr array to a sequence of TIFF images.
+
+    - Opens the zarr dataset.
+    - Ensures it is 3D.
+    - Partitions the volume along the z-axis using the dataset's chunk size for z.
+    - Submits a task for each block using dask.distributed.Client.
+    - Each block's worker writes its TIFF files to out_path.
+    """
+    logger = __import__("logging").getLogger(__name__)
     logger.info(f"Converting {os.path.join(filename, ds_name)}")
     start = now()
 
-    shape = zarr.open(os.path.join(filename, ds_name), "r").shape
-    if not len(shape) == 3:
+    # Open the dataset and get its shape and chunking.
+    ds_path = os.path.join(filename, ds_name)
+    ds = zarr.open(ds_path, mode="r")
+    shape = ds.shape
+    if len(shape) != 3:
         raise NotImplementedError("Conversion only implemented for 3D zarr arrays")
 
-    ds = open_ds(filename, ds_name, mode="r")
-
+    # Warn if dtype is not uint8.
     if np.dtype(ds.dtype) != np.uint8:
         logger.warning(f"Input dtype {ds.dtype} does not match output dtype uint8.")
 
-    chunk_shape = zarr.open(os.path.join(filename, ds_name), "r").chunks
-
-    # zyx format
-    block_roi = Roi(
-        (0, 0, 0), (ds.voxel_size[0] * chunk_shape[0],) + tuple(ds.roi.get_shape()[1:])
+    # For ordering, partition only along z. Use the first element of the chunk shape.
+    z_chunk = ds.chunks[0]
+    blocks = partition_z_axis(shape, z_chunk)
+    total_blocks = len(blocks)
+    logger.info(
+        f"Processing volume of shape {shape} in {total_blocks} blocks (z-axis partition)"
     )
 
     if not os.path.isdir(out_path):
         os.makedirs(out_path)
 
-    task = daisy.Task(
-        total_roi=ds.roi,
-        read_roi=block_roi,
-        write_roi=block_roi,
-        process_function=lambda block: convert_worker(
-            block,
-            ds,
-            out_path,
-        ),
-        fit="shrink",
-        read_write_conflict=False,
-        num_workers=num_workers,
-        task_id="convert_zarr_to_images",
-    )
+    client = Client(n_workers=num_workers)
+    logger.info(f"Dask client created with {num_workers} workers")
+    sleep(2)
 
-    daisy.run_blockwise([task])
+    scheduled = []
+    for block in blocks:
+        future = client.submit(convert_worker, filename, ds_name, block, out_path)
+        scheduled.append((block, future))
 
-    logger.info(f"Done in {now() - start} s")
+    progress_bar = tqdm(total=len(scheduled), desc="Processing Blocks")
+    mapping = {f: block for block, f in scheduled}
+    for future in as_completed([f for _, f in scheduled]):
+        mapping[future]  # retrieve block (unused here)
+        future.result()
+        progress_bar.update(1)
+    progress_bar.close()
 
-
-def convert_zarr_to_image_sequences(
-    filenames, datasets, out_directory, out_datasets, num_workers
-):
-    assert len(filenames) == len(datasets), (
-        "Provide a list of datasets for each filename."
-    )
-    assert len(filenames) == len(out_datasets), (
-        "Provide a list of out_datasets for each filename."
-    )
-
-    offset = None
-    shape = None
-
-    for f, list_of_ds, list_of_out_ds in zip(filenames, datasets, out_datasets):
-        assert len(list_of_ds) == len(list_of_out_ds), (
-            "Provide one out_dataset for each dataset name."
-        )
-
-        for ds, out_ds in zip(list_of_ds, list_of_out_ds):
-            zds = zarr.open(os.path.join(f, ds), "r")
-
-            # check for matching ROIs of all datasets
-            try:
-                new_offset = zds.attrs["offset"]
-                if offset is None:
-                    offset = new_offset
-                else:
-                    if new_offset != offset:
-                        logger.warning(
-                            (
-                                f"Offset {new_offset} of {os.path.join(f, ds)} "
-                                f"does not match offset {offset} "
-                                f"of previous datasets."
-                            )
-                        )
-            except KeyError:
-                logger.warning(f"Cannot find offset for {os.path.join(f, ds)}")
-
-            new_shape = zds.shape
-            if shape is None:
-                shape = new_shape
-            else:
-                if new_shape != shape:
-                    logger.warning(
-                        (
-                            f"Shape {new_shape} of {os.path.join(f, ds)} "
-                            f"does not match shape {shape} of previous datasets."
-                        )
-                    )
-
-            convert(
-                filename=f,
-                ds_name=ds,
-                out_path=os.path.join(out_directory, out_ds),
-                num_workers=num_workers,
-            )
+    client.close()
+    logger.info(f"Done in {now() - start:.2f} s")
 
 
-def parse_args():
-    p = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    p.add("--config", is_config_file=True, help="config file path")
-    p.add(
-        "--filename",
-        "-f",
-        type=str_path,
-        required=True,
-        action="append",
-        help=(
-            "Path to the zarr file. "
-            "You can convert dataset from multiple zarr files "
-            "with multiple -f arguments."
-        ),
-    )
-    p.add(
-        "--datasets",
-        "-d",
-        type=str_rstrip_slash,
-        required=True,
-        nargs="+",
-        action="append",
-        help="The datasets in a zarr file to convert.",
-    )
-    p.add(
-        "--out_directory",
-        "-o",
-        type=str_path,
-        required=True,
-        help=(
-            "Name of the parent output directory that contains the image  sequences."
-        ),
-    )
-    p.add(
-        "--out_datasets",
-        type=str_rstrip_slash,
-        nargs="+",
-        action="append",
-        default=None,
-        help=(
-            "The datasets in a zarr file to convert. "
-            "Defaults to the name of the input datasets."
-        ),
-    )
-    p.add("--num_workers", "-n", type=int, default=32)
-
-    args = p.parse_args()
-    logger.info(f"\n{p.format_values()}")
-
-    if args.out_datasets is None:
-        args.out_datasets = args.datasets
-
-    return args
-
-
-def str_rstrip_slash(x):
-    return x.rstrip("/")
-
-
-def str_path(x):
-    return os.path.expanduser(x).rstrip("/")
-
-
-def main():
-    args = parse_args()
-
-    convert_zarr_to_image_sequences(
-        filenames=args.filename,
-        datasets=args.datasets,
-        out_directory=args.out_directory,
-        out_datasets=args.out_datasets,
-        num_workers=args.num_workers,
-    )
-
-
+# --- Command-line Interface (if needed) ---
 if __name__ == "__main__":
-    main()
+    import configargparse as argparse
+
+    parser = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add("--filename", "-f", required=True, help="Path to the zarr container")
+    parser.add(
+        "--dataset", "-d", required=True, help="Name of the dataset in the container"
+    )
+    parser.add(
+        "--out_path", "-o", required=True, help="Output directory for TIFF images"
+    )
+    parser.add(
+        "--num_workers", "-n", type=int, default=16, help="Number of Dask workers"
+    )
+    args = parser.parse_args()
+    convert(args.filename, args.dataset, args.out_path, args.num_workers)

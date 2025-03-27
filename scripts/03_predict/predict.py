@@ -108,6 +108,7 @@ def directory_structure_setup(_run_dummy, _config):
         f"{int(_config['prediction']['run_id_training']):04d}",
         _config["prediction"]["name"],
     )
+
     return run_path
 
 
@@ -261,7 +262,6 @@ def predict(_run_dummy, _config, checkpoint=None, iteration=0, run_path=None):
             # _config['prediction']['output_size_voxels']
             # )
 
-            # TODO load files from disk as daisy datasets
             if _config["prediction"]["log_metrics"]:
                 log_metrics(
                     _run_dummy,
@@ -273,6 +273,7 @@ def predict(_run_dummy, _config, checkpoint=None, iteration=0, run_path=None):
                     iteration=iteration,
                     mode=f"ds_{idx_pipeline}",
                 )
+    return run_path
 
 
 def parse_arguments():
@@ -355,4 +356,20 @@ if __name__ == "__main__":
     with open("../../mock_db/ledger.json", mode="w") as f:
         json.dump(ledger, f)
 
-    predict(_run_dummy, config)
+    with open(config["prediction"]["data"]) as f:
+        prediction_data = json.load(f)
+
+    prediction_data_file = [e for e in prediction_data.keys()][0]
+    prediction_data_filename = prediction_data[prediction_data_file]["file"]
+    prediction_data_path = os.path.join(
+        config["directories"]["data"], prediction_data_filename
+    )
+
+    results_path = predict(_run_dummy, config)
+    data_path = config["directories"]["data"]
+
+    logger.info(
+        "Prediction named: {} was written to {}/predictions/{}".format(
+            name, prediction_data_path, results_path
+        )
+    )
