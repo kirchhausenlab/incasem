@@ -19,19 +19,19 @@ Dependencies:
 """
 
 import os
-import numpy as np
-import configargparse as argparse
-import zarr
-import skimage.io
-import skimage
-from numcodecs import Blosc
-from time import time as now, sleep
-from dask.distributed import Client, as_completed
-from tqdm import tqdm
 import warnings
+from time import sleep, time as now
 
+import configargparse as argparse
+import numpy as np
+import skimage
+import skimage.io
+import zarr
+from dask.distributed import Client, as_completed
 
 # --- Conversion Helpers ---
+from skimage.util import img_as_ubyte
+from tqdm import tqdm
 
 
 def convert_to_uint8(array):
@@ -50,7 +50,7 @@ def convert_to_uint8(array):
             raise ValueError(
                 "Array contains floats outside [0,1], cannot safely scale to uint8."
             )
-        array = skimage.img_as_ubyte(array)
+        array = img_as_ubyte(array)
         return array.astype(np.uint8)
     else:
         raise TypeError(f"Conversion to uint8 not defined for dtype {dtype}.")
@@ -136,7 +136,7 @@ def convert(filename, ds_name, out_path, num_workers):
         raise NotImplementedError("Conversion only implemented for 3D zarr arrays")
 
     # Warn if dtype is not uint8.
-    if np.dtype(ds.dtype) != np.uint8:
+    if np.dtype(ds.dtype) != np.uint8:  # type: ignore
         logger.warning(f"Input dtype {ds.dtype} does not match output dtype uint8.")
 
     # For ordering, partition only along z. Use the first element of the chunk shape.
@@ -176,14 +176,16 @@ if __name__ == "__main__":
     import configargparse as argparse
 
     parser = argparse.ArgParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add("--filename", "-f", required=True, help="Path to the zarr container")
-    parser.add(
+    parser.add_argument(
+        "--filename", "-f", required=True, help="Path to the zarr container"
+    )
+    parser.add_argument(
         "--dataset", "-d", required=True, help="Name of the dataset in the container"
     )
-    parser.add(
+    parser.add_argument(
         "--out_path", "-o", required=True, help="Output directory for TIFF images"
     )
-    parser.add(
+    parser.add_argument(
         "--num_workers", "-n", type=int, default=16, help="Number of Dask workers"
     )
     args = parser.parse_args()

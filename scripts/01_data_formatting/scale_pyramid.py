@@ -23,16 +23,16 @@ Dependencies:
   - tqdm
 """
 
-import os
-import numpy as np
 import argparse
-import dask
-from dask.distributed import Client, as_completed
-import zarr
-from numcodecs import Blosc
-import skimage.measure
-from time import time as now, sleep
 import itertools
+import os
+
+import numpy as np
+import skimage.measure
+import zarr
+from dask.delayed import delayed
+from dask.distributed import Client, as_completed
+from numcodecs import Blosc
 from tqdm import tqdm
 
 # Monkey-patch os.makedirs due to a bug in zarr
@@ -166,7 +166,7 @@ def downscale_dask(in_array, out_array, factor, write_size, num_workers):
             )
             for d, s in enumerate(block)
         )
-        task = dask.delayed(downscale_block)(
+        task = delayed(downscale_block)(
             in_array, out_array, factor, block_read, block_write
         )
         scheduled.append((block_write, task))
@@ -192,7 +192,7 @@ def prepare_ds(
     """
     z = zarr.open(in_file, mode="a")
     offset, shape = total_roi
-    ds = z.create_dataset(
+    ds = z.create_dataset(  # type: ignore
         ds_name,
         shape=shape,
         chunks=write_size,

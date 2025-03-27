@@ -12,15 +12,14 @@ Functions:
   - crop_datasets(...): crops multiple datasets (remains callable).
 """
 
-import os
-import logging
-from time import time as now, sleep
-import numpy as np
-import zarr
-from numcodecs import Blosc
 import itertools
-from tqdm import tqdm
+import logging
+from time import sleep, time as now
+
+import zarr
 from dask.distributed import Client, as_completed
+from numcodecs import Blosc
+from tqdm import tqdm
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -55,7 +54,7 @@ def prepare_new_dataset(
     """
     container = zarr.open(zarr_filename, mode="a")
     offset, shape = total_roi
-    ds = container.create_dataset(
+    ds = container.create_dataset(  # type: ignore
         ds_name,
         shape=shape,
         chunks=write_size,
@@ -154,8 +153,8 @@ def crop_dataset(
     """
     in_ds = open_dataset(zarr_filename, ds_name, mode="r")
     # Assume input dataset has attributes "roi" and "voxel_size"; otherwise default.
-    full_roi = in_ds.attrs.get("roi", ((0,) * len(in_ds.shape), in_ds.shape))
-    voxel_size = in_ds.attrs.get("voxel_size", (1,) * len(in_ds.shape))
+    full_roi = in_ds.attrs.get("roi", ((0,) * len(in_ds.shape), in_ds.shape))  # type: ignore
+    voxel_size = in_ds.attrs.get("voxel_size", (1,) * len(in_ds.shape))  # type: ignore
 
     if crop_offset_voxels is None:
         crop_offset = full_roi[0]
