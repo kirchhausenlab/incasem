@@ -579,7 +579,7 @@ nvcc --version
 1. Clone the repository:
 
 ```bash
-git clone --recursive git@github.com:kirchhausenlab/cell_interactome.git
+git clone https://github.com/kirchhausenlab/incasem.git
 ```
 
 2. 📦 In case of errors, please ensure you have the required dependencies for Python installed:
