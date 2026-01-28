@@ -18,11 +18,21 @@ logger.setLevel(logging.INFO)
 
 logging.getLogger('gunpowder').setLevel(logging.INFO)
 
+SCRIPT_DIR = os.path.dirname(__file__)
+REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
+
+
+def resolve_repo_path(path):
+    expanded = os.path.expanduser(path)
+    if os.path.isabs(expanded):
+        return expanded
+    return os.path.abspath(os.path.join(REPO_ROOT, expanded))
+
 
 class PredictionRunDummy():
     def __init__(self):
         # Get the highest ID and add 1
-        with open('../../mock_db/ledger.json') as f:
+        with open(resolve_repo_path('mock_db/ledger.json')) as f:
             ledger = json.load(f)
 
         ids = [int(e) for e in ledger.keys()]
@@ -96,7 +106,7 @@ def model_setup(_run_dummy, _config):
 
 
 def directory_structure_setup(_run_dummy, _config):
-    predictions_out_path = os.path.expanduser(
+    predictions_out_path = resolve_repo_path(
         _config['prediction']['directories']['prefix'])
     if not os.path.isdir(predictions_out_path):
         os.makedirs(predictions_out_path)
@@ -148,8 +158,8 @@ def prediction_setup(_config, run_path, model_,
     prediction = pipeline_type(
         data_config=pred_dataset,
         run_id=run_path,
-        data_path_prefix=os.path.expanduser(_config['directories']['data']),
-        predictions_path_prefix=os.path.expanduser(
+        data_path_prefix=resolve_repo_path(_config['directories']['data']),
+        predictions_path_prefix=resolve_repo_path(
             _config['prediction']['directories']['prefix']),
         model=model_,
         num_classes=int(_config['data']['num_classes']),
@@ -337,16 +347,73 @@ def parse_arguments():
     return args, remaining_argv_dict
 
 
+def _snap_to_mod(value, mod, target):
+    """Return nearest integer to value that is congruent to target (mod)."""
+    value = int(round(value))
+    if mod <= 0:
+        return value
+    delta = (target - (value % mod)) % mod
+    up = value + delta
+    down = value - ((mod - delta) % mod)
+    if down <= 0:
+        return up
+    # Prefer the closer one; tie-break upwards to avoid tiny ROIs.
+    if (value - down) <= (up - value):
+        return down
+    return up
+
+
+def _apply_resolution_agnostic_pred_sizes(config):
+    """
+    Compute prediction output/input sizes from a fixed physical output size.
+
+    Assumes the current U-Net architecture with output = input - 94 voxels.
+    """
+    physical_output_nm = (550, 550, 550)
+    voxel_size = config['data']['voxel_size']
+    output_voxels = []
+    for phys, vs in zip(physical_output_nm, voxel_size):
+        output_raw = phys / vs
+        # Output dims must be 6 (mod 8) so input dims end up 4 (mod 8).
+        output_voxels.append(_snap_to_mod(output_raw, 8, 6))
+
+    output_voxels = [int(v) for v in output_voxels]
+    input_voxels = [int(v + 94) for v in output_voxels]
+
+    config['prediction']['output_size_voxels'] = output_voxels
+    config['prediction']['input_size_voxels'] = input_voxels
+
+
+def _apply_data_voxel_size_from_prediction_sources(config):
+    """Derive data.voxel_size from the prediction data config JSON."""
+    data_config_path = config['prediction'].get('data')
+    if not data_config_path:
+        raise ValueError("prediction.data is required to infer voxel_size.")
+    data_config_path = resolve_repo_path(data_config_path)
+    with open(data_config_path, 'r') as f:
+        data_sources = json.load(f)
+    if not data_sources:
+        raise ValueError(f"No datasets found in {data_config_path}.")
+    first = next(iter(data_sources.values()))
+    try:
+        voxel_size = first['voxel_size']
+    except KeyError as e:
+        raise ValueError(
+            f"voxel_size missing in prediction data config {data_config_path}."
+        ) from e
+    config['data']['voxel_size'] = voxel_size
+
+
 if __name__ == '__main__':
 
     args, remaining_argv = parse_arguments()
-    with open('../../mock_db/ledger.json') as fp:
+    with open(resolve_repo_path('mock_db/ledger.json')) as fp:
         ledger = json.load(fp)
     available_models = [int(e) for e in ledger.keys()]
 
     assert args.run_id in available_models, "Desired run_id not found in mock_db, make sure it exists"
 
-    json_file = f"../../mock_db/{ledger[str(args.run_id)]}"
+    json_file = resolve_repo_path(f"mock_db/{ledger[str(args.run_id)]}")
 
     with open(json_file) as f:
         config = json.load(f)
@@ -361,6 +428,8 @@ if __name__ == '__main__':
     config = {**config, **yaml_data}
     config["prediction"] = {**config["prediction"], **remaining_argv}
     config["prediction"]["run_id_training"] = args.run_id
+    _apply_data_voxel_size_from_prediction_sources(config)
+    _apply_resolution_agnostic_pred_sizes(config)
 
     _run_dummy = PredictionRunDummy()
 
@@ -374,15 +443,18 @@ if __name__ == '__main__':
     # Update ledger
     ledger[str(_run_dummy._id)] = name
 
-    with open("../../mock_db/ledger.json", mode="w") as f:
+    with open(resolve_repo_path("mock_db/ledger.json"), mode="w") as f:
         json.dump(ledger, f)
 
-    with open(config["prediction"]["data"]) as f:
+    with open(resolve_repo_path(config["prediction"]["data"])) as f:
         prediction_data = json.load(f)
 
     prediction_data_file = [e for e in prediction_data.keys()][0]
     prediction_data_filename = prediction_data[prediction_data_file]["file"]
-    prediction_data_path = os.path.join(config["directories"]["data"], prediction_data_filename)
+    prediction_data_path = os.path.join(
+        resolve_repo_path(config["directories"]["data"]),
+        prediction_data_filename
+    )
 
     results_path = predict(_run_dummy, config)
     data_path = config["directories"]["data"]
