@@ -16,10 +16,21 @@ import gunpowder as gp
 import incasem as fos
 
 
+SCRIPT_DIR = os.path.dirname(__file__)
+REPO_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, os.pardir, os.pardir))
+
+
+def resolve_repo_path(path):
+    expanded = os.path.expanduser(path)
+    if os.path.isabs(expanded):
+        return expanded
+    return os.path.abspath(os.path.join(REPO_ROOT, expanded))
+
+
 class TrainingRunDummy():
     def __init__(self):
         # Get the highest ID and add 1
-        with open('../../mock_db/ledger.json') as f:
+        with open(resolve_repo_path('mock_db/ledger.json')) as f:
             ledger = json.load(f)
 
         ids = [int(e) for e in ledger.keys()]
@@ -117,6 +128,65 @@ def loss_setup(_config, device='cuda'):
     return loss
 
 
+def _snap_to_mod(value, mod, target):
+    """Return nearest integer to value that is congruent to target (mod)."""
+    value = int(round(value))
+    if mod <= 0:
+        return value
+    delta = (target - (value % mod)) % mod
+    up = value + delta
+    down = value - ((mod - delta) % mod)
+    if down <= 0:
+        return up
+    # Prefer the closer one; tie-break upwards to avoid tiny ROIs.
+    if (value - down) <= (up - value):
+        return down
+    return up
+
+
+def _apply_resolution_agnostic_sizes(config):
+    """
+    Compute output/input sizes from a fixed physical output size.
+
+    Assumes the current U-Net architecture with output = input - 94 voxels.
+    """
+    physical_output_nm = (550, 550, 550)
+    voxel_size = config['data']['voxel_size']
+    output_voxels = []
+    for phys, vs in zip(physical_output_nm, voxel_size):
+        output_raw = phys / vs
+        # Output dims must be 6 (mod 8) so input dims end up 4 (mod 8).
+        output_voxels.append(_snap_to_mod(output_raw, 8, 6))
+
+    output_voxels = [int(v) for v in output_voxels]
+    input_voxels = [int(v + 94) for v in output_voxels]
+
+    config['training']['output_size_voxels'] = output_voxels
+    config['training']['input_size_voxels'] = input_voxels
+    config['validation']['output_size_voxels'] = output_voxels
+    config['validation']['input_size_voxels'] = input_voxels
+
+
+def _apply_data_voxel_size_from_sources(config):
+    """Derive data.voxel_size from the training data config JSON."""
+    data_config_path = config['training'].get('data')
+    if not data_config_path:
+        raise ValueError("training.data is required to infer voxel_size.")
+    data_config_path = resolve_repo_path(data_config_path)
+    with open(data_config_path, 'r') as f:
+        data_sources = json.load(f)
+    if not data_sources:
+        raise ValueError(f"No datasets found in {data_config_path}.")
+    first = next(iter(data_sources.values()))
+    try:
+        voxel_size = first['voxel_size']
+    except KeyError as e:
+        raise ValueError(
+            f"voxel_size missing in training data config {data_config_path}."
+        ) from e
+    config['data']['voxel_size'] = voxel_size
+
+
 def training_setup(_config, _run_dummy, _seed, run_dir, model):
     loss = loss_setup(_config)
 
@@ -134,8 +204,8 @@ def training_setup(_config, _run_dummy, _seed, run_dir, model):
     training = pipeline_type(
         data_config=_config['training']['data'],
         run_dir=run_dir,
-        run_path_prefix=os.path.expanduser(_config['directories']['runs']),
-        data_path_prefix=os.path.expanduser(_config['directories']['data']),
+        run_path_prefix=resolve_repo_path(_config['directories']['runs']),
+        data_path_prefix=resolve_repo_path(_config['directories']['data']),
         model=model,
         loss=loss,
         optimizer=optimizer,
@@ -269,8 +339,8 @@ def validation_setup(_config, _run_dummy, _seed, run_dir, model, val_dataset):
     validation = pipeline_type(
         data_config=val_dataset,
         run_dir=run_dir,
-        run_path_prefix=os.path.expanduser(_config['directories']['runs']),
-        data_path_prefix=os.path.expanduser(_config['directories']['data']),
+        run_path_prefix=resolve_repo_path(_config['directories']['runs']),
+        data_path_prefix=resolve_repo_path(_config['directories']['data']),
         model=model,
         loss=loss,
         num_classes=int(_config['data']['num_classes']),
@@ -338,14 +408,14 @@ def directory_structure_setup(_config, _run_dummy):
         try:
             load_run_id, load_run_checkpoint = \
                 _config['training']['start_from']
-            model_to_load = os.path.expanduser(load_run_checkpoint)
+            model_to_load = resolve_repo_path(load_run_checkpoint)
             # model_to_load = os.path.join(
             # os.path.expanduser(_config['directories']['runs']),
             # "models",
             # str(load_run_id),
             # "model_checkpoint_" + str(load_run_checkpoint))
             new_model = os.path.join(
-                os.path.expanduser(_config['directories']['runs']),
+                resolve_repo_path(_config['directories']['runs']),
                 "models",
                 str(_run_dummy._id),
                 "model_checkpoint_0")
@@ -455,7 +525,7 @@ def train(_config, _run, _seed):
     validation_loss = float('inf')
 
     debug_logdir = os.path.join(
-        os.path.expanduser(_config['directories']['runs']),
+        resolve_repo_path(_config['directories']['runs']),
         'tensorboard',
         run_dir,
         'debug'
@@ -584,11 +654,11 @@ def train(_config, _run, _seed):
 
 def load_run(run_id):
     # Check if the previous run ID is in training_runs or mock_db
-    with open("../../mock_db/ledger.json") as f:
+    with open(resolve_repo_path("mock_db/ledger.json")) as f:
         ledger = json.load(f)
     assert str(run_id) in ledger.keys(), "Run ID not found in ~/incasem/mock_db"
 
-    with open(f"../../mock_db/{ledger[str(run_id)]}") as f:
+    with open(resolve_repo_path(f"mock_db/{ledger[str(run_id)]}")) as f:
         config = json.load(f)
 
     return config
@@ -689,6 +759,8 @@ if __name__ == '__main__':
     config["training"] = {**config["training"], **train_arg_dict}
     config["validation"] = {**config["validation"], **val_arg_dict}
     config["torch"] = {**config["torch"], **torch_arg_dict}
+    _apply_data_voxel_size_from_sources(config)
+    _apply_resolution_agnostic_sizes(config)
 
     _run_dummy = TrainingRunDummy()
 
@@ -700,16 +772,16 @@ if __name__ == '__main__':
     name = name + f"_{_run_dummy._id}"
 
     # Update ledger
-    with open('../../mock_db/ledger.json') as fp:
+    with open(resolve_repo_path('mock_db/ledger.json')) as fp:
         ledger = json.load(fp)
 
     ledger[str(_run_dummy._id)] = name + ".json"
 
-    with open("../../mock_db/ledger.json", mode="w") as f:
+    with open(resolve_repo_path("mock_db/ledger.json"), mode="w") as f:
         json.dump(ledger, f)
 
     # Write config
-    with open(f"../../mock_db/{name}.json", mode="w") as f:
+    with open(resolve_repo_path(f"mock_db/{name}.json"), mode="w") as f:
         json.dump(config, f)
 
     # if not os.path.exists(config['directories']['runs']):

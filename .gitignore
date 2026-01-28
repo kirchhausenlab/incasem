@@ -2,8 +2,10 @@
 ### PROJECT ###
 ###############
 
+/data
 /models
 /training_runs
+/scripts/02_train/data_configs/other
 
 ##############
 ### PYTHON ###

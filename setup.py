@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name='incasem',
@@ -8,7 +8,7 @@ setup(
     author='Benjamin Gallusser',
     author_email='gallusser@tklab.hms.harvard.edu',
     license='MIT',
-    py_modules=[],
+    packages=find_packages(),
     install_requires=[
         'numpy',
         'dask',
